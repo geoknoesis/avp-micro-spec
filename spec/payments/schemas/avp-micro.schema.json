@@ -1,0 +1,413 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/avp-micro/schemas/avp-micro.schema.json",
+  "title": "AVP-Micro data objects",
+  "description": "JSON Schema for AVP-Micro credentials and protocol messages. Each object type is under $defs; validate an instance against the relevant $def, e.g. #/$defs/PaymentQuote. Schemas are intentionally lenient about extra members (the @protected JSON-LD context governs semantics); they enforce required members, types, and value formats.",
+
+  "$defs": {
+    "did": {
+      "type": "string",
+      "pattern": "^did:[a-z0-9]+:.+"
+    },
+    "iri": {
+      "type": "string",
+      "minLength": 1,
+      "format": "uri"
+    },
+    "idValue": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decimal": {
+      "type": "string",
+      "description": "Non-negative decimal amount as a string.",
+      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+    },
+    "positiveDecimal": {
+      "type": "string",
+      "description": "Strictly positive decimal amount as a string.",
+      "pattern": "^(0\\.[0-9]*[1-9][0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "contentDigest": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*:[A-Za-z0-9_-]+$"
+    },
+    "iriOrCurie": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:.+"
+    },
+    "currencyCode": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "tier": {
+      "type": "object",
+      "required": ["amount"],
+      "properties": {
+        "upTo": { "$ref": "#/$defs/positiveDecimal" },
+        "amount": { "$ref": "#/$defs/decimal" }
+      }
+    },
+    "rateComponent": {
+      "type": "object",
+      "required": ["type"],
+      "oneOf": [
+        {
+          "properties": { "type": { "const": "PerCall" }, "amount": { "$ref": "#/$defs/positiveDecimal" },
+                          "currency": { "$ref": "#/$defs/currencyCode" } },
+          "required": ["type", "amount"]
+        },
+        {
+          "properties": { "type": { "const": "PerUnit" }, "dimension": { "$ref": "#/$defs/iriOrCurie" },
+                          "unit": { "$ref": "#/$defs/iriOrCurie" }, "amount": { "$ref": "#/$defs/positiveDecimal" },
+                          "currency": { "$ref": "#/$defs/currencyCode" } },
+          "required": ["type", "dimension", "unit", "amount"]
+        },
+        {
+          "properties": { "type": { "const": "TieredRate" }, "dimension": { "$ref": "#/$defs/iriOrCurie" },
+                          "unit": { "$ref": "#/$defs/iriOrCurie" },
+                          "tierMode": { "enum": ["graduated", "volume"] },
+                          "tiers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/tier" } },
+                          "currency": { "$ref": "#/$defs/currencyCode" } },
+          "required": ["type", "dimension", "unit", "tierMode", "tiers"]
+        },
+        {
+          "properties": { "type": { "const": "CommitmentRate" }, "dimension": { "$ref": "#/$defs/iriOrCurie" },
+                          "unit": { "$ref": "#/$defs/iriOrCurie" }, "upfront": { "$ref": "#/$defs/decimal" },
+                          "recurring": { "type": "object", "required": ["amount", "period"],
+                                         "properties": { "amount": { "$ref": "#/$defs/positiveDecimal" },
+                                                         "period": { "$ref": "#/$defs/iriOrCurie" } } },
+                          "includedQuantity": { "$ref": "#/$defs/decimal" },
+                          "currency": { "$ref": "#/$defs/currencyCode" } },
+          "required": ["type", "upfront", "recurring"]
+        },
+        {
+          "properties": { "type": { "const": "Allowance" }, "dimension": { "$ref": "#/$defs/iriOrCurie" },
+                          "unit": { "$ref": "#/$defs/iriOrCurie" }, "freeQuantity": { "$ref": "#/$defs/positiveDecimal" } },
+          "required": ["type", "dimension", "unit", "freeQuantity"]
+        }
+      ]
+    },
+    "pricingModel": {
+      "oneOf": [
+        { "$ref": "#/$defs/rateComponent" },
+        {
+          "type": "object",
+          "required": ["type", "currency", "components"],
+          "properties": {
+            "type": { "const": "CompositePricing" },
+            "currency": { "$ref": "#/$defs/currencyCode" },
+            "components": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/rateComponent" } }
+          }
+        }
+      ]
+    },
+    "categoryList": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/iri" }
+    },
+    "didList": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/did" }
+    },
+    "proof": {
+      "type": "object",
+      "required": ["type", "cryptosuite", "created", "verificationMethod", "proofPurpose", "proofValue"],
+      "properties": {
+        "type": { "const": "DataIntegrityProof" },
+        "cryptosuite": { "const": "eddsa-jcs-2022" },
+        "created": { "$ref": "#/$defs/dateTime" },
+        "verificationMethod": { "type": "string", "minLength": 1 },
+        "proofPurpose": { "const": "assertionMethod" },
+        "proofValue": { "type": "string", "pattern": "^z[1-9A-HJ-NP-Za-km-z]+$" }
+      }
+    },
+    "signedContext": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://www.w3.org/ns/credentials/v2" },
+        { "const": "https://w3id.org/security/data-integrity/v2" },
+        { "const": "https://w3id.org/spending-authority/v1" },
+        { "const": "https://w3id.org/avp-micro/v1" }
+      ],
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "verifiablePresentation": {
+      "type": "object",
+      "required": ["type", "verifiableCredential"],
+      "properties": {
+        "type": {
+          "oneOf": [
+            { "const": "VerifiablePresentation" },
+            { "type": "array", "contains": { "const": "VerifiablePresentation" } }
+          ]
+        },
+        "verifiableCredential": {
+          "type": "array",
+          "minItems": 1
+        }
+      }
+    },
+
+    "PaymentOffer": {
+      "type": "object",
+      "required": ["@context", "id", "type", "payee", "pricingModel", "quoteEndpoint"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "$ref": "#/$defs/typePaymentOffer" },
+        "payee": { "$ref": "#/$defs/did" },
+        "pricingModel": { "$ref": "#/$defs/pricingModel" },
+        "quoteEndpoint": { "$ref": "#/$defs/iri" },
+        "acceptedSettlementMethods": { "type": "array", "items": { "type": "string" } },
+        "acceptedCredentialIssuers": { "$ref": "#/$defs/didList" },
+        "categories": { "$ref": "#/$defs/categoryList" },
+        "offerValidity": { "$ref": "#/$defs/dateTime" }
+      }
+    },
+    "typePaymentOffer": {
+      "oneOf": [
+        { "const": "PaymentOffer" },
+        { "type": "array", "contains": { "const": "PaymentOffer" } }
+      ]
+    },
+
+    "PaymentQuote": {
+      "type": "object",
+      "required": ["@context", "id", "type", "payer", "payee", "serviceRequestHash", "amount", "currency", "settlementMethod", "settlementTarget", "expires", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": {
+          "oneOf": [
+            { "const": "PaymentQuote" },
+            { "type": "array", "contains": { "const": "PaymentQuote" } }
+          ]
+        },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "serviceRequestHash": { "$ref": "#/$defs/contentDigest" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "settlementMethod": { "type": "string" },
+        "settlementTarget": { "type": "string", "minLength": 1 },
+        "expires": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "PaymentAuthorization": {
+      "type": "object",
+      "required": ["@context", "id", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "settlementMethod", "settlementTarget", "serviceRequestHash", "timestamp", "expires", "nonce", "vp", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": {
+          "oneOf": [
+            { "const": "PaymentAuthorization" },
+            { "type": "array", "contains": { "const": "PaymentAuthorization" } }
+          ]
+        },
+        "quote": { "$ref": "#/$defs/idValue" },
+        "quoteDigest": { "$ref": "#/$defs/contentDigest" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "settlementMethod": { "type": "string" },
+        "settlementTarget": { "type": "string", "minLength": 1 },
+        "serviceRequestHash": { "$ref": "#/$defs/contentDigest" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "expires": { "$ref": "#/$defs/dateTime" },
+        "nonce": { "type": "string", "minLength": 1 },
+        "vp": { "$ref": "#/$defs/verifiablePresentation" },
+        "wallet": { "$ref": "#/$defs/did" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "PaymentExecution": {
+      "type": "object",
+      "required": ["@context", "id", "type", "amount", "currency", "status", "timestamp", "proof"],
+      "oneOf": [
+        { "required": ["authorization"] },
+        { "required": ["sessionBudgetAuthorization"] }
+      ],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": {
+          "oneOf": [
+            { "const": "PaymentExecution" },
+            { "type": "array", "contains": { "const": "PaymentExecution" } }
+          ]
+        },
+        "authorization": { "$ref": "#/$defs/idValue" },
+        "sessionBudgetAuthorization": { "$ref": "#/$defs/idValue" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "status": { "enum": ["pending", "completed", "partial", "failed"] },
+        "settlementRef": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "PaymentReceipt": {
+      "type": "object",
+      "required": ["@context", "id", "type", "payee", "status", "proof"],
+      "anyOf": [
+        { "required": ["quote"] },
+        { "required": ["usageSession"] }
+      ],
+      "allOf": [
+        {
+          "anyOf": [
+            { "required": ["execution"] },
+            { "required": ["payer", "amount", "currency"] }
+          ]
+        }
+      ],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": {
+          "oneOf": [
+            { "const": "PaymentReceipt" },
+            { "type": "array", "contains": { "const": "PaymentReceipt" } }
+          ]
+        },
+        "quote": { "$ref": "#/$defs/idValue" },
+        "usageSession": { "$ref": "#/$defs/idValue" },
+        "execution": { "$ref": "#/$defs/idValue" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "status": { "enum": ["fulfilled", "partial", "failed", "reversed"] },
+        "serviceOutputHash": { "$ref": "#/$defs/contentDigest" },
+        "totalMeterReading": { "type": "string" },
+        "fulfilledAt": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "UsageSession": {
+      "type": "object",
+      "required": ["@context", "id", "type", "payer", "payee", "currency", "pricingModel", "maxAmount", "settlementMethod", "settlementTarget", "timestamp", "expires", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": {
+          "oneOf": [
+            { "const": "UsageSession" },
+            { "type": "array", "contains": { "const": "UsageSession" } }
+          ]
+        },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "currency": { "type": "string" },
+        "pricingModel": { "$ref": "#/$defs/pricingModel" },
+        "maxAmount": { "$ref": "#/$defs/positiveDecimal" },
+        "meterType": { "type": "string" },
+        "meterUnit": { "type": "string" },
+        "startingBalance": { "$ref": "#/$defs/decimal" },
+        "settlementMethod": { "type": "string" },
+        "settlementTarget": { "type": "string", "minLength": 1 },
+        "settlementMode": { "enum": ["incremental", "deferred"] },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "expires": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "UsageAccrual": {
+      "type": "object",
+      "required": ["@context", "id", "type", "session", "accrualKind", "amountAccrued", "currency", "timestamp", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": {
+          "oneOf": [
+            { "const": "UsageAccrual" },
+            { "type": "array", "contains": { "const": "UsageAccrual" } }
+          ]
+        },
+        "session": { "$ref": "#/$defs/idValue" },
+        "accrualKind": { "enum": ["cumulative", "incremental"] },
+        "amountAccrued": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "meterReading": { "type": "string" },
+        "meterType": { "type": "string" },
+        "meterUnit": { "type": "string" },
+        "sequence": { "type": "integer", "minimum": 0 },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      },
+      "if": {
+        "properties": { "accrualKind": { "const": "incremental" } }
+      },
+      "then": {
+        "required": ["sequence"]
+      }
+    },
+
+    "SessionBudgetAuthorization": {
+      "type": "object",
+      "required": ["@context", "id", "type", "usageSession", "sessionDigest", "payer", "payee", "committedAmount", "currency", "timestamp", "expires", "nonce", "vp", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": {
+          "oneOf": [
+            { "const": "SessionBudgetAuthorization" },
+            { "type": "array", "contains": { "const": "SessionBudgetAuthorization" } }
+          ]
+        },
+        "usageSession": { "$ref": "#/$defs/idValue" },
+        "sessionDigest": { "$ref": "#/$defs/contentDigest" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "committedAmount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "expires": { "$ref": "#/$defs/dateTime" },
+        "nonce": { "type": "string", "minLength": 1 },
+        "vp": { "$ref": "#/$defs/verifiablePresentation" },
+        "wallet": { "$ref": "#/$defs/did" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "UsageSessionExtension": {
+      "type": "object",
+      "required": ["@context", "id", "type", "usageSession", "sessionDigest", "timestamp", "proof"],
+      "anyOf": [
+        { "required": ["newMaxAmount"] },
+        { "required": ["newExpires"] }
+      ],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": {
+          "oneOf": [
+            { "const": "UsageSessionExtension" },
+            { "type": "array", "contains": { "const": "UsageSessionExtension" } }
+          ]
+        },
+        "usageSession": { "$ref": "#/$defs/idValue" },
+        "sessionDigest": { "$ref": "#/$defs/contentDigest" },
+        "newMaxAmount": { "$ref": "#/$defs/positiveDecimal" },
+        "newExpires": { "$ref": "#/$defs/dateTime" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    }
+  }
+}

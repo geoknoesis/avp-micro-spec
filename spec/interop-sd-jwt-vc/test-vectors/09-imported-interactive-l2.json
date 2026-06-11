@@ -1,0 +1,33 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "SpendingAuthorizationCredential",
+    "EmbeddedSdJwtVcMandate"
+  ],
+  "issuer": "did:web:issuer.example",
+  "credentialSubject": {
+    "id": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "currency": "USD",
+    "maxPerTransaction": "0.10",
+    "dailyLimit": "10.00",
+    "allowedPayees": [
+      "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"
+    ]
+  },
+  "bridgeMode": "proof-preserving",
+  "sourceVct": "mandate.spending-authority.avp",
+  "embeddedSdJwtVc": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6aXNzdWVyLmV4YW1wbGUja2V5LTEiLCJ0eXAiOiJkYytzZC1qd3QifQ.eyJhbGxvd2VkX3BheWVlcyI6WyJkaWQ6a2V5Ono2TWtlblBBMnhjRDVDR0pWbWtnZWpicjRMekJBYTFlM0dWQ1FpSEZyWERnaDVWaSJdLCJjbmYiOnsiandrIjp7ImNydiI6IkVkMjU1MTkiLCJrdHkiOiJPS1AiLCJ4IjoiZ0U4SkR6bU5WSmdlazJTaVlNMmRSRnJHYkxxb0ZRdWRESlhEQVJYaHU0dyJ9fSwiY3VycmVuY3kiOiJVU0QiLCJleHAiOjE3ODI4NjQwMDAsImludGVudF9tb2RlIjoiaW50ZXJhY3RpdmUiLCJpc3MiOiJkaWQ6d2ViOmlzc3Vlci5leGFtcGxlIiwianRpIjoidXJuOnZpOm1hbmRhdGU6aW50ZXJhY3RpdmU6MDAxIiwibGltaXRzIjp7InBlcl9kYXkiOiIxMC4wMCIsInBlcl90eG4iOiIwLjEwIn0sIm5iZiI6MTc3NTAwMTYwMCwic3ViIjoiZGlkOmtleTp6Nk1rbzY4OFZ0MXVaRlFaaDhXdmI4Qm5tZW5FcVRhalp3RTJCdWdXODVuV0E2NVIiLCJ2Y3QiOiJtYW5kYXRlLnNwZW5kaW5nLWF1dGhvcml0eS5hdnAifQ.6FMdlJql23iPzh5PlDa0TPL-B8dfXKHTYHxx3gJHZ-7uy2-3Kjup7MSvOxIb79FOjdyVn7Uh3pFUBkPQLsXi5g~",
+  "profileVersion": "0.1.0",
+  "id": "urn:vi:mandate:interactive:001",
+  "validFrom": "2026-04-01T00:00:00Z",
+  "validUntil": "2026-07-01T00:00:00Z",
+  "importAdvisory": [
+    "interactive-l2: fresh per-purchase human intent has no standing-delegation analogue and is not preserved by this import"
+  ]
+}

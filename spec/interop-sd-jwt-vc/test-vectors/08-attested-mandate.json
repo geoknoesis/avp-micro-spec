@@ -1,0 +1,46 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "SpendingAuthorizationCredential",
+    "EmbeddedSdJwtVcMandate"
+  ],
+  "issuer": "did:key:z6Mkpsqx4hQbhACJf9ygK9FNy51oXwFxYVKqZhn3XJuNNzRf",
+  "credentialSubject": {
+    "id": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "currency": "USD",
+    "maxPerTransaction": "0.10",
+    "dailyLimit": "10.00",
+    "allowedPayees": [
+      "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"
+    ]
+  },
+  "bridgeMode": "attested",
+  "sourceVct": "mandate.spending-authority.avp",
+  "embeddedSdJwtVc": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6aXNzdWVyLmV4YW1wbGUja2V5LTEiLCJ0eXAiOiJkYytzZC1qd3QifQ.eyJhbGxvd2VkX3BheWVlcyI6WyJkaWQ6a2V5Ono2TWtlblBBMnhjRDVDR0pWbWtnZWpicjRMekJBYTFlM0dWQ1FpSEZyWERnaDVWaSJdLCJjbmYiOnsiandrIjp7ImNydiI6IkVkMjU1MTkiLCJrdHkiOiJPS1AiLCJ4IjoiZ0U4SkR6bU5WSmdlazJTaVlNMmRSRnJHYkxxb0ZRdWRESlhEQVJYaHU0dyJ9fSwiY3VycmVuY3kiOiJVU0QiLCJleHAiOjE3ODI4NjQwMDAsImlzcyI6ImRpZDp3ZWI6aXNzdWVyLmV4YW1wbGUiLCJqdGkiOiJ1cm46dmk6bWFuZGF0ZTpmb3JlaWduOjAwMSIsImxpbWl0cyI6eyJwZXJfZGF5IjoiMTAuMDAiLCJwZXJfdHhuIjoiMC4xMCJ9LCJuYmYiOjE3NzUwMDE2MDAsInN0YXR1cyI6eyJzdGF0dXNfbGlzdCI6eyJpZHgiOjEyLCJ1cmkiOiJodHRwczovL2lzc3Vlci5leGFtcGxlL3N0YXR1cy85In19LCJzdWIiOiJkaWQ6a2V5Ono2TWtvNjg4VnQxdVpGUVpoOFd2YjhCbm1lbkVxVGFqWndFMkJ1Z1c4NW5XQTY1UiIsInZjdCI6Im1hbmRhdGUuc3BlbmRpbmctYXV0aG9yaXR5LmF2cCJ9.DZWKPwvedOI8jjRmQyNcWuwu5Pa6pLsNKtFxAcTDOG7w5mzPjqF9YH_SetwZ57-M97NcGmA18EXYPlBBSTHWkg~",
+  "profileVersion": "0.1.0",
+  "id": "urn:dsa:vc:spendauth:attested:001",
+  "validFrom": "2026-04-01T00:00:00Z",
+  "validUntil": "2026-07-01T00:00:00Z",
+  "credentialStatus": {
+    "id": "https://issuer.example/status/9#12",
+    "type": "BitstringStatusListEntry",
+    "statusPurpose": "revocation",
+    "statusListIndex": "12",
+    "statusListCredential": "https://issuer.example/status/9"
+  },
+  "attestingBridge": "did:key:z6Mkpsqx4hQbhACJf9ygK9FNy51oXwFxYVKqZhn3XJuNNzRf",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2026-04-01T00:01:00Z",
+    "verificationMethod": "did:key:z6Mkpsqx4hQbhACJf9ygK9FNy51oXwFxYVKqZhn3XJuNNzRf#z6Mkpsqx4hQbhACJf9ygK9FNy51oXwFxYVKqZhn3XJuNNzRf",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z4AXmWXYAMJAqRWhZxF6ZW3QwTcdG6fpagqjLA1dLY9gBQmUKHAvz1Ec4o5vw6MhCUcCH9jBTQdgYx3ukexok796h"
+  }
+}

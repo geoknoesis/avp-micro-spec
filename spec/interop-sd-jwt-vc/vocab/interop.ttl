@@ -1,0 +1,80 @@
+# AVP-Micro -- SD-JWT-VC interop profile RDFS/OWL ontology.
+#
+# Declares the classes and properties used on the AVP-Micro (JSON-LD) side of the
+# bridge to SD-JWT-VC credentials (Mastercard/Google Verifiable Intent, Google AP2).
+# The SD-JWT-VC side is JOSE, not RDF, and is specified in prose and JSON Schema; it
+# has no terms here. The JSON-LD context (../context/v1.jsonld) and the prose
+# specification are authoritative for term identity and processing; this ontology is
+# an interoperability aid.
+#
+# Namespace: https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#  (prefix iop:)
+@prefix iop:  <https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#> .
+@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+<https://w3id.org/avp-micro/interop/sd-jwt-vc/v1> a owl:Ontology ;
+  dct:title "AVP-Micro -- SD-JWT-VC interop profile vocabulary"@en ;
+  dct:description "Classes and properties for bridging an AVP-Micro SpendingAuthorizationCredential to and from an SD-JWT-VC mandate."@en ;
+  owl:versionInfo "0.1.0" .
+
+#################################################################
+# Classes
+#################################################################
+
+iop:EmbeddedSdJwtVcMandate a owl:Class ;
+  rdfs:subClassOf dsa:SpendingAuthorizationCredential ;
+  rdfs:label "Embedded SD-JWT-VC mandate"@en ;
+  rdfs:comment "An AVP-Micro SpendingAuthorizationCredential produced by importing an SD-JWT-VC mandate (V->A direction); its authority is carried by an embedded SD-JWT-VC chain in iop:embeddedSdJwtVc and verified against that chain, not against the outer object's claims alone."@en .
+
+iop:EmbeddedKbJwtAuthorization a owl:Class ;
+  rdfs:label "Embedded key-binding-JWT authorization"@en ;
+  rdfs:comment "An AVP-Micro PaymentAuthorization (per-purchase action, L3) produced by importing an SD-JWT-VC presentation (mandate + holder key-binding JWT); its authority is carried by iop:embeddedKbJwtPresentation."@en .
+
+#################################################################
+# Datatype properties
+#################################################################
+
+iop:embeddedSdJwtVc a owl:DatatypeProperty ;
+  rdfs:domain iop:EmbeddedSdJwtVcMandate ;
+  rdfs:range xsd:string ;
+  rdfs:label "embedded SD-JWT-VC"@en ;
+  rdfs:comment "The source SD-JWT-VC mandate chain in compact serialization (issuer L1 [~ standing L2] and, where present, agent key-binding L3). Carries the authenticated authority for an imported mandate."@en .
+
+iop:embeddedKbJwtPresentation a owl:DatatypeProperty ;
+  rdfs:domain iop:EmbeddedKbJwtAuthorization ;
+  rdfs:range xsd:string ;
+  rdfs:label "embedded key-binding-JWT presentation"@en ;
+  rdfs:comment "The source SD-JWT-VC presentation in compact serialization: the mandate SD-JWT followed by the agent's key-binding JWT (L3) binding it to one purchase. Carries the authenticated authority for an imported PaymentAuthorization."@en .
+
+iop:bridgeMode a owl:DatatypeProperty ;
+  rdfs:range xsd:string ;
+  rdfs:label "bridge mode"@en ;
+  rdfs:comment "How the bridged object obtained its authority: 'co-issued' (issuer natively signed both forms), 'proof-preserving' (outer object is an unsigned projection; authority is the embedded original proof), or 'attested' (a named bridge re-signed the outer object). MUST be present on a bridged object."@en .
+
+iop:importAdvisory a owl:DatatypeProperty ;
+  rdfs:range xsd:string ;
+  rdfs:label "import advisory"@en ;
+  rdfs:comment "A human-readable advisory recording an inherently non-round-trippable condition surfaced during import (e.g. an interactive L2 fresh-human-intent layer, or partial selective disclosure yielding a subset view). The importer MUST surface, not silently drop, such conditions."@en .
+
+iop:sourceVct a owl:DatatypeProperty ;
+  rdfs:range xsd:string ;
+  rdfs:label "source vct"@en ;
+  rdfs:comment "The SD-JWT-VC type (vct) of the source credential, retained for provenance."@en .
+
+iop:profileVersion a owl:DatatypeProperty ;
+  rdfs:range xsd:string ;
+  rdfs:label "profile version"@en ;
+  rdfs:comment "The version of this interop profile under which the object was produced, pinned to the targeted SD-JWT-VC / Verifiable Intent revision."@en .
+
+#################################################################
+# Object properties
+#################################################################
+
+iop:attestingBridge a owl:ObjectProperty ;
+  rdfs:domain iop:EmbeddedSdJwtVcMandate ;
+  rdfs:label "attesting bridge"@en ;
+  rdfs:comment "In 'attested' bridge mode only, the DID of the bridge that re-signed the outer object. A relying party MUST independently trust this DID; in 'proof-preserving' and 'co-issued' modes this property is absent."@en .

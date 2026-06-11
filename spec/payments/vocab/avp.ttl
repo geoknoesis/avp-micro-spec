@@ -1,0 +1,166 @@
+# AVP-Micro core RDFS/OWL ontology.
+#
+# Declares the classes and properties whose JSON-LD term mappings are defined in
+# ../context/v1.jsonld, so that AVP-Micro data has formal RDF semantics
+# (rdfs:Class / rdf:Property, labels, comments, and conservative domains/ranges).
+# This ontology is an interoperability aid; the JSON-LD context and the prose
+# specification are authoritative for term identity and processing.
+#
+# Namespace: https://w3id.org/avp-micro/v1#  (prefix avp:)
+@prefix avp:  <https://w3id.org/avp-micro/v1#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+<https://w3id.org/avp-micro/v1> a owl:Ontology ;
+  dct:title "AVP-Micro Payments core vocabulary"@en ;
+  dct:description "Classes and properties for the AVP-Micro Payments layer: quotes, authorizations, executions, receipts, and streaming."@en ;
+  owl:versionInfo "0.1.0" ;
+  rdfs:seeAlso <https://w3id.org/spending-authority/v1> .
+
+#################################################################
+# Classes
+#################################################################
+
+avp:PaymentOffer a owl:Class ;
+  rdfs:label "Payment offer"@en ;
+  rdfs:comment "A payee advertisement of commercial terms and a quote endpoint."@en .
+
+avp:PaymentQuote a owl:Class ;
+  rdfs:label "Payment quote"@en ;
+  rdfs:comment "A time-bound, payee-signed commercial offer for a specific request."@en .
+
+avp:PaymentAuthorization a owl:Class ;
+  rdfs:label "Payment authorization"@en ;
+  rdfs:comment "A payer-signed commitment that restates the economic terms and binds them to a quote and request."@en .
+
+avp:PaymentExecution a owl:Class ;
+  rdfs:label "Payment execution"@en ;
+  rdfs:comment "A wallet-signed record of a settlement attempt."@en .
+
+avp:PaymentReceipt a owl:Class ;
+  rdfs:label "Payment receipt"@en ;
+  rdfs:comment "A payee-signed acknowledgement binding delivery to the agreed terms."@en .
+
+avp:UsageSession a owl:Class ;
+  rdfs:label "Usage session"@en ;
+  rdfs:comment "A budgeted metering context for streaming/session payments."@en .
+
+avp:UsageAccrual a owl:Class ;
+  rdfs:label "Usage accrual"@en ;
+  rdfs:comment "A payee-signed incremental or cumulative meter report within a session."@en .
+
+avp:SessionBudgetAuthorization a owl:Class ;
+  rdfs:label "Session budget authorization"@en ;
+  rdfs:comment "A payer-signed commitment to honor charges up to a session budget."@en .
+
+avp:UsageSessionExtension a owl:Class ;
+  rdfs:label "Usage session extension"@en ;
+  rdfs:comment "A payee-signed object that raises the cap and/or extends the expiry of an existing session."@en .
+
+#################################################################
+# Object properties (node references / DIDs / IRIs)
+#################################################################
+
+avp:payer a owl:ObjectProperty ; rdfs:label "payer"@en ;
+  rdfs:comment "DID of the payer agent."@en .
+avp:payee a owl:ObjectProperty ; rdfs:label "payee"@en ;
+  rdfs:comment "DID of the payee service."@en .
+avp:wallet a owl:ObjectProperty ; rdfs:label "wallet"@en ;
+  rdfs:comment "DID of the wallet service authorized to settle and sign the execution."@en .
+avp:quote a owl:ObjectProperty ; rdfs:label "quote"@en ;
+  rdfs:comment "IRI of the referenced PaymentQuote."@en .
+avp:authorization a owl:ObjectProperty ; rdfs:label "authorization"@en ;
+  rdfs:comment "IRI of the triggering PaymentAuthorization."@en .
+avp:sessionBudgetAuthorization a owl:ObjectProperty ; rdfs:label "session budget authorization"@en ;
+  rdfs:comment "IRI of the triggering SessionBudgetAuthorization."@en .
+avp:execution a owl:ObjectProperty ; rdfs:label "execution"@en ;
+  rdfs:comment "IRI of a PaymentExecution."@en .
+avp:session a owl:ObjectProperty ; rdfs:label "session"@en ;
+  rdfs:comment "IRI of the UsageSession an accrual belongs to."@en .
+avp:usageSession a owl:ObjectProperty ; rdfs:label "usage session"@en ;
+  rdfs:comment "IRI of the referenced UsageSession."@en .
+avp:acceptedCredentialIssuers a owl:ObjectProperty ; rdfs:label "accepted credential issuers"@en .
+
+#################################################################
+# Datatype properties
+#################################################################
+
+avp:amount a owl:DatatypeProperty ; rdfs:label "amount"@en ;
+  rdfs:comment "Non-negative decimal amount as a string."@en ; rdfs:range xsd:string .
+avp:settlementMethod a owl:DatatypeProperty ; rdfs:label "settlement method"@en ; rdfs:range xsd:string .
+avp:settlementTarget a owl:DatatypeProperty ; rdfs:label "settlement target"@en ; rdfs:range xsd:string .
+avp:settlementMode a owl:DatatypeProperty ; rdfs:label "settlement mode"@en ; rdfs:range xsd:string .
+avp:settlementRef a owl:DatatypeProperty ; rdfs:label "settlement reference"@en ; rdfs:range xsd:string .
+avp:status a owl:DatatypeProperty ; rdfs:label "status"@en ; rdfs:range xsd:string .
+avp:serviceRequestHash a owl:DatatypeProperty ; rdfs:label "service request hash"@en ; rdfs:range xsd:string .
+avp:serviceOutputHash a owl:DatatypeProperty ; rdfs:label "service output hash"@en ; rdfs:range xsd:string .
+avp:quoteDigest a owl:DatatypeProperty ; rdfs:label "quote digest"@en ; rdfs:range xsd:string .
+avp:sessionDigest a owl:DatatypeProperty ; rdfs:label "session digest"@en ; rdfs:range xsd:string .
+avp:timestamp a owl:DatatypeProperty ; rdfs:label "timestamp"@en ; rdfs:range xsd:dateTime .
+avp:fulfilledAt a owl:DatatypeProperty ; rdfs:label "fulfilled at"@en ; rdfs:range xsd:dateTime .
+avp:offerValidity a owl:DatatypeProperty ; rdfs:label "offer validity"@en ; rdfs:range xsd:dateTime .
+avp:maxAmount a owl:DatatypeProperty ; rdfs:label "max amount"@en ; rdfs:range xsd:string .
+avp:newMaxAmount a owl:DatatypeProperty ; rdfs:label "new max amount"@en ; rdfs:range xsd:string .
+avp:newExpires a owl:DatatypeProperty ; rdfs:label "new expires"@en ; rdfs:range xsd:dateTime .
+avp:startingBalance a owl:DatatypeProperty ; rdfs:label "starting balance"@en ; rdfs:range xsd:string .
+avp:committedAmount a owl:DatatypeProperty ; rdfs:label "committed amount"@en ; rdfs:range xsd:string .
+avp:amountAccrued a owl:DatatypeProperty ; rdfs:label "amount accrued"@en ; rdfs:range xsd:string .
+avp:accrualKind a owl:DatatypeProperty ; rdfs:label "accrual kind"@en ; rdfs:range xsd:string .
+avp:sequence a owl:DatatypeProperty ; rdfs:label "sequence"@en ; rdfs:range xsd:integer .
+avp:meterReading a owl:DatatypeProperty ; rdfs:label "meter reading"@en ; rdfs:range xsd:string .
+avp:meterType a owl:ObjectProperty ; rdfs:label "meter type"@en ;
+  rdfs:comment "IRI of the metered dimension (a dim: concept)."@en .
+avp:meterUnit a owl:ObjectProperty ; rdfs:label "meter unit"@en ;
+  rdfs:comment "IRI of the unit of measure (a QUDT unit or an aunit: composite)."@en .
+avp:totalMeterReading a owl:DatatypeProperty ; rdfs:label "total meter reading"@en ; rdfs:range xsd:string .
+avp:quoteEndpoint a owl:DatatypeProperty ; rdfs:label "quote endpoint"@en ; rdfs:range xsd:anyURI .
+avp:acceptedSettlementMethods a owl:DatatypeProperty ; rdfs:label "accepted settlement methods"@en .
+
+#################################################################
+# Pricing vocabulary
+#################################################################
+
+avp:CompositePricing a owl:Class ; rdfs:label "Composite pricing"@en ;
+  rdfs:comment "A pricing model whose total charge is the sum of its rate components."@en .
+avp:PerCall a owl:Class ; rdfs:label "Per-call rate"@en ;
+  rdfs:comment "A flat charge per service invocation."@en .
+avp:PerUnit a owl:Class ; rdfs:label "Per-unit rate"@en ;
+  rdfs:comment "A linear charge per unit of one metered dimension."@en .
+avp:TieredRate a owl:Class ; rdfs:label "Tiered rate"@en ;
+  rdfs:comment "A charge whose unit rate varies with cumulative volume across ordered tiers."@en .
+avp:CommitmentRate a owl:Class ; rdfs:label "Commitment rate"@en ;
+  rdfs:comment "An upfront fee plus a reduced recurring charge per period."@en .
+avp:Allowance a owl:Class ; rdfs:label "Allowance"@en ;
+  rdfs:comment "A free quantity subtracted from a dimension before its other components are charged."@en .
+
+avp:pricingModel a owl:ObjectProperty ; rdfs:label "pricing model"@en ;
+  rdfs:comment "The rate component or composite governing charges for an offer or session."@en .
+avp:components a owl:ObjectProperty ; rdfs:label "components"@en ;
+  rdfs:domain avp:CompositePricing ;
+  rdfs:comment "The rate components summed by a CompositePricing."@en .
+avp:dimension a owl:ObjectProperty ; rdfs:label "dimension"@en ;
+  rdfs:comment "IRI of the metered dimension a component prices (a dim: SKOS concept)."@en .
+avp:unit a owl:ObjectProperty ; rdfs:label "unit"@en ;
+  rdfs:comment "IRI of the unit of measure (a QUDT unit or an aunit: composite)."@en .
+avp:tiers a owl:ObjectProperty ; rdfs:label "tiers"@en ;
+  rdfs:domain avp:TieredRate ;
+  rdfs:comment "Ordered list of tier nodes, each {upTo?, amount}."@en .
+avp:recurring a owl:ObjectProperty ; rdfs:label "recurring"@en ;
+  rdfs:domain avp:CommitmentRate ;
+  rdfs:comment "The recurring charge node {amount, period} of a commitment."@en .
+avp:period a owl:ObjectProperty ; rdfs:label "period"@en ;
+  rdfs:comment "IRI of the unit of the recurring billing period."@en .
+
+avp:tierMode a owl:DatatypeProperty ; rdfs:label "tier mode"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Either 'graduated' (marginal) or 'volume' (whole usage at the landed tier)."@en .
+avp:upTo a owl:DatatypeProperty ; rdfs:label "up to"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Inclusive cumulative-quantity ceiling of a tier; absent on the open-ended last tier."@en .
+avp:freeQuantity a owl:DatatypeProperty ; rdfs:label "free quantity"@en ; rdfs:range xsd:string .
+avp:upfront a owl:DatatypeProperty ; rdfs:label "upfront"@en ; rdfs:range xsd:string .
+avp:includedQuantity a owl:DatatypeProperty ; rdfs:label "included quantity"@en ; rdfs:range xsd:string .
+
+avp:vp a rdf:Property ; rdfs:label "verifiable presentation"@en ;
+  rdfs:comment "An embedded verifiable presentation carrying a Spending Authorization Credential."@en .

@@ -1,0 +1,54 @@
+# Metering-dimension concepts. Concept IRIs: <#LocalName> with
+# @base <https://w3id.org/avp-micro/dim> → https://w3id.org/avp-micro/dim#LocalName.
+# A dimension IRI doubles as a meterType value in the session/accrual flow.
+@base <https://w3id.org/avp-micro/dim> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix dims: <https://w3id.org/avp-micro/dim/scheme/> .
+
+dims:MeteringDimension a skos:ConceptScheme ;
+  dct:title "AVP-Micro metering dimensions"@en ;
+  dct:description "Controlled vocabulary of billable usage dimensions (interoperability aid)."@en ;
+  owl:versionInfo "0.1.0" ;
+  skos:hasTopConcept
+  <#Calls> , <#Requests> , <#Invocations> , <#ComputeTime> , <#ComputeMemoryTime> ,
+  <#DataTransferIn> , <#DataTransferOut> , <#StorageDuration> , <#Tokens> ,
+  <#InputTokens> , <#OutputTokens> , <#SensorSamples> .
+
+<#Calls> a skos:Concept ; skos:prefLabel "Calls"@en ; skos:notation "Calls" ;
+  skos:definition "Service invocations counted as whole calls."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#Requests> a skos:Concept ; skos:prefLabel "Requests"@en ; skos:notation "Requests" ;
+  skos:definition "Individual API requests."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#Invocations> a skos:Concept ; skos:prefLabel "Invocations"@en ; skos:notation "Invocations" ;
+  skos:definition "Function or job invocations."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#ComputeTime> a skos:Concept ; skos:prefLabel "Compute time"@en ; skos:notation "ComputeTime" ;
+  skos:definition "Elapsed compute wall-clock time."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#ComputeMemoryTime> a skos:Concept ; skos:prefLabel "Compute memory-time"@en ; skos:notation "ComputeMemoryTime" ;
+  skos:definition "Allocated memory integrated over compute duration (e.g. GB-seconds)."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#DataTransferIn> a skos:Concept ; skos:prefLabel "Data transfer in"@en ; skos:notation "DataTransferIn" ;
+  skos:definition "Inbound data volume."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#DataTransferOut> a skos:Concept ; skos:prefLabel "Data transfer out"@en ; skos:notation "DataTransferOut" ;
+  skos:definition "Outbound data volume."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#StorageDuration> a skos:Concept ; skos:prefLabel "Storage duration"@en ; skos:notation "StorageDuration" ;
+  skos:definition "Stored data volume integrated over time (e.g. GB-months)."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#Tokens> a skos:Concept ; skos:prefLabel "Tokens"@en ; skos:notation "Tokens" ;
+  skos:definition "Model tokens, direction-agnostic."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#InputTokens> a skos:Concept ; skos:prefLabel "Input tokens"@en ; skos:notation "InputTokens" ;
+  skos:definition "Prompt/input tokens."@en ; skos:broader <#Tokens> ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#OutputTokens> a skos:Concept ; skos:prefLabel "Output tokens"@en ; skos:notation "OutputTokens" ;
+  skos:definition "Completion/output tokens."@en ; skos:broader <#Tokens> ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .
+<#SensorSamples> a skos:Concept ; skos:prefLabel "Sensor samples"@en ; skos:notation "SensorSamples" ;
+  skos:definition "Discrete sensor datapoints."@en ;
+  skos:topConceptOf dims:MeteringDimension ; skos:inScheme dims:MeteringDimension .

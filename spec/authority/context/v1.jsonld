@@ -1,0 +1,40 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "id": "@id",
+    "type": "@type",
+    "dsa": "https://w3id.org/spending-authority/v1#",
+    "cat": "https://w3id.org/avp-micro/cat#",
+    "sec": "https://w3id.org/security#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "SpendingAuthorizationCredential": "dsa:SpendingAuthorizationCredential",
+    "PaymentCapabilityCredential": "dsa:PaymentCapabilityCredential",
+    "MerchantCredential": "dsa:MerchantCredential",
+    "TrustedIssuer": "dsa:TrustedIssuer",
+    "IssuerScope": "dsa:IssuerScope",
+
+    "currency": { "@id": "dsa:currency" },
+    "asset": { "@id": "dsa:asset" },
+    "assetScale": { "@id": "dsa:assetScale", "@type": "xsd:integer" },
+    "expires": { "@id": "sec:expiration", "@type": "xsd:dateTime" },
+    "nonce": "sec:nonce",
+
+    "maxPerTransaction": { "@id": "dsa:maxPerTransaction" },
+    "maxDailyTotal": { "@id": "dsa:maxDailyTotal" },
+    "dailyLimit": { "@id": "dsa:dailyLimit" },
+    "limitTimezone": { "@id": "dsa:limitTimezone" },
+    "allowedPayees": { "@id": "dsa:allowedPayees", "@container": "@set", "@type": "@id" },
+    "allowedServiceTypes": { "@id": "dsa:allowedServiceTypes", "@container": "@set", "@type": "@id" },
+    "requiresApprovalAbove": { "@id": "dsa:requiresApprovalAbove" },
+
+    "trustedIssuers": { "@id": "dsa:trustedIssuers", "@container": "@set" },
+    "issuerScope": { "@id": "dsa:issuerScope" },
+
+    "account": { "@id": "dsa:account" },
+    "merchantName": { "@id": "dsa:merchantName" },
+    "companyName": { "@id": "dsa:companyName" },
+    "categories": { "@id": "dsa:categories", "@container": "@set", "@type": "@id" }
+  }
+}

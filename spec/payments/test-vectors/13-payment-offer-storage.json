@@ -1,0 +1,50 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:offer:storage",
+  "type": "PaymentOffer",
+  "payee": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+  "pricingModel": {
+    "type": "TieredRate",
+    "dimension": "dim:StorageDuration",
+    "unit": "aunit:GigaByteMonth",
+    "tierMode": "graduated",
+    "currency": "USD",
+    "tiers": [
+      {
+        "upTo": "51200",
+        "amount": "0.023"
+      },
+      {
+        "upTo": "512000",
+        "amount": "0.022"
+      },
+      {
+        "amount": "0.021"
+      }
+    ]
+  },
+  "quoteEndpoint": "https://provider.com/object-store/quote",
+  "acceptedSettlementMethods": [
+    "internal-ledger"
+  ],
+  "acceptedCredentialIssuers": [
+    "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79"
+  ],
+  "categories": [
+    "cat:BulkDatasetsAndSnapshots"
+  ],
+  "offerValidity": "2026-03-25T23:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2026-03-25T21:29:02Z",
+    "verificationMethod": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi#z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z5sAqHmwQcuMbyBHY5VL6CJxFa8ZFGwUcpJ8uDGwJZqRLNxo7jq9zFZzEvrcwMc4MKDoQg2si2k3GjSvZ463B9Fd6"
+  }
+}

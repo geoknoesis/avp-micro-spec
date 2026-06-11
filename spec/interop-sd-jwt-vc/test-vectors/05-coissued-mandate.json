@@ -1,0 +1,45 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"
+  ],
+  "id": "urn:dsa:vc:spendauth:coissued:456",
+  "type": [
+    "VerifiableCredential",
+    "SpendingAuthorizationCredential",
+    "EmbeddedSdJwtVcMandate"
+  ],
+  "issuer": "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79",
+  "validFrom": "2026-03-25T20:00:00Z",
+  "validUntil": "2026-06-25T20:00:00Z",
+  "credentialStatus": {
+    "id": "https://issuer.example/status/3#94567",
+    "type": "BitstringStatusListEntry",
+    "statusPurpose": "revocation",
+    "statusListIndex": "94567",
+    "statusListCredential": "https://issuer.example/status/3"
+  },
+  "credentialSubject": {
+    "id": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "currency": "USD",
+    "maxPerTransaction": "0.05",
+    "dailyLimit": "5.00",
+    "allowedPayees": [
+      "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"
+    ]
+  },
+  "bridgeMode": "co-issued",
+  "sourceVct": "mandate.spending-authority.avp",
+  "embeddedSdJwtVc": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6YWNtZS5leGFtcGxlI2VzIiwidHlwIjoiZGMrc2Qtand0In0.eyJhbGxvd2VkX3BheWVlcyI6WyJkaWQ6a2V5Ono2TWtlblBBMnhjRDVDR0pWbWtnZWpicjRMekJBYTFlM0dWQ1FpSEZyWERnaDVWaSJdLCJjbmYiOnsiandrIjp7ImNydiI6IkVkMjU1MTkiLCJrdHkiOiJPS1AiLCJ4IjoiZ0U4SkR6bU5WSmdlazJTaVlNMmRSRnJHYkxxb0ZRdWRESlhEQVJYaHU0dyJ9fSwiY3VycmVuY3kiOiJVU0QiLCJleHAiOjE3ODI0MTc2MDAsImlzcyI6ImRpZDp3ZWI6YWNtZS5leGFtcGxlIiwianRpIjoidXJuOmRzYTp2YzpzcGVuZGF1dGg6NDU2IiwibGltaXRzIjp7InBlcl9kYXkiOiI1LjAwIiwicGVyX3R4biI6IjAuMDUifSwibmJmIjoxNzc0NDY4ODAwLCJzdGF0dXMiOnsic3RhdHVzX2xpc3QiOnsiaWR4Ijo5NDU2NywidXJpIjoiaHR0cHM6Ly9pc3N1ZXIuZXhhbXBsZS9zdGF0dXMvMyJ9fSwic3ViIjoiZGlkOmtleTp6Nk1rbzY4OFZ0MXVaRlFaaDhXdmI4Qm5tZW5FcVRhalp3RTJCdWdXODVuV0E2NVIiLCJ2Y3QiOiJtYW5kYXRlLnNwZW5kaW5nLWF1dGhvcml0eS5hdnAifQ.YLvGYxH7lN2QYXxFjAYSouoHN_-0qZSdLt_Tqh__XRxI61bHe6a97ST-X9n1zKKIECVGhU3CkTVlMO5WbzvslQ~",
+  "profileVersion": "0.1.0",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2026-03-25T20:00:06Z",
+    "verificationMethod": "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79#z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2FjoCUD65YpBoeXNPnjmW1tk8a5sFpjqPHxgtjLzx5uZuNwt1x6KiQuxmeCLFMfRNQrpZQypdekunZGtX8Tbdn9h"
+  }
+}

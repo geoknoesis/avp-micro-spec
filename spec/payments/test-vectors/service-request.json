@@ -1,0 +1,8 @@
+{
+  "method": "POST",
+  "target": "https://provider.com/tool-api/run",
+  "body": {
+    "tool": "summarize",
+    "input": "doc-42"
+  }
+}

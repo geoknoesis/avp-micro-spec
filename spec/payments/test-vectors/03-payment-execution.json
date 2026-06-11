@@ -1,0 +1,24 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:exec:555",
+  "type": "PaymentExecution",
+  "authorization": "urn:avp:authz:999",
+  "amount": "0.001",
+  "currency": "USD",
+  "status": "completed",
+  "settlementRef": "internal-ledger://txn/abc123",
+  "timestamp": "2026-03-25T21:30:03Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2026-03-25T21:30:03Z",
+    "verificationMethod": "did:key:z6Mkjfc8nQkYueatDJivrXYwTJJXW6QiFn7MyKPQ3q45XRJS#z6Mkjfc8nQkYueatDJivrXYwTJJXW6QiFn7MyKPQ3q45XRJS",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z54XWNnpWUAEKcLEoTwrLGJSeSXjtbKNe58Z3m7BK4o8qEJMiGCPc1HV4FmHQDTkAS4ZXNZpKtKMyzqK4CwrYwCRH"
+  }
+}

@@ -1,0 +1,62 @@
+# AVP-Micro -- SD-JWT-VC interop profile SHACL shapes.
+#
+# Constrains the AVP-Micro (JSON-LD) side of the bridge: an EmbeddedSdJwtVcMandate
+# carries the source chain and declares its bridge mode. The SD-JWT-VC side is JOSE
+# and is checked by the JSON Schema in ../schemas/interop.schema.json, not here.
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix iop:  <https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#> .
+@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+iop:EmbeddedSdJwtVcMandateShape
+  a sh:NodeShape ;
+  sh:targetClass iop:EmbeddedSdJwtVcMandate ;
+  sh:property [
+    sh:path iop:embeddedSdJwtVc ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An EmbeddedSdJwtVcMandate MUST carry exactly one iop:embeddedSdJwtVc (the source SD-JWT-VC chain)." ;
+  ] ;
+  sh:property [
+    sh:path iop:bridgeMode ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:in ( "co-issued" "proof-preserving" "attested" ) ;
+    sh:message "An EmbeddedSdJwtVcMandate MUST declare a bridgeMode of co-issued, proof-preserving, or attested." ;
+  ] ;
+  sh:property [
+    sh:path iop:attestingBridge ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+  ] ;
+  sh:property [
+    sh:path iop:sourceVct ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+  ] ;
+  sh:property [
+    sh:path iop:profileVersion ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+  ] .
+
+iop:EmbeddedKbJwtAuthorizationShape
+  a sh:NodeShape ;
+  sh:targetClass iop:EmbeddedKbJwtAuthorization ;
+  sh:property [
+    sh:path iop:embeddedKbJwtPresentation ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An EmbeddedKbJwtAuthorization MUST carry exactly one iop:embeddedKbJwtPresentation (the mandate + KB-JWT presentation)." ;
+  ] ;
+  sh:property [
+    sh:path iop:bridgeMode ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:in ( "co-issued" "proof-preserving" "attested" ) ;
+    sh:message "An EmbeddedKbJwtAuthorization MUST declare a bridgeMode of co-issued, proof-preserving, or attested." ;
+  ] .

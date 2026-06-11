@@ -1,0 +1,7 @@
+{
+  "_warning": "TEST KEYS ONLY. Seeds are derived deterministically; do not reuse.",
+  "principalIssuer": "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79",
+  "payerAgent": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+  "payeeService": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+  "walletService": "did:key:z6Mkjfc8nQkYueatDJivrXYwTJJXW6QiFn7MyKPQ3q45XRJS"
+}

@@ -1,0 +1,298 @@
+"""Reference verifier for the AVP-Micro split test vectors (both bundles)."""
+from __future__ import annotations
+
+import sys
+from decimal import Decimal
+from pathlib import Path
+import json
+
+import avp_crypto as ac
+import pricing
+import interop
+import sdjwt
+
+SPEC = Path(__file__).parent
+AUTH = SPEC / "authority" / "test-vectors"
+PAY = SPEC / "payments" / "test-vectors"
+INTEROP = SPEC / "interop-sd-jwt-vc" / "test-vectors"
+_failed = []
+
+
+def load(base: Path, name: str) -> dict:
+    return json.loads((base / name).read_text(encoding="utf-8"))
+
+
+def check(label: str, ok: bool) -> None:
+    print(f"  [{'PASS' if ok else 'FAIL'}] {label}")
+    if not ok:
+        _failed.append(label)
+
+
+def controller(obj):
+    return obj["proof"]["verificationMethod"].split("#", 1)[0]
+
+
+def main() -> int:
+    dids = load(AUTH, "dids.json")
+    agent, payee = dids["payerAgent"], dids["payeeService"]
+    issuer, wallet = dids["principalIssuer"], dids["walletService"]
+
+    spendauth = load(AUTH, "spending-authorization-credential.json")
+    merchant = load(AUTH, "merchant-credential.json")
+    capability = load(AUTH, "payment-capability-credential.json")
+    offer = load(PAY, "00-payment-offer.json")
+    quote = load(PAY, "01-payment-quote.json")
+    authz = load(PAY, "02-payment-authorization.json")
+    execution = load(PAY, "03-payment-execution.json")
+    receipt = load(PAY, "04-payment-receipt.json")
+
+    print("Proof verification (eddsa-jcs-2022):")
+    for label, obj in [("spending-authorization credential", spendauth),
+                       ("merchant credential", merchant),
+                       ("payment-capability credential", capability),
+                       ("offer", offer),
+                       ("quote", quote), ("authorization", authz),
+                       ("execution", execution), ("receipt", receipt)]:
+        check(f"{label} proof", ac.verify_eddsa_jcs_2022(obj))
+
+    print("Discovery & revocation coverage:")
+    check("offer signed by payee", controller(offer) == payee)
+    check("offer quoteEndpoint present", bool(offer.get("quoteEndpoint")))
+    check("credential carries credentialStatus (revocation)",
+          spendauth.get("credentialStatus", {}).get("type") == "BitstringStatusListEntry")
+
+    print("Verification-method binding:")
+    check("spending-authorization credential signed by issuer", controller(spendauth) == issuer)
+    check("merchant credential signed by issuer", controller(merchant) == issuer)
+    check("payment-capability credential signed by wallet", controller(capability) == wallet)
+    check("quote signed by payee", controller(quote) == payee)
+    check("authorization signed by payer", controller(authz) == agent)
+    check("execution signed by wallet", controller(execution) == wallet)
+    check("receipt signed by payee", controller(receipt) == payee)
+
+    print("Quote binding & economic-term equality:")
+    check("authz.payer == quote.payer", authz["payer"] == quote["payer"])
+    check("authz.payee == quote.payee", authz["payee"] == quote["payee"])
+    check("quoteDigest matches resolved quote", authz["quoteDigest"] == ac.jcs_digest(quote))
+    for term in ("amount", "currency", "settlementMethod", "settlementTarget"):
+        check(f"authz.{term} == quote.{term}", authz[term] == quote[term])
+    check("serviceRequestHash byte-equal", authz["serviceRequestHash"] == quote["serviceRequestHash"])
+
+    print("Credential / policy:")
+    subj = spendauth["credentialSubject"]
+    check("credentialSubject.id == payer", subj["id"] == authz["payer"])
+    check("authz.payer controls the auth proof", controller(authz) == subj["id"])
+    check("amount <= maxPerTransaction", Decimal(authz["amount"]) <= Decimal(subj["maxPerTransaction"]))
+    check("payee in allowedPayees", authz["payee"] in subj.get("allowedPayees", []))
+    check("currency matches credential", authz["currency"] == subj.get("currency"))
+
+    print("Execution & receipt linkage:")
+    check("execution.authorization == authz.id", execution.get("authorization") == authz["id"])
+    check("execution.amount == authz.amount", execution["amount"] == authz["amount"])
+    check("execution.currency == authz.currency", execution["currency"] == authz["currency"])
+    check("execution.status completed", execution["status"] == "completed")
+    check("execution signer == authz.wallet (execution binding)", controller(execution) == authz.get("wallet"))
+    check("receipt.quote == quote.id", receipt.get("quote") == quote["id"])
+    check("receipt.execution == execution.id", receipt.get("execution") == execution["id"])
+    check("receipt.amount == authz.amount", receipt["amount"] == authz["amount"])
+    check("receipt.status fulfilled", receipt["status"] == "fulfilled")
+
+    print("Streaming / session metering:")
+    session = load(PAY, "05-usage-session.json")
+    session_budget = load(PAY, "06-session-budget-authorization.json")
+    accrual = load(PAY, "07-usage-accrual.json")
+    session_exec = load(PAY, "08-payment-execution-session.json")
+    session_receipt = load(PAY, "09-payment-receipt-session.json")
+    for label, obj in [("session", session), ("session-budget", session_budget),
+                       ("accrual", accrual), ("session execution", session_exec),
+                       ("session receipt", session_receipt)]:
+        check(f"{label} proof", ac.verify_eddsa_jcs_2022(obj))
+    check("session signed by payee", controller(session) == payee)
+    check("session-budget signed by payer", controller(session_budget) == agent)
+    check("accrual signed by payee", controller(accrual) == payee)
+    check("session execution signed by wallet", controller(session_exec) == wallet)
+    check("session receipt signed by payee", controller(session_receipt) == payee)
+    check("sessionDigest matches resolved session", session_budget["sessionDigest"] == ac.jcs_digest(session))
+    check("budget.usageSession == session.id", session_budget["usageSession"] == session["id"])
+    check("budget payer/payee match session",
+          session_budget["payer"] == session["payer"] and session_budget["payee"] == session["payee"])
+    check("committedAmount <= session.maxAmount",
+          Decimal(session_budget["committedAmount"]) <= Decimal(session["maxAmount"]))
+    check("accrual.session == session.id", accrual["session"] == session["id"])
+    check("accrual currency matches session", accrual["currency"] == session["currency"])
+    check("accrual <= maxAmount", Decimal(accrual["amountAccrued"]) <= Decimal(session["maxAmount"]))
+    pm = session["pricingModel"]
+    if "meterReading" in accrual:
+        dim = pm.get("dimension") or session.get("meterType")
+        expected = pricing.evaluate(pm, {dim: accrual["meterReading"]})
+        check("accrual consistent with evaluator pricing",
+              Decimal(accrual["amountAccrued"]) == expected)
+    check("session exec references budget auth",
+          session_exec.get("sessionBudgetAuthorization") == session_budget["id"])
+    check("session exec signer == budget.wallet (execution binding)",
+          controller(session_exec) == session_budget.get("wallet"))
+    check("session exec amount <= committedAmount",
+          Decimal(session_exec["amount"]) <= Decimal(session_budget["committedAmount"]))
+    check("session exec currency == budget.currency",
+          session_exec["currency"] == session_budget["currency"])
+    check("session receipt references session", session_receipt.get("usageSession") == session["id"])
+    check("session receipt amount == execution amount", session_receipt["amount"] == session_exec["amount"])
+    check("session receipt.status fulfilled", session_receipt["status"] == "fulfilled")
+
+    print("Session extension & re-authorization:")
+    extension = load(PAY, "10-usage-session-extension.json")
+    session_budget2 = load(PAY, "11-session-budget-authorization-2.json")
+    check("extension proof", ac.verify_eddsa_jcs_2022(extension))
+    check("re-auth budget proof", ac.verify_eddsa_jcs_2022(session_budget2))
+    check("extension signed by payee", controller(extension) == payee)
+    check("re-auth budget signed by payer", controller(session_budget2) == agent)
+    check("extension references session", extension["usageSession"] == session["id"])
+    check("extension sessionDigest matches session", extension["sessionDigest"] == ac.jcs_digest(session))
+    check("newMaxAmount > original maxAmount", Decimal(extension["newMaxAmount"]) > Decimal(session["maxAmount"]))
+    check("newExpires later than original expires", extension["newExpires"] > session["expires"])
+    check("re-auth committedAmount <= newMaxAmount",
+          Decimal(session_budget2["committedAmount"]) <= Decimal(extension["newMaxAmount"]))
+    check("re-auth references same session", session_budget2["usageSession"] == session["id"])
+
+    print("Pricing-model evaluation conformance:")
+    conformance = load(PAY, "pricing-conformance.json")
+    for case in conformance["cases"]:
+        consistent = True
+        try:
+            pricing.assert_single_currency(case["pricingModel"])
+        except pricing.PricingError:
+            consistent = False
+        check(f"pricing case '{case['name']}' single-currency", consistent)
+        got = pricing.evaluate(case["pricingModel"], case["usage"])
+        check(f"pricing case '{case['name']}' == {case['expected']}",
+              str(got) == case["expected"])
+
+    print("Interop (SD-JWT-VC bridge):")
+    keys = load(INTEROP, "keys.json")
+    resolver = keys["didWebResolver"]
+    export = load(INTEROP, "01-export-sdjwtvc.json")
+    imported = load(INTEROP, "02-imported-mandate.json")
+    foreign = load(INTEROP, "03-foreign-sdjwtvc.json")
+    imported_foreign = load(INTEROP, "04-imported-from-foreign.json")
+    bridge_pub = sdjwt.p256_public_from_jwk(keys["bridgeExporter"]["jwk"])
+    vi_pub = sdjwt.p256_public_from_jwk(keys["viIssuer"]["jwk"])
+
+    # A->V export: envelope ES256 + embedded Ed25519 authority + holder binding
+    check("export verifies (envelope + embedded authority)",
+          interop.verify_exported(export["compact"], bridge_pub))
+    mapped = interop.avp_to_claims(spendauth)
+    payload = sdjwt.jws_payload(sdjwt.sdjwt_jws(export["compact"]))
+    check("A->V claim mapping lossless", all(payload.get(k) == v for k, v in mapped.items()))
+    check("export carries non-disclosable avp_vc authority", "avp_vc" in payload)
+
+    # A->V->A round-trip preserves the credential subject exactly
+    check("A->V->A credentialSubject preserved",
+          imported["credentialSubject"] == spendauth["credentialSubject"])
+    check("imported(02) is proof-preserving projection (no proof)",
+          imported.get("bridgeMode") == "proof-preserving" and "proof" not in imported)
+    check("imported(02) verifies via embedded authority",
+          interop.verify_imported(imported, resolver))
+
+    # V-origin foreign mandate (ES256) and its proof-preserving import
+    check("foreign mandate ES256 verifies (did:web issuer)",
+          sdjwt.es256_verify(sdjwt.sdjwt_jws(foreign["compact"]), vi_pub))
+    check("imported-from-foreign(04) verifies via did:web binding",
+          interop.verify_imported(imported_foreign, resolver))
+    check("imported(04) is proof-preserving projection (no proof)",
+          imported_foreign.get("bridgeMode") == "proof-preserving" and "proof" not in imported_foreign)
+
+    # V->A->V round-trip preserves the mandate claims
+    reexport = interop.avp_to_claims(imported_foreign)
+    fp = foreign["payload"]
+    check("V->A->V claims preserved",
+          all(reexport.get(k) == fp.get(k)
+              for k in ("iss", "sub", "currency", "limits", "allowed_payees", "nbf", "exp")))
+
+    # Negatives: tamper the embedded chain, and downgrade attempts
+    t = json.loads(json.dumps(imported))
+    seg = sdjwt.sdjwt_jws(t["embeddedSdJwtVc"]).split(".")
+    seg[1] = ("A" if seg[1][0] != "A" else "B") + seg[1][1:]
+    t["embeddedSdJwtVc"] = ".".join(seg) + "~"
+    check("tampered embedded chain fails import", not interop.verify_imported(t, resolver))
+    t2 = json.loads(json.dumps(imported))
+    t2["proof"] = {"type": "DataIntegrityProof"}
+    check("proof on a proof-preserving object is rejected (no-downgrade)",
+          not interop.verify_imported(t2, resolver))
+    t3 = json.loads(json.dumps(imported_foreign))
+    t3["issuer"] = "did:web:attacker.example"
+    check("swapped issuer fails (unresolvable did:web)", not interop.verify_imported(t3, resolver))
+
+    print("Interop co-issued + L3 (per-purchase) bridge:")
+    coissued = load(INTEROP, "05-coissued-mandate.json")
+    check("co-issued mandate verifies (native proof + parallel ES256)",
+          interop.verify_imported(coissued, resolver))
+    check("co-issued carries a native Data Integrity proof",
+          "proof" in coissued and ac.verify_eddsa_jcs_2022(coissued))
+    check("co-issued is also a valid bare DSA credential (issuer-signed)",
+          controller(coissued) == issuer)
+
+    presentation = load(INTEROP, "06-l3-presentation.json")["presentation"]
+    imported_authz = load(INTEROP, "07-imported-payment-authorization.json")
+    check("L3 presentation verifies (mandate authority + KB-JWT + sd_hash)",
+          interop.verify_presentation(presentation, resolver))
+    check("L3 V->A reconstructs PaymentAuthorization economic terms", all(
+        imported_authz.get(k) == authz.get(k) for k in
+        ("payer", "payee", "amount", "currency", "quote", "quoteDigest",
+         "serviceRequestHash", "settlementMethod", "settlementTarget",
+         "nonce", "wallet", "timestamp", "expires")))
+    check("imported authz is a proof-preserving projection (no proof)",
+          imported_authz.get("bridgeMode") == "proof-preserving" and "proof" not in imported_authz)
+    pp = presentation.split("~")
+    kbseg = pp[-1].split(".")
+    kbseg[1] = ("A" if kbseg[1][0] != "A" else "B") + kbseg[1][1:]
+    check("tampered key-binding JWT fails",
+          not interop.verify_presentation("~".join(pp[:-1]) + "~" + ".".join(kbseg), resolver))
+    check("KB-JWT re-bound to a different mandate fails (sd_hash)",
+          not interop.verify_presentation(foreign["compact"] + pp[-1], resolver))
+
+    print("Interop attested mode + lossy-case advisories:")
+    trusted_bridges = set(keys.get("trustedBridges", []))
+    attested = load(INTEROP, "08-attested-mandate.json")
+    check("attested mandate cryptographically verifies (bridge re-signature)",
+          interop.verify_imported(attested, resolver))
+    check("attested outer proof signed by the attesting bridge",
+          controller(attested) == attested["attestingBridge"])
+    check("attested honored only when attestingBridge is trusted (policy)",
+          attested["attestingBridge"] in trusted_bridges)
+    # A crypto-valid attested object from an UNTRUSTED bridge must be policy-rejected.
+    rogue_key = ac.seed_key("rogue-bridge")
+    rogue = json.loads(json.dumps(attested))
+    rogue.pop("proof", None)
+    rogue["issuer"] = rogue["attestingBridge"] = ac.did_key(rogue_key.public_key())
+    rogue = ac.sign_eddsa_jcs_2022(rogue, rogue_key, "2026-04-01T00:02:00Z")
+    check("rogue attested object verifies cryptographically", interop.verify_imported(rogue, resolver))
+    check("...but is rejected by policy (bridge not trusted)",
+          rogue["attestingBridge"] not in trusted_bridges)
+
+    il2 = load(INTEROP, "09-imported-interactive-l2.json")
+    check("interactive-L2 import carries an advisory (not silently dropped)",
+          any("interactive-l2" in a for a in il2.get("importAdvisory", [])))
+    check("interactive-L2 underlying mandate still verifies", interop.verify_imported(il2, resolver))
+
+    partial = load(INTEROP, "10-imported-partial-sd.json")
+    check("partial-disclosure import flagged as a subset view",
+          any("partial-selective-disclosure" in a for a in partial.get("importAdvisory", [])))
+    check("withheld claim absent from imported subject (currency)",
+          "currency" not in partial["credentialSubject"])
+    check("partial-disclosure mandate signature still verifies", interop.verify_imported(partial, resolver))
+
+    print("Negative control (tamper detection):")
+    tampered = json.loads(json.dumps(authz))
+    tampered["amount"] = "0.05"
+    check("tampered amount breaks the payer signature", not ac.verify_eddsa_jcs_2022(tampered))
+
+    print()
+    if _failed:
+        print(f"FAIL: {len(_failed)} check(s) failed: {_failed}")
+        return 1
+    print("PASS: all checks passed.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

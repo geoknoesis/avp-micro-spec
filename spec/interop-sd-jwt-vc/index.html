@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AVP-Micro &harr; SD-JWT-VC Interop Profile</title>
+  <style>
+    p.object-summary { font-style: italic; color: #333; margin-bottom: 0.5em; }
+    figure { margin: 1.5em 0; }
+    figure.fig-diagram { text-align: center; }
+    figure.fig-diagram svg { max-width: 100%; height: auto; }
+    figure.fig-diagram figcaption { font-size: 0.9em; color: #555; margin-top: 0.4em; }
+  </style>
+  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
+  <script class="remove">
+    // @ts-check
+    const respecConfig = {
+      specStatus: "unofficial",
+      shortName: "avp-micro-interop-sd-jwt-vc",
+      subtitle: "Bridging AVP-Micro delegated spending authority to and from SD-JWT-VC mandates (Verifiable Intent / AP2)",
+      editors: [
+        {
+          name: "Stephane Fellah",
+          company: "Geoknoesis LLC",
+          companyURL: "https://geoknoesis.com",
+        },
+      ],
+      github: {
+        repoURL: "https://github.com/geoknoesis/avp-micro",
+        branch: "main",
+      },
+      license: "cc-by",
+      lint: { "no-unused-dfns": false },
+      xref: ["vc-data-model-2.0", "did-core", "INFRA"],
+      localBiblio: {
+        "DSA": {
+          title: "Delegated Spending Authority",
+          href: "../authority/",
+          authors: ["S. Fellah"],
+          publisher: "AVP-Micro (unofficial draft)",
+        },
+        "AVP-MICRO-PAYMENTS": {
+          title: "AVP-Micro Payments",
+          href: "../payments/",
+          authors: ["S. Fellah"],
+          publisher: "AVP-Micro (unofficial draft)",
+        },
+        "SD-JWT": {
+          title: "Selective Disclosure for JWTs (SD-JWT)",
+          href: "https://datatracker.ietf.org/doc/draft-ietf-oauth-selective-disclosure-jwt/",
+          publisher: "IETF OAuth WG",
+          status: "Internet-Draft",
+        },
+        "SD-JWT-VC": {
+          title: "SD-JWT-based Verifiable Credentials (SD-JWT VC)",
+          href: "https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/",
+          publisher: "IETF OAuth WG",
+          status: "Internet-Draft",
+        },
+        "TOKEN-STATUS-LIST": {
+          title: "Token Status List",
+          href: "https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/",
+          publisher: "IETF OAuth WG",
+          status: "Internet-Draft",
+        },
+        "DID-WEB": {
+          title: "did:web Method Specification",
+          href: "https://w3c-ccg.github.io/did-method-web/",
+          publisher: "W3C Credentials Community Group",
+        },
+        "RFC7515": {
+          title: "JSON Web Signature (JWS)",
+          href: "https://www.rfc-editor.org/rfc/rfc7515",
+          date: "May 2015",
+          status: "Proposed Standard",
+          publisher: "IETF",
+        },
+        "RFC7518": {
+          title: "JSON Web Algorithms (JWA)",
+          href: "https://www.rfc-editor.org/rfc/rfc7518",
+          date: "May 2015",
+          status: "Proposed Standard",
+          publisher: "IETF",
+        },
+        "RFC7800": {
+          title: "Proof-of-Possession Key Semantics for JSON Web Tokens (JWTs)",
+          href: "https://www.rfc-editor.org/rfc/rfc7800",
+          date: "April 2016",
+          status: "Proposed Standard",
+          publisher: "IETF",
+        },
+        "RFC8785": {
+          title: "JSON Canonicalization Scheme (JCS)",
+          href: "https://www.rfc-editor.org/rfc/rfc8785",
+          authors: ["A. Rundgren", "B. Jordan", "S. Erdtman"],
+          date: "June 2020",
+          status: "Informational",
+          publisher: "IETF",
+        },
+        "VC-DATA-INTEGRITY": {
+          title: "Verifiable Credential Data Integrity 1.0",
+          href: "https://www.w3.org/TR/vc-data-integrity/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "VC-DI-EDDSA": {
+          title: "Verifiable Credential Data Integrity EdDSA Cryptosuites v1.0",
+          href: "https://www.w3.org/TR/vc-di-eddsa/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "BITSTRING-STATUS-LIST": {
+          title: "Bitstring Status List v1.0",
+          href: "https://www.w3.org/TR/vc-bitstring-status-list/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "DID-KEY": {
+          title: "The did:key Method v0.7",
+          href: "https://w3c-ccg.github.io/did-key-spec/",
+          publisher: "W3C Credentials Community Group",
+        },
+        "VERIFIABLE-INTENT": {
+          title: "Verifiable Intent",
+          href: "https://verifiableintent.dev/",
+          publisher: "Mastercard and Google (open source, Apache-2.0)",
+          date: "March 2026",
+        },
+        "AP2": {
+          title: "Agent Payments Protocol (AP2)",
+          href: "https://github.com/google-agentic-commerce/AP2",
+          publisher: "Google",
+        },
+        "SECURITY-PRIVACY-QUESTIONNAIRE": {
+          title: "Self-Review Questionnaire: Security and Privacy",
+          href: "https://www.w3.org/TR/security-privacy-questionnaire/",
+          publisher: "W3C TAG",
+        },
+      },
+    };
+  </script>
+</head>
+<body>
+  <section id="abstract">
+    <p>
+      This <dfn>interop profile</dfn> defines a normative, bidirectional bridge
+      between an AVP-Micro <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">verifiable
+      credential</a> expressing delegated spending authority &mdash; the
+      <a>Spending Authorization Credential</a> of [[DSA]], optionally carried in a
+      [[AVP-MICRO-PAYMENTS]] <code>PaymentAuthorization</code> &mdash; and an
+      <a>SD-JWT-VC mandate</a> of the kind used by Mastercard/Google
+      <a>Verifiable Intent</a> [[?VERIFIABLE-INTENT]] and Google AP2 [[?AP2]]. The two
+      ecosystems share the concept of a cryptographically verifiable, delegated
+      authority chain but agree on no wire format, proof suite, or identifier scheme:
+      AVP-Micro secures JSON-LD credentials with W3C Data Integrity
+      (<code>eddsa-jcs-2022</code>) over DIDs, whereas SD-JWT-VC secures JOSE tokens
+      with <code>ES256</code> over <code>iss</code>/<code>sub</code> identifiers. This
+      profile specifies how spending <em>authority</em> crosses that line
+      <strong>without a privileged intermediary becoming the root of trust</strong>:
+      a claim mapping, an identity binding, two embedding envelopes, and the
+      verification rules a relying party applies to each.
+    </p>
+  </section>
+
+  <section id="sotd">
+    <p>
+      This document is an <strong>unofficial editor's draft</strong> prepared as a
+      candidate contribution to a W3C Community Group. It is an <em>interop
+      profile / binding</em>, not part of the AVP-Micro core protocol: it depends on
+      both [[DSA]] and [[AVP-MICRO-PAYMENTS]] and on the external [[SD-JWT-VC]]
+      family, and it is versioned and published as its own bundle so that an external
+      revision never destabilizes the core specifications. It is published with W3C
+      ReSpec and does <em>not</em> represent the consensus of the W3C Membership or of
+      any Working or Community Group. It <em>MUST NOT</em> be cited as anything other
+      than work in progress.
+    </p>
+    <p>
+      <strong>Dependency maturity.</strong> The SD-JWT family ([[SD-JWT]],
+      [[SD-JWT-VC]]), [[TOKEN-STATUS-LIST]], and [[DID-WEB]] are IETF Internet-Drafts
+      or CG drafts at the time of writing, as is [[DID-KEY]]. The AVP-Micro securing
+      mechanism this profile bridges <em>from</em> relies only on W3C Recommendations
+      ([[VC-DATA-INTEGRITY]], [[VC-DI-EDDSA]]) and the IETF Informational [[RFC8785]].
+      The behaviour of the target ecosystem ([[?VERIFIABLE-INTENT]], [[?AP2]]) is
+      tracked by the <code>iop:profileVersion</code> of artifacts this profile
+      produces; implementers <em>MUST</em> track the status of the non-REC
+      dependencies and the pinned target revision.
+    </p>
+    <p>
+      Issues, comments, and pull requests are tracked in the
+      <a href="https://github.com/geoknoesis/avp-micro">project repository</a>.
+      Before relying on this specification, complete a
+      <a href="https://www.w3.org/TR/security-privacy-questionnaire/">Security and
+      Privacy Self-Review</a> [[?SECURITY-PRIVACY-QUESTIONNAIRE]]; the threat model is
+      in <a href="#security"></a>.
+    </p>
+  </section>
+
+  <section class="informative" id="introduction">
+    <h2>Introduction</h2>
+    <p>
+      Several agent-payment ecosystems are emerging concurrently. AVP-Micro expresses
+      delegated spending authority as a [[DSA]]
+      <a>Spending Authorization Credential</a> &mdash; a W3C
+      [[vc-data-model-2.0]] credential in JSON-LD, secured with a Data Integrity proof
+      and identified by [[did-core]] DIDs. Mastercard/Google
+      <a>Verifiable Intent</a> [[?VERIFIABLE-INTENT]] and Google AP2 [[?AP2]] express
+      the equivalent authority as an <a>SD-JWT-VC mandate</a>: a layered
+      <code>SD-JWT</code> / <code>KB-SD-JWT</code> chain [[SD-JWT]] [[SD-JWT-VC]]
+      secured with JOSE <code>ES256</code> [[RFC7515]] [[RFC7518]] and identified by
+      <code>iss</code>/<code>sub</code> URIs and an opaque key identifier.
+    </p>
+    <p>
+      The two describe the <em>same shape</em> &mdash; an issuer-rooted chain
+      delegating bounded spend to an agent, verifiable by any party in the chain
+      without contacting the issuer &mdash; but they share <strong>no encoding, proof
+      suite, or identifier scheme</strong>. This is the long-standing
+      JSON-LD/Data-Integrity versus JOSE/SD-JWT divide, surfacing in agentic commerce.
+      Because the well-resourced corner of the space has chosen SD-JWT-VC, AVP-Micro
+      authority that cannot travel into that ecosystem risks being islanded; and
+      conversely, AVP-Micro relying parties benefit from being able to accept mandates
+      that originate there. This profile makes both directions possible.
+    </p>
+    <p>
+      The central design constraint is cryptographic and unavoidable: a Data Integrity
+      proof signs the JCS-canonical [[RFC8785]] JSON-LD bytes, while an SD-JWT
+      signature signs the JOSE serialization. <strong>Translating the claims from one
+      envelope to the other changes the signed bytes, so the original signature can
+      never verify over the translated form.</strong> Every rule in this profile
+      follows from that fact.
+    </p>
+  </section>
+
+  <section class="informative" id="overview">
+    <h2>How it works</h2>
+    <p>
+      Authority crosses the boundary in one of three <a>bridge modes</a>, distinguished
+      by <em>who, if anyone, becomes a new trust root</em>:
+    </p>
+    <ul>
+      <li>
+        <strong>Proof-preserving</strong> (default). The original credential and its
+        original proof are carried, intact, inside the target envelope; the relying
+        party verifies <em>both</em> the envelope (for transport, typing, and holder
+        binding) and the embedded original proof (for authority). The bridge is a pure
+        transcoder and adds no trust.
+      </li>
+      <li>
+        <strong>Co-issued</strong>. Where issuance is under the issuer's control, the
+        issuer natively signs <em>both</em> representations over the same claims at
+        creation. No intermediary exists. This is the strongest mode and is preferred
+        wherever applicable.
+      </li>
+      <li>
+        <strong>Attested</strong>. A named bridge verifies the source and re-issues a
+        new credential in the target format signed by its own key. The bridge becomes
+        a trust root; relying parties <em>MUST</em> independently and explicitly trust
+        it. This mode is a fallback for relying parties that cannot perform cross-stack
+        verification.
+      </li>
+    </ul>
+    <p>
+      The remainder of this document specifies the identity binding
+      (<a href="#identity"></a>), the claim mapping (<a href="#claim-mapping"></a>),
+      the chain/layer mapping (<a href="#chain-mapping"></a>), status
+      (<a href="#status"></a>), the two envelopes for export and import
+      (<a href="#export"></a>, <a href="#import"></a>), the relying-party verification
+      algorithm (<a href="#verification"></a>), and what does not round-trip
+      (<a href="#losslessness"></a>).
+    </p>
+  </section>
+
+  <section id="conformance">
+    <h2>Conformance</h2>
+    <p>
+      As well as sections marked as non-normative, all authoring guidelines, diagrams,
+      examples, and notes in this specification are non-normative. Everything else in
+      this specification is normative.
+    </p>
+    <p>
+      The key words <em>MAY</em>, <em>MUST</em>, <em>MUST NOT</em>,
+      <em>RECOMMENDED</em>, <em>SHOULD</em>, and <em>SHOULD NOT</em> in this document
+      are to be interpreted as described in BCP&nbsp;14 [[RFC2119]] [[RFC8174]] when,
+      and only when, they appear in all capitals, as shown here.
+    </p>
+    <p>
+      A conforming <dfn>exporter</dfn> transforms a [[DSA]]
+      <a>Spending Authorization Credential</a> into an <a>SD-JWT-VC mandate</a> per
+      <a href="#export"></a>. A conforming <dfn>importer</dfn> transforms an
+      <a>SD-JWT-VC mandate</a> into an <a>EmbeddedSdJwtVcMandate</a> per
+      <a href="#import"></a>. A conforming <dfn>cross-stack verifier</dfn> applies
+      <a href="#verification"></a>. An implementation MAY conform as any subset of
+      these classes; see <a href="#conformance-classes"></a>.
+    </p>
+  </section>
+
+  <section id="terminology">
+    <h2>Terminology</h2>
+    <p>This profile uses the roles and objects of [[DSA]] and [[AVP-MICRO-PAYMENTS]],
+      and adds:</p>
+    <dl>
+      <dt><dfn>SD-JWT-VC mandate</dfn></dt>
+      <dd>An SD-JWT-based Verifiable Credential [[SD-JWT-VC]] expressing delegated
+        spending authority, as used by [[?VERIFIABLE-INTENT]] and [[?AP2]]. In the
+        autonomous-agent case it is a layered chain: an issuer-signed
+        <code>SD-JWT</code> (<dfn>L1</dfn>) binding the subject identity and holder
+        key; optionally a holder-signed purchase-intent layer (<dfn>L2</dfn>); and an
+        agent-signed key-binding JWT (<dfn>L3</dfn>) for a specific action.</dd>
+      <dt><dfn>bridge mode</dfn></dt>
+      <dd>One of <code>proof-preserving</code>, <code>co-issued</code>, or
+        <code>attested</code> (<a href="#overview"></a>), recorded as
+        <code>iop:bridgeMode</code>.</dd>
+      <dt><dfn data-lt="EmbeddedSdJwtVcMandate">Embedded SD-JWT-VC Mandate</dfn></dt>
+      <dd>An AVP-Micro <a>Spending Authorization Credential</a> produced by importing
+        an <a>SD-JWT-VC mandate</a>, additionally typed
+        <code>EmbeddedSdJwtVcMandate</code> and carrying the source chain in
+        <code>iop:embeddedSdJwtVc</code> (<a href="#import"></a>).</dd>
+      <dt><dfn>exporter</dfn>, <dfn>importer</dfn>, <dfn>cross-stack verifier</dfn></dt>
+      <dd>The conformance classes of <a href="#conformance"></a>.</dd>
+    </dl>
+  </section>
+
+  <section id="namespace">
+    <h2>Namespace and JSON-LD context</h2>
+    <p>
+      This profile introduces terms in the namespace
+      <code>https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#</code> (prefix
+      <code>iop:</code>), mapped by the context published at
+      <code>https://w3id.org/avp-micro/interop/sd-jwt-vc/v1</code>. An
+      <a>EmbeddedSdJwtVcMandate</a> is a DSA credential extended with these terms, so
+      it uses the <strong>4-entry</strong> context array:
+    </p>
+    <pre class="json">
+["https://www.w3.org/ns/credentials/v2",
+ "https://w3id.org/security/data-integrity/v2",
+ "https://w3id.org/spending-authority/v1",
+ "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"]
+    </pre>
+    <p>
+      The <code>iop:</code> terms (<code>iop:embeddedSdJwtVc</code>,
+      <code>iop:bridgeMode</code>, <code>iop:sourceVct</code>,
+      <code>iop:attestingBridge</code>, <code>iop:profileVersion</code>) and the class
+      <code>iop:EmbeddedSdJwtVcMandate</code> <em>MUST NOT</em> appear in the [[DSA]]
+      or [[AVP-MICRO-PAYMENTS]] namespaces. The SD-JWT-VC side of the bridge is JOSE,
+      not RDF; its claims are specified in prose and JSON Schema and carry no
+      JSON-LD context.
+    </p>
+  </section>
+
+  <section id="identity">
+    <h2>Identity binding</h2>
+    <p>
+      The two stacks identify parties differently and asymmetrically. AVP-Micro uses
+      DIDs ([[DID-KEY]] mandatory-to-implement, [[DID-WEB]] permitted), with the agent
+      holder key expressed implicitly: the agent's key <em>is</em>
+      <code>credentialSubject.id</code>, and the same key signs the
+      <code>PaymentAuthorization</code> &mdash; i.e. AVP-Micro already performs
+      SD-JWT-style holder key binding, using DIDs and Data Integrity rather than
+      <code>cnf</code> [[RFC7800]] and a key-binding JWT. SD-JWT-VC uses an
+      <code>iss</code> issuer URI, a <code>sub</code> subject identifier, an opaque
+      <code>kid</code>, and a <code>cnf</code> holder key.
+    </p>
+
+    <section id="identity-export">
+      <h3>Export (AVP-Micro &rarr; SD-JWT-VC)</h3>
+      <p>This direction is near-lossless, because a DID is a URI. An exporter
+        <em>MUST</em>:</p>
+      <ul>
+        <li>set <code>iss</code> to the credential <code>issuer</code> DID;</li>
+        <li>set <code>sub</code> to <code>credentialSubject.id</code> (the agent DID),
+          and set <code>cnf.jwk</code> to the agent's public key expressed as a JWK
+          (an OKP/Ed25519 JWK derived from the agent <code>did:key</code> multibase, or
+          the verification method published in the agent's DID document);</li>
+        <li>set <code>kid</code> to the agent verification-method DID URL.</li>
+      </ul>
+      <p>
+        A consumer that understands DIDs MAY resolve these values as DIDs; a consumer
+        that does not treats them as opaque URIs. No authority information is lost.
+      </p>
+    </section>
+
+    <section id="identity-import">
+      <h3>Import (SD-JWT-VC &rarr; AVP-Micro)</h3>
+      <p>
+        This direction is lossy in general: <code>iss</code>/<code>sub</code> are
+        opaque with no mandated key-resolution method, and SD-JWT-VC keys are
+        <code>ES256</code> (P-256), which the AVP-Micro mandatory cryptosuite
+        <code>eddsa-jcs-2022</code> (Ed25519 only) cannot express. To enable
+        <strong>proof-preserving</strong> import (<a href="#overview"></a>) this profile
+        defines the following <dfn>did:web binding convention</dfn>, which a
+        conforming importer operating in <code>proof-preserving</code> or
+        <code>co-issued</code> mode <em>MUST</em> rely upon:
+      </p>
+      <ul>
+        <li>The source <code>iss</code> (and, where the subject is itself an issuer,
+          <code>sub</code>) <em>MUST</em> be, or deterministically map to, a
+          [[DID-WEB]] identifier whose DID document publishes the signing key as a
+          verification method of type <code>JsonWebKey</code> bearing the
+          <code>ES256</code>/P-256 public key.</li>
+        <li>The source <code>kid</code> <em>MUST</em> resolve to that verification
+          method (by fragment or by JWK thumbprint).</li>
+        <li>The importer verifies the embedded JOSE proof against the resolved P-256
+          verification method (<a href="#verification"></a>); it does <em>not</em>
+          re-sign.</li>
+      </ul>
+      <p>
+        Where the <a>did:web binding convention</a> cannot be satisfied (no resolvable
+        DID, or a key type that cannot be published), proof-preserving import is not
+        possible and the importer <em>MUST</em> either refuse or fall back to
+        <strong>attested</strong> mode (<a href="#import"></a>), never silently emit an
+        object that claims authority it cannot substantiate.
+      </p>
+    </section>
+  </section>
+
+  <section id="claim-mapping">
+    <h2>Claim mapping</h2>
+    <p>
+      The spending <em>policy</em> is the same concept set on both sides. An exporter
+      and importer <em>MUST</em> map the following fields losslessly and bidirectionally.
+      The SD-JWT-VC side uses the credential type
+      <code>vct: "mandate.spending-authority.avp"</code> (or
+      <code>"mandate.spending-authority.avp+embedded"</code> for the proof-preserving
+      profile of <a href="#export"></a>), distinct from any other <code>vct</code> in
+      the target ecosystem.
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Concept</th><th>AVP-Micro ([[DSA]] field)</th><th>SD-JWT-VC claim</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Credential type</td><td><code>type</code> includes <code>SpendingAuthorizationCredential</code></td><td><code>vct</code></td></tr>
+        <tr><td>Issuer (principal)</td><td><code>issuer</code> (DID)</td><td><code>iss</code></td></tr>
+        <tr><td>Subject (agent)</td><td><code>credentialSubject.id</code> (DID)</td><td><code>sub</code> + <code>cnf.jwk</code></td></tr>
+        <tr><td>Currency</td><td><code>credentialSubject.currency</code></td><td><code>currency</code></td></tr>
+        <tr><td>Per-transaction cap</td><td><code>credentialSubject.maxPerTransaction</code></td><td><code>limits.per_txn</code></td></tr>
+        <tr><td>Period (daily) cap</td><td><code>credentialSubject.dailyLimit</code></td><td><code>limits.per_day</code></td></tr>
+        <tr><td>Limit timezone</td><td><code>credentialSubject.limitTimezone</code></td><td><code>limits.tz</code></td></tr>
+        <tr><td>Step-up threshold</td><td><code>credentialSubject.requiresApprovalAbove</code></td><td><code>limits.approval_above</code></td></tr>
+        <tr><td>Allowed payees</td><td><code>credentialSubject.allowedPayees[]</code> (DIDs)</td><td><code>allowed_payees[]</code></td></tr>
+        <tr><td>Allowed service types</td><td><code>credentialSubject.allowedServiceTypes[]</code> (IRIs)</td><td><code>allowed_service_types[]</code></td></tr>
+        <tr><td>Validity start</td><td><code>validFrom</code></td><td><code>nbf</code></td></tr>
+        <tr><td>Validity end</td><td><code>validUntil</code></td><td><code>exp</code></td></tr>
+        <tr><td>Credential id</td><td><code>id</code></td><td><code>jti</code></td></tr>
+        <tr><td>Status / revocation</td><td><code>credentialStatus</code> (<code>BitstringStatusListEntry</code>)</td><td><code>status</code> (Token Status List) &mdash; see <a href="#status"></a></td></tr>
+      </tbody>
+    </table>
+    <p>
+      Monetary amounts <em>MUST</em> be carried as decimal strings on both sides and
+      <em>MUST NOT</em> be converted to or from floating-point. Payee and subject DIDs
+      <em>MUST</em> be carried verbatim as URI strings in the JOSE form. Datetimes map
+      between RFC 3339 strings (<code>validFrom</code>/<code>validUntil</code>) and
+      NumericDate integers (<code>nbf</code>/<code>exp</code>); the conversion
+      <em>MUST</em> preserve the instant.
+    </p>
+  </section>
+
+  <section id="chain-mapping">
+    <h2>Chain and layer mapping</h2>
+    <p>
+      The layers of an <a>SD-JWT-VC mandate</a> correspond to AVP-Micro objects as
+      follows. The correspondence is exact for the autonomous-agent case
+      (the agent-payments case this profile targets):
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>SD-JWT-VC layer</th><th>Signer</th><th>AVP-Micro analogue</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a>L1</a> &mdash; identity + holder-key binding</td>
+          <td>Issuer</td>
+          <td>[[DSA]] <a>Spending Authorization Credential</a> issuance (<code>issuer</code> &rarr; <code>credentialSubject</code> + key)</td>
+        </tr>
+        <tr>
+          <td><a>L2</a> &mdash; purchase intent</td>
+          <td>User / principal</td>
+          <td><em>Standing:</em> folded into the mandate (the delegation <strong>is</strong> the pre-authorized intent). <em>Interactive:</em> no direct analogue &mdash; see below.</td>
+        </tr>
+        <tr>
+          <td><a>L3</a> &mdash; agent action on a specific purchase</td>
+          <td>Agent (holder key)</td>
+          <td>[[AVP-MICRO-PAYMENTS]] <code>PaymentAuthorization</code> proof: the agent DID (= <code>credentialSubject.id</code>) signs over <code>quoteDigest</code>, <code>amount</code>, <code>serviceRequestHash</code>, <code>nonce</code>, <code>expires</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      The L1&harr;L3 key binding of SD-JWT-VC (the key-binding JWT chained to the
+      issuer layer) is mirrored in AVP-Micro by the <code>PaymentAuthorization</code>
+      embedding the credential and being signed by the <em>same key</em> named as
+      <code>credentialSubject.id</code>. The key-binding semantics line up; only the
+      encoding differs.
+    </p>
+    <p class="note" title="The one genuine semantic gap">
+      SD-JWT-VC's <em>interactive</em> L2 &mdash; a fresh per-purchase human approval
+      &mdash; has no AVP-Micro analogue, because AVP-Micro's trust model is standing
+      delegation: the human's intent is expressed once, ahead of time, by issuing the
+      mandate. An importer <em>MUST</em> mark a chain that carries an interactive L2 as
+      imported with an advisory: the resulting <a>EmbeddedSdJwtVcMandate</a> represents
+      the delegated envelope, not a per-purchase human action, and a relying party that
+      specifically requires fresh human intent cannot obtain that guarantee from the
+      imported form. For autonomous-mode mandates (where L2, if present, is itself a
+      standing mandate), this gap does not arise.
+    </p>
+  </section>
+
+  <section id="status">
+    <h2>Status and revocation</h2>
+    <p>
+      AVP-Micro uses <code>BitstringStatusListEntry</code> [[BITSTRING-STATUS-LIST]];
+      SD-JWT-VC uses the IETF Token Status List [[TOKEN-STATUS-LIST]]. Both index a bit
+      into a hosted, compressed bitstring and map structurally. A conforming exporter or
+      importer:
+    </p>
+    <ul>
+      <li><em>MUST</em> translate the status <em>reference</em> but <em>MUST NOT</em>
+        re-host the status list: the produced object points at the <strong>original
+        issuer's</strong> status endpoint, so revocation remains controlled by the
+        principal, not by the bridge;</li>
+      <li>when both references are present (as in <code>co-issued</code> mode),
+        <em>MUST</em> keep them consistent; a verifier checking either is sufficient,
+        and the two <em>MUST</em> agree.</li>
+    </ul>
+    <p>
+      A <a>cross-stack verifier</a> <em>MUST</em> check whichever status mechanism its
+      stack understands and <em>MUST</em> treat a revoked status as fatal.
+    </p>
+  </section>
+
+  <section id="export">
+    <h2>Export: AVP-Micro &rarr; SD-JWT-VC</h2>
+    <p class="object-summary">An SD-JWT-VC carrying the AVP-Micro authority for use by
+      an SD-JWT-VC / AP2 verifier.</p>
+    <p>
+      In <strong>proof-preserving</strong> mode (default), an exporter produces an
+      SD-JWT-VC that carries the original credential as a protected, non-disclosable
+      claim:
+    </p>
+    <pre class="json">
+{
+  "vct": "mandate.spending-authority.avp+embedded",
+  "iss": "did:web:principal.example",
+  "sub": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+  "cnf": { "jwk": { "kty": "OKP", "crv": "Ed25519", "x": "…agent public key…" } },
+  "currency": "USD",
+  "limits": { "per_txn": "0.05", "per_day": "5.00" },
+  "allowed_payees": ["did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"],
+  "nbf": 1774483200,
+  "exp": 1782345600,
+  "jti": "urn:dsa:vc:spendauth:456",
+  "status": { "status_list": { "idx": 94567, "uri": "https://issuer.example/status/3" } },
+  "avp_vc": "<base64url of the exact JCS-canonical SpendingAuthorizationCredential, including its eddsa-jcs-2022 proof>"
+}
+    </pre>
+    <p>
+      The outer SD-JWT issuer signature provides JOSE-native typing, selective
+      disclosure, and (via <code>cnf</code>) holder binding; the <code>avp_vc</code>
+      claim carries the <strong>authority</strong>. The <code>avp_vc</code> claim
+      <em>MUST NOT</em> be marked selectively-disclosable: the authority must always be
+      present. An exporter producing the <code>mandate.spending-authority.avp+embedded</code>
+      profile <em>MUST</em> set <code>avp_vc</code> to the byte-exact JCS-canonical form
+      that the original Data Integrity proof covers.
+    </p>
+    <p>
+      In <strong>attested</strong> mode an exporter MAY omit <code>avp_vc</code> and
+      instead rely on its own issuer signature over the mapped claims; the produced
+      <code>vct</code> is then <code>mandate.spending-authority.avp</code> and the
+      bridge is the issuer of record. In <strong>co-issued</strong> mode the original
+      issuer signs this SD-JWT-VC natively over the same claims as part of issuance.
+    </p>
+  </section>
+
+  <section id="import">
+    <h2>Import: SD-JWT-VC &rarr; AVP-Micro</h2>
+    <p class="object-summary">An AVP-Micro Spending Authorization Credential, typed
+      <code>EmbeddedSdJwtVcMandate</code>, carrying the source chain.</p>
+    <p>
+      An importer produces a DSA credential whose subject carries the mapped claims
+      (<a href="#claim-mapping"></a>) and whose <code>iop:embeddedSdJwtVc</code> carries
+      the original chain in compact serialization:
+    </p>
+    <pre class="json">
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"
+  ],
+  "id": "urn:dsa:vc:spendauth:imported:456",
+  "type": ["VerifiableCredential", "SpendingAuthorizationCredential", "EmbeddedSdJwtVcMandate"],
+  "issuer": "did:web:principal.example",
+  "validFrom": "2026-03-25T20:00:00Z",
+  "validUntil": "2026-06-25T20:00:00Z",
+  "credentialSubject": {
+    "id": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "currency": "USD",
+    "maxPerTransaction": "0.05",
+    "dailyLimit": "5.00",
+    "allowedPayees": ["did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"]
+  },
+  "bridgeMode": "proof-preserving",
+  "sourceVct": "mandate.spending-authority.avp",
+  "embeddedSdJwtVc": "eyJ…issuer-L1….~eyJ…agent-KB-L3…"
+}
+    </pre>
+    <p>
+      The mode determines the trust of the outer object:
+    </p>
+    <ul>
+      <li><strong><code>proof-preserving</code></strong>: there is no Ed25519 proof to
+        be had (the principal signed only JOSE), so the outer object carries
+        <em>no</em> <code>proof</code> and is an unsigned <em>projection</em>. Its
+        authority is the <code>embeddedSdJwtVc</code>, verified via the
+        <a>did:web binding convention</a> (<a href="#identity-import"></a>). An
+        importer <em>MUST</em> set <code>bridgeMode</code> to
+        <code>proof-preserving</code> and <em>MUST NOT</em> add a <code>proof</code>.</li>
+      <li><strong><code>co-issued</code></strong>: the outer <code>proof</code> is a
+        genuine <code>eddsa-jcs-2022</code> proof by the principal's Ed25519 key over
+        the mapped claims, produced at issuance &mdash; no bridge in the path.</li>
+      <li><strong><code>attested</code></strong>: a named bridge re-signs the outer
+        object; the bridge DID <em>MUST</em> appear in
+        <code>iop:attestingBridge</code> and in <code>proof.verificationMethod</code>,
+        and relying parties <em>MUST</em> independently trust it.</li>
+    </ul>
+  </section>
+
+  <section id="verification">
+    <h2>Cross-stack verification</h2>
+    <p>A <a>cross-stack verifier</a> presented with a bridged object <em>MUST</em>
+      apply all of the following. These rules are the security core of the profile.</p>
+    <ol>
+      <li><strong>No-downgrade.</strong> For a <code>proof-preserving</code> object the
+        verifier <em>MUST</em> verify the <em>embedded original</em> proof for
+        authority and <em>MUST NOT</em> treat the outer envelope signature (the SD-JWT
+        issuer signature on export, or the absence of an outer proof on import) as a
+        substitute. The outer signature attests only transport, typing, and holder
+        binding.</li>
+      <li><strong>Algorithm pinning.</strong> Ed25519 (Data Integrity) and
+        <code>ES256</code> (JOSE) <em>MUST</em> each be verified against the layer that
+        legitimately uses it. A verifier <em>MUST NOT</em> accept one algorithm where
+        the other is expected (algorithm confusion).</li>
+      <li><strong>Explicit bridge trust.</strong> A verifier <em>MUST NOT</em> honor an
+        <code>attested</code> object unless the <code>iop:attestingBridge</code> DID is
+        on an explicit, operator-configured trust list. Authority obtained in
+        <code>proof-preserving</code> or <code>co-issued</code> mode requires no such
+        list.</li>
+      <li><strong>Window intersection.</strong> When both stacks carry validity or
+        replay bounds (<code>validFrom</code>/<code>validUntil</code> vs
+        <code>nbf</code>/<code>exp</code>; <code>nonce</code>/<code>jti</code>;
+        <code>expires</code>), the verifier <em>MUST</em> enforce the
+        <strong>intersection</strong> (most restrictive). A bridged object
+        <em>MUST NOT</em> be honored beyond the narrowest bound present.</li>
+      <li><strong>Status.</strong> The verifier <em>MUST</em> check status per
+        <a href="#status"></a> and treat revocation as fatal.</li>
+      <li><strong>Holder binding.</strong> The verifier <em>MUST</em> confirm that the
+        key exercising the mandate (the SD-JWT key-binding JWT signer, or the
+        AVP-Micro <code>PaymentAuthorization</code> signer) is the holder key bound in
+        L1 / named as <code>credentialSubject.id</code>.</li>
+    </ol>
+  </section>
+
+  <section id="losslessness">
+    <h2>Round-trip and losslessness</h2>
+    <p>
+      A conforming implementation <em>MUST</em> preserve every field in
+      <a href="#claim-mapping"></a> across a full round-trip in both directions
+      (A&rarr;V&rarr;A and V&rarr;A&rarr;V) and <em>MUST</em> preserve verifiability of
+      the embedded original proof. The following are inherently lossy and an
+      implementation <em>MUST</em> surface (not silently drop) each:
+    </p>
+    <ul>
+      <li><strong>Interactive L2.</strong> SD-JWT-VC fresh per-purchase human intent
+        has no AVP-Micro equivalent (<a href="#chain-mapping"></a>); flag on import.</li>
+      <li><strong>Native selective disclosure.</strong> SD-JWT selective disclosure has
+        no Data-Integrity equivalent. On export, selective disclosure MAY be introduced
+        only in <code>attested</code> mode (the bridge re-issues); under
+        <code>proof-preserving</code> mode the embedded credential is whole, so
+        selective disclosure of the embedded authority is <em>NOT</em> available and
+        <em>MUST NOT</em> be implied. On import of a <em>partially</em> disclosed
+        SD-JWT, the resulting mandate is a subset view and <em>MUST</em> be flagged as
+        partial.</li>
+      <li><strong>P-256 keys.</strong> Not expressible in <code>eddsa-jcs-2022</code>;
+        proof-preserving import depends on the <a>did:web binding convention</a>
+        (<a href="#identity-import"></a>), failing which the object cannot be imported
+        proof-preservingly.</li>
+    </ul>
+  </section>
+
+  <section id="security">
+    <h2>Security considerations</h2>
+    <p>
+      The dominant risk is a bridge that silently becomes a trust root.
+      <code>proof-preserving</code> and <code>co-issued</code> modes add no trust by
+      construction; <code>attested</code> mode does, and is constrained by rule&nbsp;3
+      of <a href="#verification"></a> (explicit trust list) and by mandatory
+      <code>iop:attestingBridge</code> disclosure.
+    </p>
+    <p>
+      <strong>Downgrade and confusion.</strong> The no-downgrade and algorithm-pinning
+      rules (<a href="#verification"></a>) prevent an attacker from substituting a
+      cheaply-forged outer signature for the embedded authority, or from exploiting the
+      two distinct signature algorithms. A verifier that checks only the outer envelope
+      is non-conforming and unsafe.
+    </p>
+    <p>
+      <strong>Authority widening.</strong> Translation <em>MUST NOT</em> widen
+      authority. The window-intersection rule and the decimal-string discipline of
+      <a href="#claim-mapping"></a> prevent a translation from extending validity or
+      altering caps. Status references are re-pointed but never re-hosted
+      (<a href="#status"></a>), so the principal retains revocation control across the
+      bridge.
+    </p>
+    <p>
+      <strong>Replay.</strong> The per-purchase layer (SD-JWT key-binding JWT / [[AVP-MICRO-PAYMENTS]]
+      <code>PaymentAuthorization</code>) carries the nonce, request binding, and short
+      expiry that bound a mandate to a single action; the bridge transports these
+      unchanged and the verifier enforces them.
+    </p>
+  </section>
+
+  <section id="privacy">
+    <h2>Privacy considerations</h2>
+    <p>
+      The proof-preserving envelope embeds the original whole credential, which is
+      <em>not</em> selectively disclosable (<a href="#losslessness"></a>); a holder that
+      needs to minimize disclosure into the SD-JWT-VC ecosystem must use
+      <code>attested</code> re-issuance, accepting the bridge as a trust root in
+      exchange for selective disclosure. Conversely, importing a partially-disclosed
+      SD-JWT yields only the disclosed claims, which the importer <em>MUST</em> flag as
+      a partial view rather than presenting it as a complete mandate. Identifiers
+      (DIDs, <code>iss</code>/<code>sub</code>) are carried verbatim; deployments that
+      treat agent or principal identifiers as correlatable <em>SHOULD</em> apply the
+      same pairwise-identifier practices recommended by [[DSA]].
+    </p>
+  </section>
+
+  <section id="i18n">
+    <h2>Internationalization considerations</h2>
+    <p>
+      This profile carries currency codes and decimal amounts as opaque strings and
+      does not localize them; presentation and rounding are out of scope, exactly as in
+      [[AVP-MICRO-PAYMENTS]]. Datetime conversions between RFC 3339 strings and
+      NumericDate integers <em>MUST</em> preserve the absolute instant and use UTC.
+    </p>
+  </section>
+
+  <section id="accessibility" class="informative">
+    <h2>Accessibility considerations</h2>
+    <p>
+      This profile defines data interchange between software agents and has no direct
+      user interface. Tooling that surfaces bridge provenance (the
+      <code>bridgeMode</code> and any <code>attestingBridge</code>) to operators
+      should follow general accessibility guidance for that tooling.
+    </p>
+  </section>
+
+  <section id="examples" class="informative">
+    <h2>Examples</h2>
+    <p>
+      The <a href="#export"></a> and <a href="#import"></a> sections show the two
+      envelopes for the same underlying mandate (the [[DSA]]
+      <code>spending-authorization-credential</code> test vector: agent
+      <code>z6Mko688…</code> may spend up to 0.05 USD per transaction, 5.00 per day,
+      only with payee <code>z6MkenPA…</code>). Signed, harness-verified round-trip
+      vectors are provided under <code>test-vectors/</code>.
+    </p>
+  </section>
+
+  <section id="conformance-classes">
+    <h2>Conformance classes</h2>
+    <p>An implementation MAY conform as any subset of the following. Each is
+      independently testable against the round-trip vectors.</p>
+    <table class="simple">
+      <thead><tr><th>Class</th><th>Requirement</th></tr></thead>
+      <tbody>
+        <tr><td><a>exporter</a></td><td>Produces a conformant <a>SD-JWT-VC mandate</a> per <a href="#export"></a>, with the claim mapping of <a href="#claim-mapping"></a> and, in proof-preserving mode, a byte-exact <code>avp_vc</code>.</td></tr>
+        <tr><td><a>importer</a></td><td>Produces a conformant <a>EmbeddedSdJwtVcMandate</a> per <a href="#import"></a>, sets <code>bridgeMode</code> correctly, and obeys the proof/attestation rules.</td></tr>
+        <tr><td><a>cross-stack verifier</a></td><td>Applies every rule of <a href="#verification"></a>, including no-downgrade, algorithm pinning, explicit bridge trust, and window intersection.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="acknowledgements" class="informative">
+    <h2>Acknowledgements</h2>
+    <p>
+      This profile builds on [[DSA]] and [[AVP-MICRO-PAYMENTS]] and bridges to the
+      SD-JWT family [[SD-JWT]] [[SD-JWT-VC]] and the agent-payment work of
+      Mastercard/Google <a>Verifiable Intent</a> [[?VERIFIABLE-INTENT]] and Google AP2
+      [[?AP2]]. It uses the Token Status List [[TOKEN-STATUS-LIST]] and the
+      <code>did:web</code> method [[DID-WEB]].
+    </p>
+  </section>
+</body>
+</html>

@@ -1,0 +1,81 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:authz:999",
+  "type": "PaymentAuthorization",
+  "quote": "urn:avp:quote:789",
+  "quoteDigest": "sha-256:uRYtrB8Irb-fPVHbevdHzQQ1TOBFqNxlBjgtYHbwAEc",
+  "payer": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+  "payee": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+  "amount": "0.001",
+  "currency": "USD",
+  "settlementMethod": "internal-ledger",
+  "settlementTarget": "https://wallet.example.com/tool-api-addr",
+  "serviceRequestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
+  "timestamp": "2026-03-25T21:30:02Z",
+  "expires": "2026-03-25T21:31:02Z",
+  "nonce": "n-39102",
+  "wallet": "did:key:z6Mkjfc8nQkYueatDJivrXYwTJJXW6QiFn7MyKPQ3q45XRJS",
+  "vp": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://w3id.org/security/data-integrity/v2",
+      "https://w3id.org/spending-authority/v1",
+      "https://w3id.org/avp-micro/v1"
+    ],
+    "type": "VerifiablePresentation",
+    "verifiableCredential": [
+      {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://w3id.org/security/data-integrity/v2",
+          "https://w3id.org/spending-authority/v1"
+        ],
+        "id": "urn:dsa:vc:spendauth:456",
+        "type": [
+          "VerifiableCredential",
+          "SpendingAuthorizationCredential"
+        ],
+        "issuer": "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79",
+        "validFrom": "2026-03-25T20:00:00Z",
+        "validUntil": "2026-06-25T20:00:00Z",
+        "credentialStatus": {
+          "id": "https://issuer.example/status/3#94567",
+          "type": "BitstringStatusListEntry",
+          "statusPurpose": "revocation",
+          "statusListIndex": "94567",
+          "statusListCredential": "https://issuer.example/status/3"
+        },
+        "credentialSubject": {
+          "id": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+          "currency": "USD",
+          "maxPerTransaction": "0.05",
+          "dailyLimit": "5.00",
+          "allowedPayees": [
+            "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-03-25T20:00:01Z",
+          "verificationMethod": "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79#z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z2Wwg6reoiuTKoDhTJ2wg9LUT3B9jqXguP4Tof4THkDcTDafhHdiC3U3XfFxErRV9iLsQ5U9P9bvJcraZc5eesrZd"
+        }
+      }
+    ]
+  },
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2026-03-25T21:30:02Z",
+    "verificationMethod": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R#z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2phEvFW5hNCGnrfaUfDGKfx2hFA3PVuAAWSjHDp9hfNQpbGj1VvtUNtr6NoM1VH8RfZkV7HUGQ9DhJsu44zYz9rJ"
+  }
+}

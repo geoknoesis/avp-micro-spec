@@ -1,0 +1,32 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "SpendingAuthorizationCredential",
+    "EmbeddedSdJwtVcMandate"
+  ],
+  "issuer": "did:web:issuer.example",
+  "credentialSubject": {
+    "id": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "maxPerTransaction": "0.10",
+    "dailyLimit": "10.00",
+    "allowedPayees": [
+      "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"
+    ]
+  },
+  "bridgeMode": "proof-preserving",
+  "sourceVct": "mandate.spending-authority.avp",
+  "embeddedSdJwtVc": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6aXNzdWVyLmV4YW1wbGUja2V5LTEiLCJ0eXAiOiJkYytzZC1qd3QifQ.eyJfc2QiOlsib0UxNXFva1ZHdVM2MlQyLVhrRWhFN0Ryd1RMTEFuWDFHX0NkMXg2M3dudyIsImQ4Q2RzMHZrLVV0c2VOaFhseEpNcEFQRmY0OFdPR1h4X0FUTU5yUjJHZmciXSwiX3NkX2FsZyI6InNoYS0yNTYiLCJjbmYiOnsiandrIjp7ImNydiI6IkVkMjU1MTkiLCJrdHkiOiJPS1AiLCJ4IjoiZ0U4SkR6bU5WSmdlazJTaVlNMmRSRnJHYkxxb0ZRdWRESlhEQVJYaHU0dyJ9fSwiZXhwIjoxNzgyODY0MDAwLCJpc3MiOiJkaWQ6d2ViOmlzc3Vlci5leGFtcGxlIiwianRpIjoidXJuOnZpOm1hbmRhdGU6c2Q6MDAxIiwibGltaXRzIjp7InBlcl9kYXkiOiIxMC4wMCIsInBlcl90eG4iOiIwLjEwIn0sIm5iZiI6MTc3NTAwMTYwMCwic3ViIjoiZGlkOmtleTp6Nk1rbzY4OFZ0MXVaRlFaaDhXdmI4Qm5tZW5FcVRhalp3RTJCdWdXODVuV0E2NVIiLCJ2Y3QiOiJtYW5kYXRlLnNwZW5kaW5nLWF1dGhvcml0eS5hdnAifQ.0fWa6wYTOqC2TdRj0XGhwqzbyb4lK4qY02iUV_MwEqXRVsCq8LC7W3bGeChApzhzvK-Y5MEEvlcn48C35k94pQ~WyJzYWx0LWFsbG93ZWQtcGF5ZWVzIiwiYWxsb3dlZF9wYXllZXMiLFsiZGlkOmtleTp6Nk1rZW5QQTJ4Y0Q1Q0dKVm1rZ2VqYnI0THpCQWExZTNHVkNRaUhGclhEZ2g1VmkiXV0~",
+  "profileVersion": "0.1.0",
+  "id": "urn:vi:mandate:sd:001",
+  "validFrom": "2026-04-01T00:00:00Z",
+  "validUntil": "2026-07-01T00:00:00Z",
+  "importAdvisory": [
+    "partial-selective-disclosure: 1 claim(s) withheld; subset view, not a complete mandate"
+  ]
+}

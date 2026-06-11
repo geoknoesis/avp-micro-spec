@@ -1,0 +1,2410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AVP-Micro Payments</title>
+  <style>
+    /* Object-definition summary */
+    p.object-summary { font-style: italic; color: #333; margin-bottom: 0.5em; }
+    /* Diagram figures (hand-authored SVGs only — keeps ReSpec example figures unaffected) */
+    figure { margin: 1.5em 0; }
+    figure.fig-diagram { text-align: center; }
+    figure.fig-diagram svg { max-width: 100%; height: auto; }
+    figure.fig-diagram figcaption { font-size: 0.9em; color: #555; margin-top: 0.4em; }
+  </style>
+  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
+  <script class="remove">
+    // @ts-check
+    const respecConfig = {
+      specStatus: "unofficial",
+      shortName: "avp-micro",
+      subtitle: "A transport-agnostic micropayment layer for autonomous agents, built on Delegated Spending Authority",
+      editors: [
+        {
+          name: "Stephane Fellah",
+          company: "Geoknoesis LLC",
+          companyURL: "https://geoknoesis.com",
+        },
+      ],
+      github: {
+        repoURL: "https://github.com/geoknoesis/avp-micro",
+        branch: "main",
+      },
+      license: "cc-by",
+      lint: { "no-unused-dfns": false },
+      xref: ["vc-data-model-2.0", "did-core", "INFRA"],
+      localBiblio: {
+        "DSA": {
+          title: "Delegated Spending Authority",
+          href: "../authority/",
+          publisher: "Geoknoesis LLC (editor's draft)",
+        },
+        "OPEN-PAYMENTS": {
+          title: "Open Payments",
+          href: "https://openpayments.guide/",
+          publisher: "Interledger Foundation",
+        },
+        "RFC9421": {
+          title: "HTTP Message Signatures",
+          href: "https://www.rfc-editor.org/rfc/rfc9421",
+          authors: ["A. Backman", "J. Richer", "M. Sporny"],
+          date: "February 2024",
+          status: "Proposed Standard",
+          publisher: "IETF",
+        },
+        "RFC9449": {
+          title: "OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)",
+          href: "https://www.rfc-editor.org/rfc/rfc9449",
+          authors: ["D. Fett", "B. Campbell", "J. Bradley", "T. Lodderstedt", "M. Jones", "D. Balfanz"],
+          date: "September 2023",
+          status: "Proposed Standard",
+          publisher: "IETF",
+        },
+        "RFC8785": {
+          title: "JSON Canonicalization Scheme (JCS)",
+          href: "https://www.rfc-editor.org/rfc/rfc8785",
+          authors: ["A. Rundgren", "B. Jordan", "S. Erdtman"],
+          date: "June 2020",
+          status: "Informational",
+          publisher: "IETF",
+        },
+        "RFC7515": {
+          title: "JSON Web Signature (JWS)",
+          href: "https://www.rfc-editor.org/rfc/rfc7515",
+          date: "May 2015",
+          status: "Proposed Standard",
+          publisher: "IETF",
+        },
+        "GNAP": {
+          title: "Grant Negotiation and Authorization Protocol (GNAP)",
+          href: "https://www.rfc-editor.org/rfc/rfc9635",
+          authors: ["J. Richer", "F. Imbault", "A. Parecki", "L. Seitz"],
+          date: "April 2025",
+          status: "Proposed Standard",
+          publisher: "IETF",
+        },
+        "SD-JWT-VC": {
+          title: "SD-JWT-based Verifiable Credentials (SD-JWT VC)",
+          href: "https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/",
+          status: "Internet-Draft",
+          publisher: "IETF",
+        },
+        "JSON-LD11": {
+          title: "JSON-LD 1.1",
+          href: "https://www.w3.org/TR/json-ld11/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "VC-DATA-INTEGRITY": {
+          title: "Verifiable Credential Data Integrity 1.0",
+          href: "https://www.w3.org/TR/vc-data-integrity/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "VC-DI-EDDSA": {
+          title: "Verifiable Credential Data Integrity EdDSA Cryptosuites v1.0",
+          href: "https://www.w3.org/TR/vc-di-eddsa/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "BITSTRING-STATUS-LIST": {
+          title: "Bitstring Status List v1.0",
+          href: "https://www.w3.org/TR/vc-bitstring-status-list/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "SECURITY-PRIVACY-QUESTIONNAIRE": {
+          title: "Self-Review Questionnaire: Security and Privacy",
+          href: "https://www.w3.org/TR/security-privacy-questionnaire/",
+          publisher: "W3C TAG",
+        },
+      },
+    };
+  </script>
+</head>
+<body>
+  <section id="abstract">
+    <p>
+      <dfn>AVP-Micro Payments</dfn> defines a transport-agnostic layer for
+      programmatic micropayments by autonomous agents: signed quotes,
+      authorizations, executions, and receipts, plus a streaming/session-metering
+      mode. Payer identity, the spending-authority credential, securing
+      mechanisms, and issuer trust are defined by [[DSA]]; this specification
+      composes them with per-transaction economic terms. Value transfer
+      (settlement) is intentionally out of scope as a normative rail.
+    </p>
+  </section>
+
+  <section id="sotd">
+    <p>
+      This document is an <strong>unofficial editor's draft</strong> prepared as a
+      candidate contribution to a W3C Community Group (CG). Given its reliance on
+      Decentralized Identifiers, the Verifiable Credentials Data Model, Data
+      Integrity, and [[DSA]], the intended host is the
+      <a href="https://www.w3.org/community/credentials/">W3C Credentials
+      Community Group</a> (CCG), or a new CG chartered for agent payments. It is
+      published with W3C ReSpec and does <em>not</em> represent the consensus of
+      the W3C Membership or of any Working or Community Group. It is provided for
+      review and experimentation only and <em>MUST NOT</em> be cited as anything
+      other than work in progress.
+    </p>
+    <p>
+      <strong>Dependency maturity.</strong> This specification depends on [[DSA]]
+      for payer identity, the Spending Authorization Credential, securing
+      mechanisms, and issuer trust; deployers MUST satisfy that document's
+      requirements as well. Some referenced specifications are not W3C
+      Recommendations: [[GNAP]] is an IETF RFC and [[SD-JWT-VC]] is an IETF
+      Internet-Draft. They are cited as optional or interoperability-testing
+      dependencies; the
+      <strong>mandatory-to-implement</strong> securing mechanism (defined in
+      [[DSA]]) relies only on W3C Recommendations ([[VC-DATA-INTEGRITY]],
+      [[VC-DI-EDDSA]]) and the IETF Informational [[RFC8785]]. Implementers should
+      track the status of the non-REC dependencies.
+    </p>
+    <p>
+      <strong>Contributions and IPR.</strong> Once adopted by a Community Group,
+      contributions to this specification are expected to be made under the
+      <a href="https://www.w3.org/community/about/process/cla/">W3C Community
+      Contributor License Agreement (CLA)</a>. The document text is offered under
+      the <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons
+      Attribution 4.0</a> license and accompanying code/test artifacts under the
+      <a href="https://opensource.org/license/bsd-3-clause">BSD-3-Clause</a>
+      license, pending CG adoption.
+    </p>
+    <p>
+      Issues, comments, and pull requests are tracked in the
+      <a href="https://github.com/geoknoesis/avp-micro">project repository</a>.
+      Before relying on this specification, complete a
+      <a href="https://www.w3.org/TR/security-privacy-questionnaire/">Security and
+      Privacy Self-Review</a> [[SECURITY-PRIVACY-QUESTIONNAIRE]]; an initial
+      threat model is in <a href="#security"></a>.
+    </p>
+  </section>
+
+  <section class="informative" id="introduction">
+    <h2>Introduction</h2>
+
+    <p>
+      Autonomous agents increasingly need to purchase APIs, data, and compute at
+      micro scale. Human-centric account flows, opaque bearer tokens, and
+      platform-specific identities poorly match high-frequency, low-value,
+      cross-domain machine transactions. Parallel work on HTTP <code>402</code>
+      challenges, streaming payments, and account-to-account APIs improves
+      settlement ergonomics but often assumes a fixed trust boundary.
+    </p>
+
+    <p>
+      AVP-Micro Payments composes the portable <strong>identity</strong> and
+      <strong>delegated spending policy</strong> layer of [[DSA]] with
+      per-transaction <strong>economic terms</strong>, orthogonal to any
+      particular settlement technology. A <a>payer agent</a> identifies itself
+      with a <a data-cite="did-core#dfn-decentralized-identifiers">decentralized identifier</a>,
+      presents a Spending Authorization Credential (defined by [[DSA]])
+      that constrains how it may spend, and signs authorization messages that
+      <strong>commit to the exact economic terms</strong> (amount, currency,
+      settlement target) and bind those terms to a specific service request. A
+      <a>wallet service</a> enforces those constraints before instructing a
+      settlement implementation to move funds. A <a>payee service</a> issues
+      <em>signed</em> quotes and, after settlement, can emit a
+      <a>PaymentReceipt</a> that cryptographically binds delivery to the agreed
+      commercial terms.
+    </p>
+
+    <p>
+      This specification <strong>depends on</strong> [[DSA]], which defines payer
+      identity ([[did-core]]), the Spending Authorization Credential,
+      Merchant Credential, and Payment Capability Credential, the
+      securing mechanisms used to sign every object here, the generic
+      content-digest form and decimal monetary-amount format, category-matching
+      semantics, and issuer trust. It is designed to align with the data models
+      and verification semantics of [[[vc-data-model-2.0]]] and the identifier and
+      resolution model of [[[did-core]]]. It does not define a new DID method.
+    </p>
+  </section>
+
+  <section class="informative" id="overview">
+    <h2>How it works</h2>
+
+    <p>
+      AVP-Micro Payments defines how a <strong>payer agent</strong> buys a
+      service from a <strong>payee service</strong> in a way that is
+      cryptographically auditable end-to-end. Identity, the spending-authority
+      credential, and trust are defined by [[DSA]]; this specification
+      handles the per-transaction messages.
+    </p>
+
+    <p>
+      For a <strong>one-off payment</strong>: the payee issues a signed
+      <a>PaymentQuote</a> bound to the exact service request; the payer
+      agent constructs a signed <a>PaymentAuthorization</a> that restates
+      the economic terms and embeds a verifiable presentation carrying its
+      <a href="../authority/#spending-authorization-credential">Spending
+      Authorization Credential</a>; the wallet verifies the authorization and
+      settles via the chosen rail; the wallet emits a signed
+      <a>PaymentExecution</a>; the payee issues a signed
+      <a>PaymentReceipt</a> binding delivery to the agreed terms.
+      See the <a href="#fig-seq-oneoff">one-off payment sequence diagram</a>.
+    </p>
+
+    <p>
+      For a <strong>streaming or metered session</strong>: the payee opens a
+      <a>UsageSession</a> with a budget cap; the payer agent commits with a
+      signed <a>SessionBudgetAuthorization</a>; the payee emits signed
+      <a>UsageAccrual</a> reports as usage accrues; the wallet enforces the
+      budget cap in real time; at close, the payee issues a session
+      <a>PaymentReceipt</a>. The budget cap may be raised mid-session via a
+      <a>UsageSessionExtension</a> followed by a fresh
+      <a>SessionBudgetAuthorization</a>. See the <a href="#fig-seq-streaming">streaming sequence diagram</a>.
+    </p>
+
+    <p>
+      Every signed object carries a <code>DataIntegrityProof</code>
+      (<code>eddsa-jcs-2022</code>), making the full chain — offer, quote,
+      authorization, execution, receipt — independently re-verifiable by an
+      auditor long after the transaction.
+    </p>
+
+    <section id="overview-glance">
+      <h3>Roles and objects at a glance</h3>
+
+      <table class="simple" id="tab-pay-roles">
+        <caption>Roles in AVP-Micro Payments</caption>
+        <thead>
+          <tr>
+            <th scope="col">Role</th>
+            <th scope="col">Produces</th>
+            <th scope="col">Verifies / consumes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a>Payer agent</a></td>
+            <td><a>PaymentAuthorization</a>, <a>SessionBudgetAuthorization</a></td>
+            <td><a>PaymentQuote</a>, <a>UsageSession</a>, <a>UsageAccrual</a>, <a>PaymentReceipt</a></td>
+          </tr>
+          <tr>
+            <td><a>Payee service</a></td>
+            <td><a>PaymentOffer</a>, <a>PaymentQuote</a>, <a>UsageSession</a>, <a>UsageAccrual</a>, <a>UsageSessionExtension</a>, <a>PaymentReceipt</a></td>
+            <td><a>PaymentAuthorization</a>, <a>SessionBudgetAuthorization</a></td>
+          </tr>
+          <tr>
+            <td><a>Wallet service</a></td>
+            <td><a>PaymentExecution</a></td>
+            <td><a>PaymentAuthorization</a>, <a>SessionBudgetAuthorization</a>, <a>UsageAccrual</a>; initiates rail settlement</td>
+          </tr>
+          <tr>
+            <td>Settlement rail</td>
+            <td>Settlement reference</td>
+            <td>Settlement instruction from the wallet</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="simple" id="tab-pay-objects">
+        <caption>Objects defined by this specification</caption>
+        <thead>
+          <tr>
+            <th scope="col">Object</th>
+            <th scope="col">One-line purpose</th>
+            <th scope="col">Signer</th>
+            <th scope="col">Section</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a>PaymentOffer</a></td>
+            <td>Payee advertisement of pricing and a quote endpoint</td>
+            <td>Payee (optional)</td>
+            <td><a href="#payment-offer"></a></td>
+          </tr>
+          <tr>
+            <td><a>PaymentQuote</a></td>
+            <td>Time-bound, payee-signed price bound to a specific request</td>
+            <td>Payee</td>
+            <td><a href="#payment-quote"></a></td>
+          </tr>
+          <tr>
+            <td><a>PaymentAuthorization</a></td>
+            <td>Payer commitment to pay, restating the economic terms and embedding a credential VP</td>
+            <td>Payer agent</td>
+            <td><a href="#payment-authorization"></a></td>
+          </tr>
+          <tr>
+            <td><a>PaymentExecution</a></td>
+            <td>Wallet record of a settlement attempt with status and rail reference</td>
+            <td>Wallet service</td>
+            <td><a href="#payment-execution"></a></td>
+          </tr>
+          <tr>
+            <td><a>PaymentReceipt</a></td>
+            <td>Payee acknowledgement binding delivery to the agreed terms</td>
+            <td>Payee</td>
+            <td><a href="#payment-receipt"></a></td>
+          </tr>
+          <tr>
+            <td><a>UsageSession</a></td>
+            <td>Metering contract with budget cap and pricing model for a streaming period</td>
+            <td>Payee</td>
+            <td><a href="#usage-session"></a></td>
+          </tr>
+          <tr>
+            <td><a>UsageAccrual</a></td>
+            <td>Incremental or cumulative meter report during an active session</td>
+            <td>Payee</td>
+            <td><a href="#usage-accrual"></a></td>
+          </tr>
+          <tr>
+            <td><a>SessionBudgetAuthorization</a></td>
+            <td>Payer commitment to honour session charges up to a budget cap</td>
+            <td>Payer agent</td>
+            <td><a href="#session-budget-authorization"></a></td>
+          </tr>
+          <tr>
+            <td><a>UsageSessionExtension</a></td>
+            <td>Payee amendment raising an existing session's budget cap or expiry</td>
+            <td>Payee</td>
+            <td><a href="#session-extension"></a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    <figure id="fig-arch" class="fig-diagram">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 380"
+           role="img" aria-labelledby="pay-fig-arch-title pay-fig-arch-desc">
+        <title id="pay-fig-arch-title">AVP-Micro Payments — roles and message flows</title>
+        <desc id="pay-fig-arch-desc">
+          Five roles: Payer Agent (left centre), Payee Service (right centre),
+          Wallet Service (bottom left), Settlement Rail (bottom right), and
+          Principal (top left, issuing the spending credential). Arrows
+          show the main message flows: the Payer Agent exchanges
+          PaymentQuote / PaymentAuthorization / PaymentReceipt with the Payee;
+          submits PaymentAuthorization to the Wallet; the Wallet instructs
+          the Settlement Rail and receives a reference; the Wallet returns
+          PaymentExecution to the Payer Agent; for streaming, UsageSession /
+          UsageAccrual flows between Payee and Payer Agent.
+        </desc>
+        <defs>
+          <marker id="p-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#333"/>
+          </marker>
+          <marker id="p-arr-b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#005a9c"/>
+          </marker>
+          <marker id="p-arr-g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#888"/>
+          </marker>
+        </defs>
+
+        <!-- Principal (top-left, small) -->
+        <rect x="10" y="10" width="100" height="44" rx="4"
+              fill="#f5f5f5" stroke="#aaa" stroke-width="1"/>
+        <text x="60" y="30" text-anchor="middle"
+              font-family="sans-serif" font-size="11" fill="#555">Principal</text>
+        <text x="60" y="45" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#888">(issues credential)</text>
+
+        <!-- Payer Agent (left, main) -->
+        <rect x="60" y="150" width="140" height="64" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="130" y="180" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Payer Agent</text>
+        <text x="130" y="197" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">holds spending credential</text>
+
+        <!-- SAC arrow from Principal to Payer Agent -->
+        <line x1="80" y1="54" x2="110" y2="148"
+              stroke="#005a9c" stroke-width="1" stroke-dasharray="4,3"
+              marker-end="url(#p-arr-b)"/>
+        <text x="60" y="105" font-family="sans-serif" font-size="9"
+              fill="#005a9c">SpendingAuth-</text>
+        <text x="60" y="117" font-family="sans-serif" font-size="9"
+              fill="#005a9c">orizationCred.</text>
+
+        <!-- Payee Service (right, main) -->
+        <rect x="440" y="150" width="140" height="64" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="510" y="180" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Payee Service</text>
+        <text x="510" y="197" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">issues quote, receipt</text>
+
+        <!-- Payer ↔ Payee messages -->
+        <line x1="200" y1="168" x2="438" y2="168"
+              stroke="#005a9c" stroke-width="1.5" marker-end="url(#p-arr-b)"/>
+        <text x="320" y="162" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#005a9c">PaymentAuthorization + VP</text>
+        <line x1="438" y1="185" x2="200" y2="185"
+              stroke="#333" stroke-width="1.5" marker-end="url(#p-arr)"/>
+        <text x="320" y="198" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#333">PaymentQuote / PaymentReceipt</text>
+
+        <!-- Streaming messages (below main arrows) -->
+        <line x1="438" y1="205" x2="200" y2="205"
+              stroke="#888" stroke-width="1" stroke-dasharray="4,3"
+              marker-end="url(#p-arr-g)"/>
+        <text x="320" y="218" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#888">UsageSession / UsageAccrual (streaming)</text>
+
+        <!-- Wallet Service (bottom-left) -->
+        <rect x="60" y="300" width="140" height="54" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="130" y="325" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Wallet Service</text>
+        <text x="130" y="342" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">verifies + settles</text>
+
+        <!-- Settlement Rail (bottom-right) -->
+        <rect x="440" y="300" width="140" height="54" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="510" y="325" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Settlement Rail</text>
+        <text x="510" y="342" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">moves value</text>
+
+        <!-- Payer Agent → Wallet -->
+        <line x1="130" y1="214" x2="130" y2="298"
+              stroke="#333" stroke-width="1.5" marker-end="url(#p-arr)"/>
+        <text x="78" y="258" font-family="sans-serif" font-size="9"
+              fill="#333">PaymentAuth-</text>
+        <text x="78" y="270" font-family="sans-serif" font-size="9"
+              fill="#333">orization</text>
+
+        <!-- Wallet → Payer Agent (execution) -->
+        <line x1="148" y1="298" x2="148" y2="214"
+              stroke="#333" stroke-width="1.5" marker-end="url(#p-arr)"/>
+        <text x="155" y="258" font-family="sans-serif" font-size="9"
+              fill="#333">Payment-</text>
+        <text x="155" y="270" font-family="sans-serif" font-size="9"
+              fill="#333">Execution</text>
+
+        <!-- Wallet → Rail -->
+        <line x1="200" y1="327" x2="438" y2="327"
+              stroke="#333" stroke-width="1.5" marker-end="url(#p-arr)"/>
+        <text x="320" y="320" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#333">initiate settlement</text>
+
+        <!-- Rail → Wallet (ref) -->
+        <line x1="438" y1="342" x2="200" y2="342"
+              stroke="#333" stroke-width="1.5" marker-end="url(#p-arr)"/>
+        <text x="320" y="358" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#333">settlement reference</text>
+      </svg>
+      <figcaption>Figure: AVP-Micro Payments roles and message flows.
+        Solid arrows: one-off payment messages.
+        Dashed: streaming messages and the credential issuance path.
+      </figcaption>
+    </figure>
+    <figure id="fig-seq-oneoff" class="fig-diagram">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420"
+           role="img" aria-labelledby="seq1-title seq1-desc">
+        <title id="seq1-title">One-off payment sequence</title>
+        <desc id="seq1-desc">
+          Four participants: Payer Agent, Payee Service, Wallet Service,
+          Settlement Rail. Steps: 1. Payer Agent sends service request with
+          serviceRequestHash to Payee. 2. Payee returns signed PaymentQuote.
+          3. Payer Agent sends PaymentAuthorization plus verifiable presentation
+          to Wallet. 4. Wallet verifies and sends settlement instruction to Rail.
+          5. Rail returns settlement reference to Wallet. 6. Wallet sends signed
+          PaymentExecution to Payer Agent. 7. Payer Agent notifies Payee.
+          8. Payee returns signed PaymentReceipt to Payer Agent.
+        </desc>
+        <defs>
+          <marker id="s1-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#333"/>
+          </marker>
+          <marker id="s1-arr-b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#005a9c"/>
+          </marker>
+        </defs>
+
+        <!-- Lifeline positions: x = 80, 260, 450, 590 -->
+        <!-- Lifeline boxes -->
+        <rect x="20"  y="10" width="120" height="40" rx="4" fill="#f0f0f0" stroke="#333" stroke-width="1.5"/>
+        <text x="80"  y="35" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">Payer Agent</text>
+        <rect x="200" y="10" width="120" height="40" rx="4" fill="#f0f0f0" stroke="#333" stroke-width="1.5"/>
+        <text x="260" y="35" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">Payee Service</text>
+        <rect x="390" y="10" width="120" height="40" rx="4" fill="#f0f0f0" stroke="#333" stroke-width="1.5"/>
+        <text x="450" y="35" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">Wallet Service</text>
+        <rect x="530" y="10" width="100" height="40" rx="4" fill="#f0f0f0" stroke="#333" stroke-width="1.5"/>
+        <text x="580" y="35" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">Rail</text>
+
+        <!-- Lifeline dashes -->
+        <line x1="80"  y1="50" x2="80"  y2="420" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="260" y1="50" x2="260" y2="420" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="450" y1="50" x2="450" y2="420" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="580" y1="50" x2="580" y2="420" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+
+        <!-- Step labels (left margin) -->
+        <text x="6" y="93"  font-family="sans-serif" font-size="9" fill="#888">1</text>
+        <text x="6" y="133" font-family="sans-serif" font-size="9" fill="#888">2</text>
+        <text x="6" y="173" font-family="sans-serif" font-size="9" fill="#888">3</text>
+        <text x="6" y="223" font-family="sans-serif" font-size="9" fill="#888">4</text>
+        <text x="6" y="263" font-family="sans-serif" font-size="9" fill="#888">5</text>
+        <text x="6" y="303" font-family="sans-serif" font-size="9" fill="#888">6</text>
+        <text x="6" y="343" font-family="sans-serif" font-size="9" fill="#888">7</text>
+        <text x="6" y="383" font-family="sans-serif" font-size="9" fill="#888">8</text>
+
+        <!-- 1. Agent → Payee: service request + serviceRequestHash -->
+        <line x1="82" y1="90" x2="258" y2="90" stroke="#333" stroke-width="1.5" marker-end="url(#s1-arr)"/>
+        <text x="170" y="83" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">service request + serviceRequestHash</text>
+
+        <!-- 2. Payee → Agent: PaymentQuote (signed) -->
+        <line x1="258" y1="130" x2="82" y2="130" stroke="#005a9c" stroke-width="1.5" marker-end="url(#s1-arr-b)"/>
+        <text x="170" y="123" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#005a9c">PaymentQuote ✓ (payee-signed)</text>
+
+        <!-- 3. Agent → Wallet: PaymentAuthorization + VP -->
+        <line x1="82" y1="170" x2="448" y2="170" stroke="#333" stroke-width="1.5" marker-end="url(#s1-arr)"/>
+        <text x="265" y="163" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">PaymentAuthorization + VP (payer-signed)</text>
+
+        <!-- 4. Wallet → Rail: settle -->
+        <line x1="452" y1="220" x2="578" y2="220" stroke="#333" stroke-width="1.5" marker-end="url(#s1-arr)"/>
+        <text x="516" y="213" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">settle</text>
+
+        <!-- 5. Rail → Wallet: ref -->
+        <line x1="578" y1="260" x2="452" y2="260" stroke="#333" stroke-width="1.5" marker-end="url(#s1-arr)"/>
+        <text x="516" y="253" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">settlement ref</text>
+
+        <!-- 6. Wallet → Agent: PaymentExecution -->
+        <line x1="448" y1="300" x2="82" y2="300" stroke="#005a9c" stroke-width="1.5" marker-end="url(#s1-arr-b)"/>
+        <text x="265" y="293" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#005a9c">PaymentExecution ✓ (wallet-signed)</text>
+
+        <!-- 7. Agent → Payee: payment confirmed -->
+        <line x1="82" y1="340" x2="258" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#s1-arr)"/>
+        <text x="170" y="333" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">payment confirmed</text>
+
+        <!-- 8. Payee → Agent: PaymentReceipt -->
+        <line x1="258" y1="380" x2="82" y2="380" stroke="#005a9c" stroke-width="1.5" marker-end="url(#s1-arr-b)"/>
+        <text x="170" y="373" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#005a9c">PaymentReceipt ✓ (payee-signed)</text>
+      </svg>
+      <figcaption>Figure: One-off payment sequence. ✓ = signed commitment.
+        The wallet verifies the <a>PaymentAuthorization</a> (including
+        the embedded credential and <code>quoteDigest</code>) before
+        initiating settlement.</figcaption>
+    </figure>
+    <figure id="fig-seq-streaming" class="fig-diagram">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 460"
+           role="img" aria-labelledby="seq2-title seq2-desc">
+        <title id="seq2-title">Streaming / session-metering sequence</title>
+        <desc id="seq2-desc">
+          Three participants: Payer Agent, Payee Service, Wallet Service.
+          Steps: 1. Payer Agent opens a session with Payee. 2. Payee returns
+          signed UsageSession. 3. Payer Agent sends SessionBudgetAuthorization
+          plus VP to Wallet. 4. Wallet confirms budget committed. 5 (loop).
+          Payee sends signed UsageAccrual updates to Payer Agent; Wallet
+          enforces maxAmount. 6. Either party closes the session. 7. Wallet
+          settles net amount with Rail. 8. Payee sends signed PaymentReceipt
+          with usageSession to Payer Agent.
+        </desc>
+        <defs>
+          <marker id="s2-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#333"/>
+          </marker>
+          <marker id="s2-arr-b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#005a9c"/>
+          </marker>
+        </defs>
+
+        <!-- Lifelines: x = 100, 320, 540 -->
+        <rect x="30"  y="10" width="140" height="40" rx="4" fill="#f0f0f0" stroke="#333" stroke-width="1.5"/>
+        <text x="100" y="35" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">Payer Agent</text>
+        <rect x="250" y="10" width="140" height="40" rx="4" fill="#f0f0f0" stroke="#333" stroke-width="1.5"/>
+        <text x="320" y="35" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">Payee Service</text>
+        <rect x="470" y="10" width="140" height="40" rx="4" fill="#f0f0f0" stroke="#333" stroke-width="1.5"/>
+        <text x="540" y="35" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">Wallet Service</text>
+
+        <line x1="100" y1="50" x2="100" y2="460" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="320" y1="50" x2="320" y2="460" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="540" y1="50" x2="540" y2="460" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+
+        <!-- Step labels -->
+        <text x="6" y="93"  font-family="sans-serif" font-size="9" fill="#888">1</text>
+        <text x="6" y="133" font-family="sans-serif" font-size="9" fill="#888">2</text>
+        <text x="6" y="173" font-family="sans-serif" font-size="9" fill="#888">3</text>
+        <text x="6" y="213" font-family="sans-serif" font-size="9" fill="#888">4</text>
+        <text x="6" y="253" font-family="sans-serif" font-size="9" fill="#888">5</text>
+        <text x="6" y="313" font-family="sans-serif" font-size="9" fill="#888">6</text>
+        <text x="6" y="363" font-family="sans-serif" font-size="9" fill="#888">7</text>
+        <text x="6" y="420" font-family="sans-serif" font-size="9" fill="#888">8</text>
+
+        <!-- 1. Agent → Payee: open session -->
+        <line x1="102" y1="90" x2="318" y2="90" stroke="#333" stroke-width="1.5" marker-end="url(#s2-arr)"/>
+        <text x="210" y="83" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">open session request</text>
+
+        <!-- 2. Payee → Agent: UsageSession -->
+        <line x1="318" y1="130" x2="102" y2="130" stroke="#005a9c" stroke-width="1.5" marker-end="url(#s2-arr-b)"/>
+        <text x="210" y="123" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#005a9c">UsageSession ✓ (budget cap, pricing model)</text>
+
+        <!-- 3. Agent → Wallet: SessionBudgetAuthorization + VP -->
+        <line x1="102" y1="170" x2="538" y2="170" stroke="#333" stroke-width="1.5" marker-end="url(#s2-arr)"/>
+        <text x="320" y="163" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">SessionBudgetAuthorization + VP (payer-signed)</text>
+
+        <!-- 4. Wallet → Agent: budget committed -->
+        <line x1="538" y1="210" x2="102" y2="210" stroke="#333" stroke-width="1.5" marker-end="url(#s2-arr)"/>
+        <text x="320" y="203" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">budget committed</text>
+
+        <!-- Loop box for accruals -->
+        <rect x="88" y="228" width="244" height="70" rx="3"
+              fill="none" stroke="#888" stroke-width="1" stroke-dasharray="5,3"/>
+        <text x="95" y="242" font-family="sans-serif" font-size="9" fill="#888">loop [usage accrues]</text>
+
+        <!-- 5. Payee → Agent: UsageAccrual -->
+        <line x1="318" y1="258" x2="102" y2="258" stroke="#005a9c" stroke-width="1.5" marker-end="url(#s2-arr-b)"/>
+        <text x="210" y="251" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#005a9c">UsageAccrual ✓ (meter + amount)</text>
+        <text x="210" y="288" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#888">Wallet enforces maxAmount</text>
+
+        <!-- 6. Close signal -->
+        <line x1="102" y1="310" x2="318" y2="310" stroke="#333" stroke-width="1.5" marker-end="url(#s2-arr)"/>
+        <text x="210" y="303" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">close session</text>
+
+        <!-- 7. Wallet → Rail (settle net) -->
+        <line x1="540" y1="360" x2="102" y2="360"
+              stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="340" y="350" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#888">(Wallet settles net amount with Rail — off diagram)</text>
+
+        <!-- 8. Payee → Agent: PaymentReceipt (session) -->
+        <line x1="318" y1="415" x2="102" y2="415" stroke="#005a9c" stroke-width="1.5" marker-end="url(#s2-arr-b)"/>
+        <text x="210" y="408" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#005a9c">PaymentReceipt ✓ (usageSession)</text>
+      </svg>
+      <figcaption>Figure: Streaming / session-metering sequence. ✓ = signed commitment.
+        Step 5 (UsageAccrual) repeats as usage accrues; the Wallet enforces
+        <code>maxAmount</code> on each accrual. The session budget may be raised
+        via a <a>UsageSessionExtension</a> + fresh
+        <a>SessionBudgetAuthorization</a> (not shown).</figcaption>
+    </figure>
+  </section>
+
+  <section id="conformance">
+    <h2>Conformance</h2>
+    <p>
+      This specification defines requirements for <a>AVP-Micro data objects</a>
+      and for software that produces or verifies them. All behavior described with
+      normative RFC 2119 language applies to implementations unless a section
+      is explicitly marked non-normative (for example, informative examples or
+      workflow summaries).
+    </p>
+    <p>
+      An implementation satisfies this specification if it obeys all
+      <em class="rfc2119">MUST</em> / <em class="rfc2119">MUST NOT</em>
+      requirements applicable to its <a href="#conformance-classes">conformance
+      class</a>. Because this specification builds on [[DSA]], a conforming
+      implementation <em class="rfc2119">MUST</em> also satisfy the requirements
+      of [[DSA]] that apply to the credentials, securing mechanisms, and trust
+      decisions it relies on.
+    </p>
+  </section>
+
+  <section id="terminology">
+    <h2>Terminology</h2>
+
+    <p>
+      The keywords <em class="rfc2119">MAY</em>, <em class="rfc2119">MUST</em>,
+      <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">OPTIONAL</em>,
+      <em class="rfc2119">RECOMMENDED</em>, <em class="rfc2119">REQUIRED</em>,
+      <em class="rfc2119">SHALL</em>, <em class="rfc2119">SHALL NOT</em>,
+      <em class="rfc2119">SHOULD</em>, and <em class="rfc2119">SHOULD NOT</em> in
+      this document are to be interpreted as described in
+      [[[RFC2119]]] when they appear in uppercase, as suggested by
+      [[[RFC8174]]].
+    </p>
+
+    <p>
+      This document uses terms from [[[INFRA]]], including
+      <a data-cite="INFRA#string">string</a>,
+      <a data-cite="INFRA#ordered-map">map</a>, and
+      <a data-cite="INFRA#list">list</a>. It also uses, without redefining, the
+      following terms defined by [[DSA]]: Principal,
+      Spending Authorization Credential, Payment Capability Credential,
+      and Merchant Credential.
+    </p>
+
+    <dl>
+      <dt><dfn data-lt="payer agents">Payer agent</dfn></dt>
+      <dd>
+        An autonomous software actor that initiates payment on behalf of a
+        principal (defined by [[DSA]]) and is identified by a DID.
+      </dd>
+
+      <dt><dfn data-lt="payee services">Payee service</dfn></dt>
+      <dd>
+        A service (merchant, API, or resource provider) that publishes commercial
+        terms, issues <a>Payment quote</a> instances, and delivers goods or services after
+        settlement.
+      </dd>
+
+      <dt><dfn data-lt="wallet services">Wallet service</dfn></dt>
+      <dd>
+        A component or service, controlled by the principal (defined by
+        [[DSA]]), that verifies authorizations and credentials and that instructs
+        a settlement implementation to transfer value.
+      </dd>
+
+      <dt><dfn>Verifier</dfn> / <dfn>Auditor</dfn></dt>
+      <dd>
+        An optional party that verifies signatures, credential proofs, and the
+        consistency of the message chain after the fact (for example, for
+        compliance or reconciliation).
+      </dd>
+
+      <dt><dfn>Settlement rail</dfn></dt>
+      <dd>
+        Any technology that moves monetary value between accounts or
+        instruments. AVP-Micro references rails by identifier only; defining or
+        profiling specific rails is out of scope for this specification.
+      </dd>
+
+      <dt><dfn>Payment quote</dfn></dt>
+      <dd>
+        A time-bound, payee-signed commercial offer for a specific request,
+        modeled as a <a>PaymentQuote</a> object.
+      </dd>
+
+      <dt><dfn data-lt="economic terms">Economic terms</dfn></dt>
+      <dd>
+        The tuple (<code>amount</code>, <code>currency</code>,
+        <code>settlementMethod</code>, <code>settlementTarget</code>) that defines
+        how much value moves, in what unit, over which rail, and to which
+        destination. The <code>currency</code> term is defined by [[DSA]] and
+        resolves via the shared context (see <a href="#namespace"></a>).
+      </dd>
+
+      <dt><dfn>Securing mechanism</dfn></dt>
+      <dd>
+        A cryptographic method (for example a Data Integrity proof or a JWS) that
+        provides integrity and sender authentication for an
+        <a>AVP-Micro data object</a>. Securing mechanisms — including the
+        mandatory-to-implement <code>eddsa-jcs-2022</code> cryptosuite,
+        verification-method binding, and DID-state-at-proof-time — are defined by
+        [[DSA]] (see [[DSA]] Securing mechanisms). This document adds only the
+        payment-specific bindings in <a href="#securing"></a>.
+      </dd>
+
+      <dt><dfn>Content digest</dfn></dt>
+      <dd>
+        A string of the form <code>&lt;alg&gt;:&lt;base64url&gt;</code> binding an
+        object to fixed bytes. The generic content-digest form is defined by
+        [[DSA]]; this document uses it for request and quote binding (see
+        <a href="#request-binding"></a>).
+      </dd>
+
+      <dt><dfn>Monetary amount format</dfn></dt>
+      <dd>
+        The wire format for decimal monetary members (a non-negative decimal
+        string). The format is defined by [[DSA]]; this document restates only the
+        payment-specific strictly-positive rule for transferred or committed
+        amounts (see <a href="#amount-format"></a>).
+      </dd>
+    </dl>
+  </section>
+
+  <section id="namespace">
+    <h2>Namespace and JSON-LD context</h2>
+
+    <p>
+      The vocabulary IRIs for terms defined in this specification use the
+      HTTPS namespace prefix <code>https://w3id.org/avp-micro/v1#</code>.
+      Implementations <em class="rfc2119">MUST</em> treat term definitions in
+      this document as authoritative for interpreting JSON-LD documents that
+      include the AVP-Micro Payments context.
+    </p>
+
+    <p>
+      A JSON-LD 1.1 context document is published alongside this specification at
+      <a href="context/v1.jsonld"><code>context/v1.jsonld</code></a> and is
+      intended to be served from the canonical URL
+      <code>https://w3id.org/avp-micro/v1</code>. A companion RDFS/OWL ontology at
+      <a href="vocab/avp.ttl"><code>vocab/avp.ttl</code></a> gives the classes and
+      properties formal RDF semantics; the context and this document remain
+      authoritative for term identity and processing. Deployments
+      <em class="rfc2119">MUST</em> use that canonical HTTPS URL for the context
+      value when interoperability across implementations is required. The URL
+      <em class="rfc2119">MUST</em> resolve to this context before a publication
+      or conformance profile depends on network dereferencing; until the
+      <code>w3id.org</code> redirect is registered, implementations
+      <em class="rfc2119">MUST</em> load an equivalent local context by explicit
+      configuration. The
+      AVP-Micro Payments context defines <em>only</em> payment-message terms and
+      <em class="rfc2119">MUST NOT</em> redefine any term from the [[DSA]] context;
+      shared terms (notably <code>currency</code>) and the embedded
+      Spending Authorization Credential resolve from the [[DSA]] context
+      included in the array below.
+    </p>
+
+    <p>
+      All <a>AVP-Micro data objects</a> <em class="rfc2119">MUST</em> be valid
+      JSON-LD documents when processed with the [[[JSON-LD11]]] algorithms.
+      Every object that carries a <code>proof</code> or a <code>vp</code> member,
+      and every object that is itself a
+      <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">verifiable credential</a>
+      or <a data-cite="vc-data-model-2.0#dfn-verifiable-presentations">verifiable presentation</a>,
+      <em class="rfc2119">MUST</em> declare its <code>@context</code> as an array
+      containing, in this order, the Verifiable Credentials 2.0 context
+      <code>https://www.w3.org/ns/credentials/v2</code>, the Data Integrity
+      context <code>https://w3id.org/security/data-integrity/v2</code>, the
+      Delegated Spending Authority context
+      <code>https://w3id.org/spending-authority/v1</code>, and the
+      AVP-Micro Payments context <code>https://w3id.org/avp-micro/v1</code>:
+    </p>
+    <pre class="json">
+[
+  "https://www.w3.org/ns/credentials/v2",
+  "https://w3id.org/security/data-integrity/v2",
+  "https://w3id.org/spending-authority/v1",
+  "https://w3id.org/avp-micro/v1"
+]
+    </pre>
+    <p>
+      The Data Integrity context is required because it defines proof terms for
+      objects outside the type-scoped verifiable credential and presentation
+      terms in [[vc-data-model-2.0]], including non-credential payment messages
+      such as <a>PaymentQuote</a>. The [[DSA]] context is included so that the shared
+      <code>currency</code> term and an embedded
+      <a href="../authority/#spending-authorization-credential">Spending
+      Authorization Credential</a> (which itself declares the [[DSA]] three-entry context)
+      resolve. The AVP-Micro context defines only payment-message terms. These
+      <code>@protected</code> contexts compose without conflict because this
+      specification reuses existing IRIs rather than redefining them. Because
+      signed objects are canonicalized with
+      [[RFC8785]] (JCS), which preserves array order, the order of the
+      <code>@context</code> entries is part of the signed bytes: producers and
+      verifiers <em class="rfc2119">MUST</em> use the array order given above so
+      that proofs are reproducible across implementations.
+    </p>
+
+    <p class="note">
+      The AVP-Micro Payments context is declared with
+      <code>"@protected": true</code> and deliberately defines <em>no</em>
+      <code>@vocab</code> fallback. Terms that are not defined by an included
+      context are dropped during JSON-LD expansion rather than coerced to an
+      ad-hoc IRI. Because the mandatory <code>eddsa-jcs-2022</code> proof signs
+      the raw JSON document using JCS, such members can still be part of the
+      signed bytes; processors nevertheless <em class="rfc2119">MUST NOT</em>
+      make authorization, settlement, or delivery decisions from undefined
+      terms. Extensions therefore <em class="rfc2119">MUST</em> ship their own
+      context (see <a href="#extensions"></a>).
+    </p>
+      <aside class="note">
+        <p>
+          <strong>Why array order is significant.</strong>
+          The <code>eddsa-jcs-2022</code> proof is computed over the
+          JSON Canonicalization Scheme (JCS) serialisation of the object,
+          and JCS preserves JSON array order. Reordering the
+          <code>@context</code> entries produces a different canonical form,
+          a different hash, and therefore an invalid proof — even though the
+          JSON-LD semantics are unchanged.
+        </p>
+      </aside>
+
+    <p class="note">
+      Because AVP-Micro objects are routinely co-typed or nested with verifiable
+      credentials, the <code>expires</code> and <code>nonce</code> members are
+      mapped to the corresponding Security Vocabulary terms
+      (<code>https://w3id.org/security#expiration</code> and
+      <code>https://w3id.org/security#nonce</code>) rather than to AVP-Micro IRIs.
+      These definitions reuse Security Vocabulary IRIs already used by the
+      proof ecosystem, so the <code>@protected</code> contexts compose without a
+      term-redefinition conflict. The shared <code>currency</code> term is
+      defined once in the [[DSA]] context and reused here. All other members use the
+      <code>avp:</code> namespace.
+    </p>
+
+    <p class="note">
+      Until the <code>w3id.org</code> redirects are registered, implementations
+      can load equivalent local context files by explicit configuration or serve
+      them from a controlled origin agreed out of band. The registration of
+      <code>https://w3id.org/avp-micro/v1</code> and
+      of the [[DSA]] context <code>https://w3id.org/spending-authority/v1</code>
+      is a prerequisite for the <em class="rfc2119">MUST</em> above.
+    </p>
+  </section>
+
+  <section id="data-model">
+    <h2>Data model</h2>
+
+    <p>
+      An <dfn>AVP-Micro data object</dfn> is a JSON-LD document whose
+      <code>type</code> includes one of the payment classes defined in this
+      section or in an extension specification. Every party that signs AVP-Micro
+      messages or acts as a named payer, payee, or wallet endpoint
+      <em class="rfc2119">MUST</em> be identified with a conforming DID and
+      <em class="rfc2119">MUST</em> satisfy the DID-document and verification-method
+      requirements of [[DSA]].
+
+    </p>
+
+    <section id="request-binding">
+      <h3>Request binding and content digests</h3>
+
+      <p>
+        AVP-Micro binds a payment to (a) the exact service request being paid for
+        and (b) the exact quote that priced it, using
+        <a>content digest</a> values in the generic content-digest form defined by
+        [[DSA]]. Conforming software <em class="rfc2119">MUST</em> support
+        <code>sha-256</code> and <em class="rfc2119">MUST NOT</em> accept a digest
+        whose algorithm it does not recognize.
+      </p>
+
+      <ul>
+        <li>
+          <code>serviceRequestHash</code> is the <a>content digest</a> of the
+          canonical byte serialization of the intended service request (for an
+          HTTP mapping, the request method, target, and body as agreed in the
+          deployment profile). The <a>payee service</a> computes it in the
+          <a>PaymentQuote</a>; the <a>payer agent</a> <em class="rfc2119">MUST</em>
+          echo the identical value in the corresponding
+          <a>PaymentAuthorization</a>. The exact canonicalization of the request
+          is deployment-defined but <em class="rfc2119">MUST</em> be agreed by
+          both parties and documented in the deployment profile. In the absence
+          of another agreed profile, implementations <em class="rfc2119">MUST</em>
+          use the following <dfn>default request canonicalization</dfn>: form a
+          JSON object with members <code>method</code> (the HTTP method as an
+          uppercase string), <code>target</code> (the absolute request URL), and
+          <code>body</code> (the request payload as a JSON value, or the
+          base64url-without-padding encoding of the raw body for non-JSON
+          payloads); serialize it with [[RFC8785]] (JCS); and take its
+          <code>sha-256</code> <a>content digest</a>. This default is the
+          canonicalization used by the published <a href="test-vectors/">test
+          vectors</a>.
+        </li>
+        <li>
+          <code>quoteDigest</code> is the <a>content digest</a> of the
+          [[RFC8785]] JCS serialization of the <a>PaymentQuote</a> with any
+          <code>proof</code> member removed. The <a>payer agent</a> includes it in
+          the <a>PaymentAuthorization</a> so that the payer's signature commits to
+          the <em>entire</em> quote it observed, not merely its IRI.
+        </li>
+      </ul>
+    </section>
+
+    <section id="securing">
+      <h3>Securing mechanisms</h3>
+
+      <p>
+        Each AVP-Micro object that represents a commitment (see the per-message
+        requirements) <em class="rfc2119">MUST</em> be secured with at least one
+        <a>securing mechanism</a> that provides integrity and authenticates the
+        producer. The available securing mechanisms, the
+        <strong>mandatory-to-implement</strong> <code>DataIntegrityProof</code>
+        with cryptosuite <code>eddsa-jcs-2022</code> [[VC-DI-EDDSA]], the optional
+        cryptosuites and JOSE-based proofs, the HTTP-message-signing recommendation
+        ([[RFC9421]] / [[RFC9449]]), and the requirement that a verifier reject an
+        object whose only proof uses an unrecognized cryptosuite, are all defined
+        by [[DSA]] (see [[DSA]] Securing mechanisms). The same document defines
+        verification-method binding to a subject DID and the requirement that a
+        proof be verified against the verification method as it existed at
+        <code>proof.created</code> (DID state at proof time). This section adds the
+        payment-specific cross-object bindings.
+      </p>
+
+      <p id="key-binding">
+        <strong>Verification-method binding (payment authorizations).</strong> For
+        any object that names a <code>payer</code> (notably
+        <a>PaymentAuthorization</a> and <a>SessionBudgetAuthorization</a>), the
+        verifying party <em class="rfc2119">MUST</em> confirm that the
+        <code>proof.verificationMethod</code> dereferences to a verification
+        method whose <code>controller</code> is the <code>payer</code> DID, and
+        that the same DID equals the referenced quote's or session's
+        <code>payer</code> and the <code>credentialSubject.id</code> of the
+        embedded Spending Authorization Credential (defined by [[DSA]]). A
+        mismatch <em class="rfc2119">MUST</em> cause rejection with
+        <code>invalidSignature</code> or <code>credentialRejected</code>. This
+        prevents an attacker who merely possesses a credential from authorizing
+        spending without control of the subject's keys. The underlying
+        verification-method binding and DID-state-at-proof-time requirements are
+        defined by [[DSA]]; this paragraph adds the requirement that the same DID
+        also equal the referenced quote's or session's <code>payer</code>.
+      </p>
+
+      <p id="execution-binding">
+        <strong>Execution signer binding.</strong> A <a>PaymentExecution</a>
+        <em class="rfc2119">MUST</em> be signed by the <a>wallet service</a> that
+        performed settlement. When the referenced <a>PaymentAuthorization</a> or
+        <a>SessionBudgetAuthorization</a> carries a <code>wallet</code> member
+        naming the authorized wallet DID, a <a>verifier</a>
+        <em class="rfc2119">MUST</em> confirm that the execution's
+        <code>proof.verificationMethod</code> dereferences to a verification
+        method controlled by that DID, and <em class="rfc2119">MUST</em> reject
+        with <code>invalidSignature</code> on a mismatch. When no
+        <code>wallet</code> member is present, the verifier
+        <em class="rfc2119">MUST</em> evaluate the execution's signer against its
+        trust policy (see [[DSA]] Trust establishment) instead, because the authorized
+        wallet identity is then established out of band. Naming <code>wallet</code>
+        in the authorization is therefore <em class="rfc2119">RECOMMENDED</em>
+        whenever after-the-fact audit by a third party is expected.
+      </p>
+      <aside class="note">
+        <p>
+          <strong>Why naming the authorized wallet matters for audit.</strong>
+          Without the <code>wallet</code> member, an auditor re-checking the
+          message chain after the fact cannot determine whether the wallet that
+          signed the execution was the one the payer intended. The
+          <code>wallet</code> member is RECOMMENDED in all deployments and
+          REQUIRED in the auditable profile precisely because its absence makes
+          retrospective audit depend on out-of-band trust.
+        </p>
+      </aside>
+    </section>
+
+    <section id="messages">
+      <h3>Protocol messages</h3>
+
+    <p>
+      Except where noted, each message <em class="rfc2119">MUST</em> include:
+      <code>id</code> (absolute IRI or URN), <code>type</code>, and
+      <code>@context</code>. Messages that represent commitments
+      (<a>PaymentQuote</a>, <a>PaymentAuthorization</a>, <a>PaymentExecution</a>,
+      <a>PaymentReceipt</a>, <a>UsageSession</a>, <a>UsageAccrual</a>,
+      <a>SessionBudgetAuthorization</a>, <a>UsageSessionExtension</a>)
+      <em class="rfc2119">MUST</em> be secured
+      per <a href="#securing"></a> and the securing mechanisms of [[DSA]].
+      Streaming-specific messages are defined in
+      <a href="#usage-session"></a>, <a href="#usage-accrual"></a>, and
+      <a href="#session-budget-authorization"></a>.
+    </p>
+
+      <section id="payment-offer">
+        <h4><dfn>PaymentOffer</dfn></h4>
+        <p>
+          <code>type</code> <em class="rfc2119">MUST</em> include
+          <code>PaymentOffer</code>. Unlike the commitment messages, a
+          <a>PaymentOffer</a> is an advertisement and is not required to be
+          secured; a payee <em class="rfc2119">SHOULD</em> nevertheless sign it
+          per <a href="#securing"></a> for integrity, and a relying party
+          <em class="rfc2119">MUST</em> treat the contents of an unsigned offer as
+          unauthenticated hints (the binding commitment is always the signed
+          <a>PaymentQuote</a>).
+        </p>
+        <p class="object-summary">
+          A payee's advertisement of commercial terms — pricing model and a
+          quote endpoint — optionally signed for integrity; a commitment is
+          established only by the signed <a>PaymentQuote</a>.
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DID</td><td>Payee service's DID.</td></tr>
+            <tr><td><code>pricingModel</code></td><td><em class="rfc2119">REQUIRED</em></td><td>object</td><td>Pricing structure for the offered service (see the RECOMMENDED per-unit form in <a href="#usage-session"></a>).</td></tr>
+            <tr><td><code>quoteEndpoint</code></td><td><em class="rfc2119">REQUIRED</em></td><td>HTTPS URL</td><td>Endpoint where a payer agent requests a <a>PaymentQuote</a>.</td></tr>
+            <tr><td><code>acceptedSettlementMethods</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>list of strings</td><td>Rail identifiers the payee accepts.</td></tr>
+            <tr><td><code>acceptedCredentialIssuers</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>list of DIDs</td><td>Issuer DIDs the payee advertises as acceptable. This is a payee assertion only; wallets <em class="rfc2119">MUST NOT</em> treat it as a trust root.</td></tr>
+            <tr><td><code>categories</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>list of IRIs</td><td>Self-asserted service-category IRIs. May be used for discovery or UX only; policy-enforcement matching <em class="rfc2119">MUST</em> use attested <a href="../authority/#dfn-merchant-credential">Merchant Credential</a> categories.</td></tr>
+            <tr><td><code>offerValidity</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>RFC 3339</td><td>Offer expiry.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="payment-quote">
+        <h4><dfn>PaymentQuote</dfn></h4>
+        <p>
+          <code>type</code> <em class="rfc2119">MUST</em> include
+          <code>PaymentQuote</code>. A PaymentQuote is a commitment and
+          <em class="rfc2119">MUST</em> be signed by the <code>payee</code> per
+          <a href="#securing"></a>; verifiers <em class="rfc2119">MUST</em> reject
+          an unsigned quote.
+        </p>
+        <p class="object-summary">
+          A time-bound, payee-signed price commitment for one specific service
+          request, identified by <code>serviceRequestHash</code> and binding
+          the exact economic terms.
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>payer</code>, <code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DIDs</td><td>Parties to the quote.</td></tr>
+            <tr><td><code>serviceRequestHash</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Binds the quote to the exact service request (see <a href="#request-binding"></a>).</td></tr>
+            <tr><td><code>amount</code>, <code>currency</code></td><td><em class="rfc2119">REQUIRED</em></td><td>decimal · string</td><td>The price. Decimal string per [[DSA]] amount format; strictly positive.</td></tr>
+            <tr><td><code>settlementMethod</code>, <code>settlementTarget</code></td><td><em class="rfc2119">REQUIRED</em></td><td>strings</td><td>Together with <code>amount</code> and <code>currency</code> these form the <a>economic terms</a>.</td></tr>
+            <tr><td><code>expires</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Quote expiry. Deployments <em class="rfc2119">SHOULD</em> keep this ≤ 300 s.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payee signature (<code>eddsa-jcs-2022</code>). Verifiers <em class="rfc2119">MUST</em> reject an unsigned quote.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="payment-authorization">
+        <h4><dfn>PaymentAuthorization</dfn></h4>
+        <p>
+          <code>type</code> <em class="rfc2119">MUST</em> include
+          <code>PaymentAuthorization</code>. It <em class="rfc2119">MUST</em> be
+          signed by the <code>payer</code> per <a href="#securing"></a>, and the
+          signature therefore covers the <a>economic terms</a> restated below.
+        </p>
+        <p class="object-summary">
+          A payer-signed commitment to pay the quoted price, restating all
+          economic terms, committing to the exact quote via
+          <code>quoteDigest</code>, and carrying a verifiable presentation
+          with the spending-authority credential.
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>quote</code></td><td><em class="rfc2119">REQUIRED</em></td><td>IRI</td><td>IRI of the accepted <a>PaymentQuote</a>.</td></tr>
+            <tr><td><code>quoteDigest</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Content digest of the referenced quote (proof removed). The payer's signature thereby commits to the exact quote bytes it observed, not just the IRI.</td></tr>
+            <tr><td><code>payer</code>, <code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DIDs</td><td><code>payer</code> <em class="rfc2119">MUST</em> equal the quote's <code>payer</code>; <code>payee</code> <em class="rfc2119">MUST</em> equal the quote's <code>payee</code>.</td></tr>
+            <tr><td><code>amount</code>, <code>currency</code>, <code>settlementMethod</code>, <code>settlementTarget</code></td><td><em class="rfc2119">REQUIRED</em></td><td>(as quote)</td><td>The <a>economic terms</a>. Each <em class="rfc2119">MUST</em> be byte-identical to the corresponding value in the referenced quote.</td></tr>
+            <tr><td><code>serviceRequestHash</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td><em class="rfc2119">MUST</em> be byte-identical to the quote's <code>serviceRequestHash</code>.</td></tr>
+            <tr><td><code>timestamp</code>, <code>expires</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Validity window. Deployments <em class="rfc2119">SHOULD</em> keep the window ≤ 60 s.</td></tr>
+            <tr><td><code>nonce</code></td><td><em class="rfc2119">REQUIRED</em></td><td>string</td><td>Unique within the verifier's retention window (scoped to the payer–verifier pair) for replay protection.</td></tr>
+            <tr><td><code>wallet</code></td><td><em class="rfc2119">OPTIONAL</em> (<em class="rfc2119">RECOMMENDED</em>)</td><td>DID</td><td>Wallet service authorised to settle and sign the <a>PaymentExecution</a>. Required in the <a>auditable profile</a>.</td></tr>
+            <tr><td><code>vp</code></td><td><em class="rfc2119">REQUIRED</em></td><td>VP</td><td>A verifiable presentation containing at least one <a href="../authority/#spending-authorization-credential">Spending Authorization Credential</a>.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payer signature bound to the <code>payer</code> DID (see <a href="#key-binding">key binding</a>).</td></tr>
+          </tbody>
+        </table>
+        <aside class="note">
+          <p>
+            <strong>Why <code>quoteDigest</code> is needed.</strong>
+            <code>quoteDigest</code> is a hash of the complete signed quote
+            (proof removed). It commits the payer's signature to the exact
+            price and terms the payer observed — not just to a mutable IRI.
+            Without it, a compromised quote server could swap the quote's
+            terms after the payer signed and before the wallet verified.
+          </p>
+        </aside>
+        <aside class="note">
+          <p>
+            <strong>Why <code>payee</code> must equal the quote's payee.</strong>
+            Without this binding, a payer could reference a legitimate quote
+            from a payee it is not supposed to pay, name a permitted payee DID
+            in the authorization, satisfy the <code>allowedPayees</code> check,
+            and have the wallet settle to the original quote's settlement target.
+            Binding <code>payee</code> in the authorization to the quote's
+            <code>payee</code> closes this policy-bypass.
+          </p>
+        </aside>
+      </section>
+
+      <section id="payment-execution">
+        <h4><dfn>PaymentExecution</dfn></h4>
+        <p>
+          Produced and signed by the <a>wallet service</a> after attempting
+          settlement. <code>type</code> <em class="rfc2119">MUST</em> include
+          <code>PaymentExecution</code>.
+        </p>
+        <p class="object-summary">
+          A wallet-signed record of a settlement attempt, linking status,
+          amount settled, and a rail reference to the authorisation that
+          triggered it.
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>authorization</code> <em>or</em> <code>sessionBudgetAuthorization</code></td><td><em class="rfc2119">REQUIRED</em> (exactly one)</td><td>IRI</td><td>IRI of the triggering <a>PaymentAuthorization</a> (one-off) or <a>SessionBudgetAuthorization</a> (streaming). Exactly one <em class="rfc2119">MUST</em> be present.</td></tr>
+            <tr><td><code>amount</code>, <code>currency</code></td><td><em class="rfc2119">REQUIRED</em></td><td>decimal · string</td><td>Amount executed. <em class="rfc2119">MUST</em> equal the authorised amount unless <code>status</code> is <code>partial</code>, in which case it <em class="rfc2119">MUST</em> be less.</td></tr>
+            <tr><td><code>status</code></td><td><em class="rfc2119">REQUIRED</em></td><td>enum</td><td><code>pending</code> | <code>completed</code> | <code>partial</code> | <code>failed</code>. Rail lifecycle states (settled, reversed, etc.) are out of scope and conveyed by the rail or an extension.</td></tr>
+            <tr><td><code>settlementRef</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>string</td><td>Rail-specific settlement reference.</td></tr>
+            <tr><td><code>timestamp</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Time of execution attempt.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Wallet service signature (see <a href="#execution-binding">execution binding</a>).</td></tr>
+          </tbody>
+        </table>
+        <p>
+          The execution's <code>currency</code> <em class="rfc2119">MUST</em>
+          equal the <code>currency</code> of the referenced
+          <a>PaymentAuthorization</a> or <a>SessionBudgetAuthorization</a>; a
+          verifier <em class="rfc2119">MUST</em> reject an execution whose
+          <code>currency</code> differs.
+        </p>
+        <p>
+          For a one-off <a>PaymentAuthorization</a>, at most one
+          <a>PaymentExecution</a> with a non-<code>failed</code>
+          <code>status</code> <em class="rfc2119">MUST</em> exist; a wallet or
+          <a>verifier</a> that observes a second non-<code>failed</code> execution
+          for the same <code>authorization</code> <em class="rfc2119">MUST</em>
+          treat the duplicate as an error rather than a second settlement.
+          (Streaming settlement under a <a>SessionBudgetAuthorization</a> instead
+          admits multiple executions, bounded in aggregate by
+          <code>committedAmount</code> per <a href="#streaming-settlement"></a>.)
+          To keep settlement idempotent under retransmission, a wallet
+          <em class="rfc2119">SHOULD</em> derive a deterministic settlement key
+          from the authorization identifier and, where the <a>settlement rail</a>
+          supports it, pass that key to the rail so that retrying a
+          <code>pending</code> settlement does not double-spend.
+        </p>
+        <p>
+          The <code>authorization</code> and
+          <code>sessionBudgetAuthorization</code> references here, and the
+          <code>quote</code>, <code>usageSession</code>, and <code>execution</code>
+          references in a <a>PaymentReceipt</a>, are <strong>by IRI</strong> and
+          are not accompanied by a content digest — unlike <code>quoteDigest</code>
+          and <code>sessionDigest</code>, which bind <em>upstream</em> objects to
+          their exact bytes. An <a>AVP-Micro verifier</a> re-checking a chain
+          therefore <em class="rfc2119">MUST</em> resolve each referenced object to
+          its retained, verbatim signed form (see <a href="#audit"></a>) and verify
+          that object's own proof, rather than relying on a referrer's signature to
+          bind the referenced content.
+        </p>
+        <p class="note">
+          The <code>status</code> term (<code>avp:status</code>) is shared with
+          <a>PaymentReceipt</a>, but its value set differs by object: a
+          <a>PaymentExecution</a> uses
+          {<code>pending</code>, <code>completed</code>, <code>partial</code>,
+          <code>failed</code>} to describe a <em>settlement attempt</em>, whereas a
+          <a>PaymentReceipt</a> uses
+          {<code>fulfilled</code>, <code>partial</code>, <code>failed</code>,
+          <code>reversed</code>} to describe <em>delivery</em>. A consumer
+          <em class="rfc2119">MUST</em> interpret <code>status</code> against the
+          enclosing object's <code>type</code>.
+        </p>
+      </section>
+
+      <section id="payment-receipt">
+        <h4><dfn>PaymentReceipt</dfn></h4>
+        <p>
+          Issued and signed by the <a>payee service</a>. <code>type</code>
+          <em class="rfc2119">MUST</em> include <code>PaymentReceipt</code>. A
+          one-off payment receipt <em class="rfc2119">MUST</em> include
+          <code>quote</code> (IRI of the <a>PaymentQuote</a>). A
+          <a href="#streaming">session settlement</a> receipt
+          <em class="rfc2119">MUST</em> include <code>usageSession</code>
+          (IRI of the <a>UsageSession</a>) and <em class="rfc2119">MAY</em> omit
+          <code>quote</code>. Every receipt <em class="rfc2119">MUST</em> include
+          <code>status</code>. A receipt that omits <code>execution</code>
+          <em class="rfc2119">MUST</em> include <code>payer</code>,
+          <code>amount</code>, and <code>currency</code> so the receipt remains
+          auditable without dereferencing settlement records.
+        </p>
+        <p class="object-summary">
+          A payee-signed acknowledgement of the delivery outcome at the agreed
+          commercial terms, binding the outcome to the originating
+          quote (one-off) or session (streaming).
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>quote</code> <em>or</em> <code>usageSession</code></td><td><em class="rfc2119">REQUIRED</em> (at least one)</td><td>IRI</td><td>One-off receipt includes <code>quote</code>; session receipt includes <code>usageSession</code>. Both <em class="rfc2119">MAY</em> be present.</td></tr>
+            <tr><td><code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DID</td><td>The signing payee service.</td></tr>
+            <tr><td><code>status</code></td><td><em class="rfc2119">REQUIRED</em></td><td>string</td><td>One of <code>fulfilled</code>, <code>partial</code>, <code>failed</code>, or <code>reversed</code>.</td></tr>
+            <tr><td><code>payer</code></td><td><em class="rfc2119">SHOULD</em></td><td>DID</td><td>The payer agent named in the quote, authorization, or session. Required when <code>execution</code> is absent.</td></tr>
+            <tr><td><code>amount</code>, <code>currency</code></td><td><em class="rfc2119">SHOULD</em></td><td>decimal · string</td><td>Amount associated with the outcome. Required when <code>execution</code> is absent.</td></tr>
+            <tr><td><code>fulfilledAt</code></td><td><em class="rfc2119">SHOULD</em></td><td>RFC 3339</td><td>Time of delivery.</td></tr>
+            <tr><td><code>execution</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>IRI</td><td>IRI of the <a>PaymentExecution</a>.</td></tr>
+            <tr><td><code>serviceOutputHash</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>content digest</td><td>Content digest of the delivered output.</td></tr>
+            <tr><td><code>totalMeterReading</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>string</td><td>Final meter value for a closed session.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payee signature.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="usage-session">
+        <h4><dfn>UsageSession</dfn></h4>
+        <p>
+          Establishes a budgeted metering context for <a>streaming mode</a>.
+          <code>type</code> <em class="rfc2119">MUST</em> include
+          <code>UsageSession</code> and the object <em class="rfc2119">MUST</em>
+          be signed by the <a>payee service</a> that created it.
+        </p>
+        <p class="object-summary">
+          A payee-signed metering contract that establishes the budget cap,
+          pricing model, and settlement parameters for a streaming usage
+          period.
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>payer</code>, <code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DIDs</td><td>Parties to the session.</td></tr>
+            <tr><td><code>currency</code></td><td><em class="rfc2119">REQUIRED</em></td><td>string</td><td>Currency for all charges in this session.</td></tr>
+            <tr><td><code>pricingModel</code></td><td><em class="rfc2119">REQUIRED</em></td><td>object</td><td>Pricing basis. RECOMMENDED form: <code>{"type":"PerUnit","amount":"0.001","unit":"token"}</code>. Enables the wallet to verify accrual consistency.</td></tr>
+            <tr><td><code>maxAmount</code></td><td><em class="rfc2119">REQUIRED</em></td><td>decimal string</td><td>Upper bound on total charges for this session.</td></tr>
+            <tr><td><code>meterType</code></td><td><em class="rfc2119">RECOMMENDED</em></td><td>string</td><td>What is metered (e.g. <code>llmTokens</code>, <code>cpuSeconds</code>, <code>bytes</code>).</td></tr>
+            <tr><td><code>meterUnit</code></td><td><em class="rfc2119">RECOMMENDED</em></td><td>string</td><td>Unit a <code>meterReading</code> counts (e.g. <code>token</code>, <code>second</code>).</td></tr>
+            <tr><td><code>settlementMethod</code>, <code>settlementTarget</code></td><td><em class="rfc2119">REQUIRED</em></td><td>strings</td><td>Settlement rail and destination for this session.</td></tr>
+            <tr><td><code>timestamp</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Session start time.</td></tr>
+            <tr><td><code>expires</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Session expiry. Accruals after this instant are not admitted unless the session is extended (see <a href="#session-extension"></a>).</td></tr>
+            <tr><td><code>settlementMode</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>enum</td><td><code>incremental</code> (settle each accrual/batch) or <code>deferred</code> (settle at close); default <code>deferred</code>.</td></tr>
+            <tr><td><code>startingBalance</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>decimal string</td><td>Prepayment counted toward the session total; <em class="rfc2119">MUST</em> be ≤ <code>maxAmount</code>. Any unused remainder <em class="rfc2119">SHOULD</em> be released at close.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payee signature.</td></tr>
+          </tbody>
+        </table>
+        <aside class="note">
+          <p>
+            <strong>Why the unused <code>startingBalance</code> SHOULD be released.</strong>
+            <code>startingBalance</code> is a prepayment counted toward the
+            session total. The SHOULD release at close ensures the payer is
+            not charged for unused committed balance. Where the wallet cannot
+            release programmatically (for example due to rail finality
+            constraints), the excess shows up in the difference between the
+            receipt's <code>amount</code> and the original
+            <code>startingBalance</code>, giving the payer evidence for a
+            reconciliation claim.
+          </p>
+        </aside>
+      </section>
+
+      <section id="usage-accrual">
+        <h4><dfn>UsageAccrual</dfn></h4>
+        <p>
+          Incremental meter report from <a>payee service</a> to <a>payer agent</a>
+          and/or <a>wallet service</a> during an active <a>UsageSession</a>.
+          <code>type</code> <em class="rfc2119">MUST</em> include
+          <code>UsageAccrual</code>.
+        </p>
+        <p class="object-summary">
+          A payee-signed incremental or cumulative meter report emitted
+          during an active <a>UsageSession</a>, recording charges and a
+          meter reading for wallet budget enforcement.
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>session</code></td><td><em class="rfc2119">REQUIRED</em></td><td>IRI</td><td>IRI of the <a>UsageSession</a> this accrual belongs to.</td></tr>
+            <tr><td><code>accrualKind</code></td><td><em class="rfc2119">REQUIRED</em></td><td>enum</td><td><code>cumulative</code> — <code>amountAccrued</code> is the running session total; <code>incremental</code> — <code>amountAccrued</code> is the delta since the previous accrual.</td></tr>
+            <tr><td><code>amountAccrued</code></td><td><em class="rfc2119">REQUIRED</em></td><td>decimal string</td><td>The cumulative or incremental charge amount.</td></tr>
+            <tr><td><code>currency</code></td><td><em class="rfc2119">REQUIRED</em></td><td>string</td><td><em class="rfc2119">MUST</em> match the session <code>currency</code>.</td></tr>
+            <tr><td><code>meterReading</code></td><td><em class="rfc2119">RECOMMENDED</em></td><td>string</td><td>Meter value in the session's <code>meterUnit</code> (tokens, seconds, bytes, etc.).</td></tr>
+            <tr><td><code>sequence</code></td><td><em class="rfc2119">REQUIRED</em> for incremental; <em class="rfc2119">RECOMMENDED</em> otherwise</td><td>integer ≥ 0</td><td>Monotonically increasing ordering value. Wallets <em class="rfc2119">MUST</em> reject out-of-order or duplicate values.</td></tr>
+            <tr><td><code>timestamp</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Time of accrual report.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payee signature.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="session-budget-authorization">
+        <h4><dfn>SessionBudgetAuthorization</dfn></h4>
+        <p>
+          Binds a <a>payer agent</a> and <a>wallet service</a> to honor charges
+          up to the <a>UsageSession</a> budget (analogous to
+          <a>PaymentAuthorization</a> for a single quote). <code>type</code>
+          <em class="rfc2119">MUST</em> include <code>SessionBudgetAuthorization</code>.
+        </p>
+        <p class="object-summary">
+          A payer-signed commitment to honour session charges up to a budget
+          cap — the streaming analogue of <a>PaymentAuthorization</a> for a
+          single quote.
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>usageSession</code></td><td><em class="rfc2119">REQUIRED</em></td><td>IRI</td><td>IRI of the <a>UsageSession</a> being authorised.</td></tr>
+            <tr><td><code>sessionDigest</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Content digest of the session (proof removed). Commits the payer to the exact session terms it observed.</td></tr>
+            <tr><td><code>payer</code>, <code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DIDs</td><td><em class="rfc2119">MUST</em> match the session’s <code>payer</code> and <code>payee</code>.</td></tr>
+            <tr><td><code>committedAmount</code></td><td><em class="rfc2119">REQUIRED</em></td><td>decimal string</td><td>Amount the wallet commits; <em class="rfc2119">MUST</em> be ≤ session <code>maxAmount</code>.</td></tr>
+            <tr><td><code>currency</code></td><td><em class="rfc2119">REQUIRED</em></td><td>string</td><td><em class="rfc2119">MUST</em> match the session currency.</td></tr>
+            <tr><td><code>timestamp</code>, <code>expires</code>, <code>nonce</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339 · string</td><td>Replay protection (see <a href="#integrity"></a>).</td></tr>
+            <tr><td><code>wallet</code></td><td><em class="rfc2119">OPTIONAL</em> (<em class="rfc2119">RECOMMENDED</em>)</td><td>DID</td><td>Wallet service authorised to settle session charges. Required in the <a>auditable profile</a>.</td></tr>
+            <tr><td><code>vp</code></td><td><em class="rfc2119">REQUIRED</em></td><td>VP</td><td>Verifiable presentation with at least one <a href="../authority/#spending-authorization-credential">Spending Authorization Credential</a>.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payer signature bound to the <code>payer</code> DID (see <a href="#key-binding">key binding</a>).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="session-extension">
+        <h4><dfn>UsageSessionExtension</dfn></h4>
+        <p>
+          Raises the budget cap and/or extends the expiry of an existing
+          <a>UsageSession</a> without opening a new session. It
+          <em class="rfc2119">MUST</em> be signed by the <a>payee service</a> that
+          owns the session. <code>type</code> <em class="rfc2119">MUST</em>
+          include <code>UsageSessionExtension</code>.
+        </p>
+        <p class="object-summary">
+          A payee-signed amendment to an existing <a>UsageSession</a> that
+          raises the budget cap (<code>newMaxAmount</code>) and/or extends
+          the expiry (<code>newExpires</code>). At least one of the two
+          <em class="rfc2119">MUST</em> be present.
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>usageSession</code></td><td><em class="rfc2119">REQUIRED</em></td><td>IRI</td><td>IRI of the session being extended.</td></tr>
+            <tr><td><code>sessionDigest</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Digest of the original session (proof removed), binding the extension to the exact session state it amends.</td></tr>
+            <tr><td><code>newMaxAmount</code></td><td><em class="rfc2119">OPTIONAL</em>*</td><td>decimal string</td><td>Raised budget cap; <em class="rfc2119">MUST</em> be &gt; current <code>maxAmount</code>. *At least one of <code>newMaxAmount</code> / <code>newExpires</code> required.</td></tr>
+            <tr><td><code>newExpires</code></td><td><em class="rfc2119">OPTIONAL</em>*</td><td>RFC 3339</td><td>Extended session expiry; <em class="rfc2119">MUST</em> be later than current <code>expires</code>. *At least one required.</td></tr>
+            <tr><td><code>timestamp</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Time the extension was created.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payee signature. A wallet <em class="rfc2119">MUST NOT</em> admit extended accruals on the strength of this alone; it <em class="rfc2119">MUST</em> first obtain a fresh <a>SessionBudgetAuthorization</a>.</td></tr>
+          </tbody>
+        </table>
+        <p>
+          An extension is payee-signed and therefore raises only the payee-set
+          envelope. A <a>wallet service</a> <em class="rfc2119">MUST NOT</em> admit
+          accruals above the previously committed amount, or after the original
+          <code>expires</code>, on the strength of a <a>UsageSessionExtension</a>
+          alone: it <em class="rfc2119">MUST</em> first verify the extension's
+          proof and <code>sessionDigest</code>, then obtain a fresh
+          <a>SessionBudgetAuthorization</a> from the payer whose
+          <code>committedAmount</code> is ≤ <code>newMaxAmount</code> and whose
+          <code>expires</code> covers the new window. Extensions
+          <em class="rfc2119">MAY</em> be chained; each
+          <em class="rfc2119">MUST</em> reference the session it extends.
+        </p>
+      </section>
+
+      <section id="amount-format">
+        <h4>Monetary amount format</h4>
+        <p>
+          All monetary members (<code>amount</code>, <code>maxAmount</code>,
+          <code>startingBalance</code>, <code>committedAmount</code>,
+          <code>amountAccrued</code>, <code>newMaxAmount</code>, and the
+          credential limits such as <code>maxPerTransaction</code> and
+          <code>dailyLimit</code> that this document references) use the
+          <a>monetary amount format</a> defined by [[DSA]]: a JSON string holding a
+          non-negative decimal number (never a JSON number), matching
+          <code>(0|[1-9][0-9]*)(\.[0-9]+)?</code> (no exponent, no leading
+          <code>+</code> or <code>-</code>, no thousands separators), with
+          fractional digits not exceeding the scale implied by the
+          <code>currency</code>/<code>asset</code>, and with exact decimal
+          arithmetic for sums and limit comparisons. In addition, a member that
+          denotes value actually transferred or committed (<code>amount</code>,
+          <code>amountAccrued</code>, <code>committedAmount</code>), or an
+          upper-bound spending cap (<code>maxAmount</code>,
+          <code>newMaxAmount</code>), <em class="rfc2119">MUST</em> be strictly
+          greater than zero, and a
+          verifier <em class="rfc2119">MUST</em> reject a message in which such a
+          member is zero or absent where required.
+        </p>
+      </section>
+    </section>
+  </section>
+
+  <section id="pricing-models">
+    <h2>Pricing models</h2>
+    <p>
+      A <code>pricingModel</code> appears in a <a>PaymentOffer</a> (advertised terms) and in a
+      <a>UsageSession</a> (active terms governing accruals). It is either a single rate component
+      or a <dfn>CompositePricing</dfn> whose total charge is the sum of its <code>components</code>.
+      All components MUST share one <code>currency</code>.
+    </p>
+
+    <section id="rate-components">
+      <h3>Rate components</h3>
+      <dl>
+        <dt><dfn>PerCall</dfn></dt><dd>A flat <code>amount</code> per invocation.</dd>
+        <dt><dfn>PerUnit</dfn></dt><dd>A linear <code>amount</code> per unit of one <code>dimension</code>
+          measured in <code>unit</code>.</dd>
+        <dt><dfn>TieredRate</dfn></dt><dd>A <code>dimension</code> priced over ordered <code>tiers</code>
+          (<code>{upTo?, amount}</code>; the last omits <code>upTo</code>). <code>tierMode</code> is
+          <code>graduated</code> (each band at its own rate) or <code>volume</code> (the whole quantity at
+          the landed tier's rate).</dd>
+        <dt><dfn>CommitmentRate</dfn></dt><dd>An <code>upfront</code> fee plus a <code>recurring</code>
+          <code>{amount, period}</code> charge. <code>includedQuantity</code> is reserved; its
+        offset semantics are not normative in this version.</dd>
+        <dt><dfn>Allowance</dfn></dt><dd>A <code>freeQuantity</code> subtracted from its <code>dimension</code>
+          before any other component on that dimension is charged.</dd>
+      </dl>
+    </section>
+
+    <section id="dimensions-units-currency">
+      <h3>Dimensions, units, and currency</h3>
+      <p>
+        <code>dimension</code> values are IRIs from the AVP-Micro metering-dimension SKOS scheme
+        (<code>https://w3id.org/avp-micro/dim#</code>); a dimension IRI also serves as a
+        <code>meterType</code> in the session/accrual flow. <code>unit</code> values are QUDT unit
+        IRIs (atomic units, e.g. <code>GigaBYTE</code> vs <code>GibiBYTE</code>) or AVP composite-unit
+        IRIs (<code>https://w3id.org/avp-micro/unit#</code>) defined in terms of a QUDT quantity kind.
+        <code>currency</code> is an ISO&nbsp;4217 alphabetic code.
+      </p>
+      <p>
+        Implementations MUST accept the core dimension and unit IRIs registered by this specification.
+        A provider MAY use an extension IRI under <code>.../dim/x/</code> or <code>.../unit/x/</code>;
+        consumers that do not recognize an extension IRI MUST treat its semantics as unspecified.
+      </p>
+    </section>
+
+    <section id="pricing-evaluation">
+      <h3>Evaluation algorithm</h3>
+      <p>To compute the charge for a usage vector <var>U</var> (a map from dimension IRI to quantity,
+         plus optional <code>calls</code> and <code>periods</code>):</p>
+      <ol>
+        <li><strong>Allowances first.</strong> For each <a>Allowance</a> on dimension <var>d</var>,
+          replace <var>U</var>[<var>d</var>] with <code>max(0, U[d] &minus; freeQuantity)</code>.</li>
+        <li><strong>Per component:</strong>
+          <a>PerCall</a> &rarr; <code>amount &times; (calls, default 1)</code>;
+          <a>PerUnit</a> &rarr; <code>amount &times; U[dimension]</code>;
+          <a>TieredRate</a>/<code>graduated</code> &rarr; &Sigma; over tiers of <code>(quantity in band) &times; amount</code>;
+          <a>TieredRate</a>/<code>volume</code> &rarr; <code>U[dimension] &times; (rate of the landed tier)</code>;
+          <a>CommitmentRate</a> &rarr; <code>upfront + recurring.amount &times; (periods, default 1)</code>.</li>
+        <li><strong>Total.</strong> Sum the component charges and quantize to
+          <code>0.00000001</code> using round-half-up.</li>
+      </ol>
+      <p class="note">All components MUST share the model <code>currency</code>; a mismatch makes the
+         model invalid. The conformance fixtures in
+         <code>test-vectors/pricing-conformance.json</code> pin representative
+         <code>(pricingModel, usage) &rarr; amount</code> results.</p>
+    </section>
+
+    <section id="pricing-examples">
+      <h3>Examples</h3>
+      <pre class="example json" title="Multi-dimensional (function invocation) pricing">
+{
+  "type": "CompositePricing", "currency": "USD",
+  "components": [
+    { "type": "Allowance", "dimension": "dim:Requests", "unit": "qudtu:NUM", "freeQuantity": "1000000" },
+    { "type": "PerUnit", "dimension": "dim:Requests", "unit": "qudtu:NUM", "amount": "0.0000002" },
+    { "type": "PerUnit", "dimension": "dim:ComputeMemoryTime", "unit": "aunit:GigaByteSecond", "amount": "0.0000166667" }
+  ]
+}
+      </pre>
+      <pre class="example json" title="Tiered (object storage) pricing">
+{
+  "type": "TieredRate", "dimension": "dim:StorageDuration", "unit": "aunit:GigaByteMonth",
+  "tierMode": "graduated", "currency": "USD",
+  "tiers": [
+    { "upTo": "51200", "amount": "0.023" },
+    { "upTo": "512000", "amount": "0.022" },
+    { "amount": "0.021" }
+  ]
+}
+      </pre>
+    </section>
+  </section>
+
+  <section id="streaming">
+    <h2>Streaming and session metering</h2>
+
+    <p>
+      <dfn data-lt="streaming mode|streaming modes">Streaming mode</dfn> is used when many small
+      charges accrue over time (token streams, sensor feeds, metered APIs). It
+      avoids issuing a distinct <a>PaymentQuote</a> for every micro-unit by
+      amortizing negotiation: open a <a>UsageSession</a>, authorize the budget
+      once, meter with <a>UsageAccrual</a>, then settle incrementally and/or at
+      close.
+    </p>
+
+    <section id="streaming-lifecycle">
+      <h3>Session lifecycle</h3>
+      <p>
+        A <a>UsageSession</a> <em class="rfc2119">MUST</em> be treated by
+        conforming implementations as following one of the state sets below;
+        exact state names are informative, but ordering constraints are normative:
+      </p>
+      <ol>
+        <li>
+          <strong>Created</strong> — Session object exists; payee and payer DIDs,
+          <code>pricingModel</code>, <code>maxAmount</code>, <code>expires</code>,
+          and <code>currency</code> are fixed.
+        </li>
+        <li>
+          <strong>Budget authorized</strong> — A <a>SessionBudgetAuthorization</a>
+          was accepted by the <a>wallet service</a> (or equivalent recorded), and
+          the wallet will reject accruals that exceed policy or
+          <code>maxAmount</code>.
+        </li>
+        <li>
+          <strong>Active metering</strong> — The payee may issue signed
+          <a>UsageAccrual</a> objects. The wallet <em class="rfc2119">MUST NOT</em>
+          apply accruals after <code>expires</code> unless the session is
+          explicitly extended by a <a>UsageSessionExtension</a> and re-authorized
+          per <a href="#session-extension"></a>.
+        </li>
+        <li>
+          <strong>Closing</strong> — The payer or payee signals end-of-session;
+          no new usage is admitted. Final cumulative charge is computed.
+        </li>
+        <li>
+          <strong>Closed</strong> — Final settlement completed (if any balance
+          due remains) and a <a>PaymentReceipt</a> with <code>usageSession</code>
+          and an appropriate <code>status</code>
+          <em class="rfc2119">SHOULD</em> be issued.
+        </li>
+      </ol>
+    </section>
+
+    <section id="streaming-settlement">
+      <h3>Accrual evaluation and settlement timing</h3>
+      <p>
+        For each <a>UsageAccrual</a>, the <a>wallet service</a>
+        <em class="rfc2119">MUST</em>:
+      </p>
+      <ol class="algorithm">
+        <li>Verify the payee’s <code>proof</code> and that the session is active and unexpired; reject with <code>invalidSignature</code> or <code>sessionExpired</code> respectively.</li>
+        <li>Verify <code>sequence</code> ordering per <a href="#streaming-integrity"></a>; reject with <code>invalidAccrual</code> on a duplicate or out-of-order value.</li>
+        <li>Resolve the monetary amount to compare against <code>maxAmount</code>: if <code>accrualKind</code> is <code>cumulative</code>, use <code>amountAccrued</code> directly; if <code>incremental</code>, add to the wallet’s running total for the session.</li>
+        <li>If <code>meterReading</code> is present, <em class="rfc2119">SHOULD</em> verify that the charge is consistent with the session <code>pricingModel</code> and reject anomalous accruals (for example a charge with no corresponding metered usage) with <code>invalidAccrual</code>.</li>
+        <li>Reject the accrual with <code>accrualExceedsBudget</code> if the resolved total would exceed <code>maxAmount</code> (unless a <a>UsageSessionExtension</a> plus a fresh <a>SessionBudgetAuthorization</a> have raised the cap per <a href="#session-extension"></a>).</li>
+        <li>If <code>settlementMode</code> is <code>incremental</code>, initiate settlement for the incremental portion (or deployment-defined batch) and record <a>PaymentExecution</a> as needed.</li>
+      </ol>
+      <p>
+        A deployment <em class="rfc2119">MUST</em> define how signed
+        <a>UsageAccrual</a> objects are delivered to the wallet: either directly
+        by the payee, through the payer agent, or in a retrievable session log.
+        The wallet <em class="rfc2119">MUST</em> acknowledge the highest accepted
+        <code>sequence</code> or cumulative meter state before the payee treats an
+        accrual as admitted. If the wallet observes a gap, missing final accrual,
+        or unacknowledged accrual at close, it <em class="rfc2119">MUST</em> hold
+        final settlement for reconciliation rather than silently settling a lower
+        total.
+      </p>
+      <p>
+        If <code>settlementMode</code> is <code>deferred</code>, the wallet
+        <em class="rfc2119">SHOULD</em> still verify each accrual in real time for
+        budget enforcement, then perform one or more settlement operations at
+        session close for the net amount owed.
+      </p>
+      <p>
+        When both incremental and final settlements occur, the sum of executed
+        amounts <em class="rfc2119">MUST</em> equal the final agreed total within
+        the settlement rail’s rounding rules; any release of unused
+        <code>startingBalance</code> <em class="rfc2119">SHOULD</em> occur at close.
+      </p>
+    </section>
+
+    <section id="streaming-integrity">
+      <h3>Integrity for streaming objects</h3>
+      <p>
+        <a>UsageAccrual</a> objects <em class="rfc2119">MUST</em> be signed by
+        the <a>payee service</a> so the payer and wallet can prove meter claims.
+        <a>UsageSession</a> objects <em class="rfc2119">MUST</em> be signed by
+        the payee when created. <a>SessionBudgetAuthorization</a>
+        <em class="rfc2119">MUST</em> be signed by the payer and bound to the
+        payer DID per <a href="#key-binding">key binding</a>.
+      </p>
+      <p>
+        Verifiers <em class="rfc2119">MUST</em> reject out-of-order or duplicate
+        <code>sequence</code> values for the same session when <code>sequence</code>
+        is required or present, to limit meter rollback and replay attacks. For
+        <code>incremental</code> accruals, a gap in <code>sequence</code>
+        <em class="rfc2119">MUST</em> be treated as a missing charge and the
+        session <em class="rfc2119">SHOULD</em> be held for reconciliation rather
+        than silently settled.
+      </p>
+    </section>
+  </section>
+
+  <section id="workflows" class="informative">
+    <h2>Protocol workflows</h2>
+
+    <p>
+      AVP-Micro is transport-agnostic. Deployments commonly map messages to
+      HTTP (including <code>402 Payment Required</code> for quotes) or to
+      agent-to-agent channels. The following descriptions are non-normative
+      patterns; normative requirements on message contents and verification are
+      in <a href="#wallet-processing"></a> and <a href="#data-model"></a>.
+    </p>
+
+    <section id="workflow-one-off">
+      <h3>One-off payment</h3>
+      <ol>
+        <li>The <a>payer agent</a> discovers a <a>PaymentOffer</a> (for example via DID document service endpoints).</li>
+        <li>The agent requests a <a>PaymentQuote</a> bound to a <code>serviceRequestHash</code> of the intended service request; the payee returns a <em>signed</em> quote.</li>
+        <li>The agent verifies the quote's signature and that its <a>economic terms</a> satisfy the Spending Authorization Credential and local policy.</li>
+        <li>The agent constructs a signed <a>PaymentAuthorization</a> that restates the economic terms, includes the <code>quoteDigest</code>, and embeds a <a data-cite="vc-data-model-2.0#dfn-verifiable-presentations">verifiable presentation</a>.</li>
+        <li>The <a>wallet service</a> verifies and settles via a <a>settlement rail</a>, emitting a signed <a>PaymentExecution</a>.</li>
+        <li>The <a>payee service</a> delivers the resource and issues a signed <a>PaymentReceipt</a>.</li>
+      </ol>
+    </section>
+
+    <section id="workflow-streaming">
+      <h3>Streaming and session metering</h3>
+      <p>
+        Normative requirements for sessions, accruals, and settlement timing are
+        in <a href="#streaming"></a>. Typical HTTP-mapped flows follow this
+        pattern:
+      </p>
+      <ol>
+        <li>The <a>payer agent</a> requests session creation; the <a>payee service</a> returns a signed <a>UsageSession</a> (for example <code>201 Created</code>).</li>
+        <li>The agent submits a <a>SessionBudgetAuthorization</a> to the <a>wallet service</a>. The wallet verifies the VP and commits up to <code>maxAmount</code>.</li>
+        <li>During the session, the payee returns signed <a>UsageAccrual</a> updates (for example with HTTP <code>402</code> and a JSON body, or alongside streamed data).</li>
+        <li>Under <code>incremental</code> mode the wallet settles each accrual or batch; under <code>deferred</code> it only enforces the budget until close, then settles the net.</li>
+        <li>The agent or payee closes the session; the payee finalizes the total and issues a <a>PaymentReceipt</a> with <code>usageSession</code> set.</li>
+      </ol>
+    </section>
+  </section>
+
+  <section id="wallet-processing">
+    <h2>Wallet verification</h2>
+
+    <section id="wallet-one-off">
+      <h3>One-off <a>PaymentAuthorization</a></h3>
+      <p>
+        Before initiating settlement for a quoted payment, a <a>wallet service</a>
+        that claims conformance with this specification <em class="rfc2119">MUST</em>
+        perform the steps below. The order is normative where one step's result is
+        relied upon by a later step.
+      </p>
+
+      <p>
+        Because a <a>PaymentAuthorization</a> carries only the quote's <code>id</code>
+        and <code>quoteDigest</code> — not the quote's bytes — the verifier
+        <em class="rfc2119">MUST</em> obtain the complete, payee-signed
+        <a>PaymentQuote</a> before applying the algorithm. A deployment
+        <em class="rfc2119">MUST</em> make that quote available to the verifier by
+        either (a) using an <code>id</code> that dereferences to the signed quote, or
+        (b) conveying the signed quote alongside the authorization (for example in
+        the same request envelope). The verifier <em class="rfc2119">MUST</em>
+        recompute <code>quoteDigest</code> over the obtained quote (proof removed) and
+        reject with <code>quoteMismatch</code> if it differs, so that the quote the
+        verifier evaluates is provably the one the payer signed over. The same
+        requirement applies to obtaining a <a>UsageSession</a> referenced by a
+        <a>SessionBudgetAuthorization</a>.
+      </p>
+
+      <ol class="algorithm">
+        <li>Verify the outer integrity of the <a>PaymentAuthorization</a> per <a href="#securing"></a> and the securing mechanisms of [[DSA]], and confirm the <code>proof</code> is bound to the <code>payer</code> DID per <a href="#key-binding">key binding</a>.</li>
+        <li>Obtain the referenced <a>PaymentQuote</a> as described above, verify the payee's signature on it (reject with <code>invalidSignature</code> on failure), and confirm it is not expired (reject with <code>quoteExpired</code> if past its <code>expires</code>) and its <code>payer</code> equals the authorizing agent’s DID.</li>
+        <li>Confirm <code>quoteDigest</code> equals the <a>content digest</a> of the resolved quote (proof removed), that the authorization's <code>payee</code> is byte-identical to the quote's <code>payee</code>, and that the authorization's <a>economic terms</a> (<code>amount</code>, <code>currency</code>, <code>settlementMethod</code>, <code>settlementTarget</code>) are each byte-identical to the quote's. Reject with <code>quoteMismatch</code> on any mismatch.</li>
+        <li>Confirm <code>serviceRequestHash</code> in the authorization is byte-identical to the quote's; reject with <code>quoteMismatch</code> otherwise.</li>
+        <li>Verify the <a data-cite="vc-data-model-2.0#dfn-verifiable-presentations">verifiable presentation</a> and each embedded <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">verifiable credential</a>, including issuer authentication, schema/type, validity window, and revocation/suspension status ([[BITSTRING-STATUS-LIST]]) when present; reject with <code>invalidSignature</code> (proof failure) or <code>credentialRejected</code> (status, schema, or validity failure).</li>
+        <li>Confirm a Spending Authorization Credential is present whose <code>credentialSubject.id</code> equals the payer DID, and that its issuer is acceptable under the wallet's trust policy (see [[DSA]] Trust establishment); reject with <code>credentialRejected</code> otherwise.</li>
+        <li>Enforce numeric and categorical constraints against the credential and local policy, applying the more restrictive of the two: <code>amount</code> ≤ <code>maxPerTransaction</code>; day-aggregated spend + <code>amount</code> ≤ <code>dailyLimit</code> (<a href="#daily-limit"></a>); <code>currency</code> matches; payee in <code>allowedPayees</code> and/or category match per [[DSA]] category matching. Reject with <code>policyViolation</code> if any limit or category check fails. The <code>maxPerTransaction</code>, <code>dailyLimit</code>, <code>allowedPayees</code>, and <code>allowedServiceTypes</code> claim semantics are defined by [[DSA]].</li>
+        <li>Reject reused <code>nonce</code> values within the verifier’s retention window, and reject stale <code>timestamp</code>/<code>expires</code> per the clock-skew budget (<a href="#integrity"></a>), with <code>nonceReuse</code> in either case.</li>
+        <li>If Payment Capability Credential instances are required by policy, validate them before sending funds: verify the credential proof, confirm the issuer is an accepted wallet provider or financial institution under local trust policy, confirm <code>credentialSubject.id</code> equals the payer DID, confirm any <code>currency</code>, <code>asset</code>, <code>assetScale</code>, and <code>account</code> claims match the authorization's settlement target and economic terms, and reject expired credentials.</li>
+      </ol>
+    </section>
+
+    <section id="wallet-session-budget">
+      <h3><a>SessionBudgetAuthorization</a></h3>
+      <p>
+        Before accepting metering charges for a <a>UsageSession</a>, the wallet
+        <em class="rfc2119">MUST</em>:
+      </p>
+      <ol class="algorithm">
+        <li>Verify the payer’s signature on <a>SessionBudgetAuthorization</a>, bound to the payer DID per <a href="#key-binding">key binding</a> (reject with <code>invalidSignature</code>), and check <code>nonce</code>, <code>timestamp</code>, and <code>expires</code> (reject with <code>nonceReuse</code>).</li>
+        <li>Resolve the <a>UsageSession</a>, verify the payee signature, confirm it is unexpired (reject with <code>sessionExpired</code>), that <code>sessionDigest</code> matches and the payer/payee match (reject with <code>sessionInvalid</code>), that the payee DID is acceptable, and that <code>committedAmount</code> ≤ session <code>maxAmount</code> with matching <code>currency</code> (reject with <code>policyViolation</code>).</li>
+        <li>Verify the VP and Spending Authorization Credential such that session <code>maxAmount</code> and payee fall within credential limits. If Payment Capability Credential instances are required by policy, validate them as in the one-off flow and confirm their account/currency claims are compatible with the session settlement target.</li>
+        <li>Record the authorization and associate it with <code>usageSession</code> for subsequent <a>UsageAccrual</a> processing per <a href="#streaming-settlement"></a>.</li>
+      </ol>
+    </section>
+
+    <section id="wallet-streaming-accrual">
+      <h3>Streaming accruals</h3>
+      <p>
+        During <a>UsageSession</a> processing, the wallet <em class="rfc2119">MUST</em>
+        apply <a href="#streaming-settlement"></a> on every <a>UsageAccrual</a>
+        and <em class="rfc2119">MUST</em> ensure that evaluated charges never
+        exceed <code>maxAmount</code> unless a <a>UsageSessionExtension</a> and a
+        fresh <a>SessionBudgetAuthorization</a> raise the cap per
+        <a href="#session-extension"></a>.
+      </p>
+    </section>
+
+    <section id="daily-limit">
+      <h3>Daily-limit aggregation</h3>
+      <p>
+        The <code>dailyLimit</code> claim, the meaning of the <q>day</q> boundary
+        (the calendar day in the credential's <code>limitTimezone</code>, or UTC if
+        that member is absent), and the <code>limitTimezone</code> claim are defined
+        by [[DSA]]. This section specifies the cross-transaction
+        <em>enforcement</em> a <a>wallet service</a> performs. A wallet that
+        enforces <code>dailyLimit</code>
+        <em class="rfc2119">MUST</em> aggregate completed and in-flight
+        authorizations for the subject across the accounts it controls and
+        <em class="rfc2119">MUST</em> serialize the check-and-reserve step (for
+        example with a per-subject lock or atomic counter) so that concurrent
+        authorizations cannot jointly exceed the cap. If a deployment cannot
+        guarantee a single aggregation point (for example multiple independent
+        wallets share one credential), it <em class="rfc2119">MUST</em> document
+        that <code>dailyLimit</code> enforcement is best-effort and
+        <em class="rfc2119">SHOULD</em> compensate with a lower
+        <code>maxPerTransaction</code> or reconciliation.
+      </p>
+    </section>
+  </section>
+
+  <section id="integrity">
+    <h2>Integrity, authentication, and replay protection</h2>
+
+    <p>
+      Object-level securing mechanisms are defined in <a href="#securing"></a> and
+      by [[DSA]]. When AVP-Micro objects are carried over HTTP, implementations
+      <em class="rfc2119">SHOULD</em> sign the HTTP requests and responses using
+      [[RFC9421]] or use [[RFC9449]] proof-of-possession where OAuth
+      infrastructure is present. Other transports <em class="rfc2119">MUST</em>
+      provide equivalent integrity and sender authentication.
+    </p>
+
+    <p>
+      <a>PaymentAuthorization</a> and <a>SessionBudgetAuthorization</a> objects
+      <em class="rfc2119">MUST</em> include <code>nonce</code>,
+      <code>timestamp</code>, and <code>expires</code> to limit replay.
+      Verifiers <em class="rfc2119">MUST</em> reject messages outside a
+      deployment-defined clock-skew budget; absent a profile, the
+      <em class="rfc2119">RECOMMENDED</em> default budget is 300&nbsp;seconds.
+      Verifiers <em class="rfc2119">MUST</em> retain seen <code>nonce</code>
+      values at least until <code>expires</code> plus the skew budget so that the
+      replay window is fully covered. <code>nonce</code> uniqueness is scoped to
+      the (<code>payer</code>, verifier) pair.
+    </p>
+      <aside class="note">
+        <p>
+          <strong>Why nonce uniqueness is scoped to the payer–verifier pair.</strong>
+          A payer using two independent wallet services for different merchants
+          can reuse the same nonce string without enabling cross-wallet replay,
+          because the verifier component of the pair differs. Implementations
+          need only retain nonces within the window [issue, expires + skew
+          budget] for each (payer, verifier) pair.
+        </p>
+      </aside>
+  </section>
+
+  <section id="errors">
+    <h2>Error model</h2>
+
+    <p>
+      Error responses <em class="rfc2119">SHOULD</em> use a JSON map containing
+      <code>code</code>, <code>description</code>, and optional
+      <code>details</code>. The HTTP status column is a
+      <em class="rfc2119">RECOMMENDED</em> mapping for HTTP deployments; non-HTTP
+      transports convey only the <code>code</code>.
+    </p>
+
+    <table class="simple">
+      <thead>
+        <tr><th>Code</th><th>Meaning</th><th>HTTP</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>invalidDid</code></td><td>DID resolution failed or DID is malformed.</td><td>400</td></tr>
+        <tr><td><code>invalidSignature</code></td><td>Message or VC proof verification failed, or proof not bound to the payer DID.</td><td>401</td></tr>
+        <tr><td><code>credentialRejected</code></td><td>Credential not acceptable (issuer untrusted, schema, or status).</td><td>403</td></tr>
+        <tr><td><code>quoteExpired</code></td><td>Quote past <code>expires</code>.</td><td>409</td></tr>
+        <tr><td><code>quoteMismatch</code></td><td><code>quoteDigest</code> or restated economic terms do not match the resolved quote.</td><td>409</td></tr>
+        <tr><td><code>policyViolation</code></td><td>Spending policy would be exceeded or a constraint is unmet.</td><td>403</td></tr>
+        <tr><td><code>insufficientFunds</code></td><td>Wallet cannot cover the authorized amount.</td><td>402</td></tr>
+        <tr><td><code>settlementFailed</code></td><td>Rail-specific transfer failed.</td><td>502</td></tr>
+        <tr><td><code>nonceReuse</code></td><td>Duplicate or missing nonce, or stale timestamp.</td><td>409</td></tr>
+        <tr><td><code>badRequest</code></td><td>Malformed or incomplete message.</td><td>400</td></tr>
+        <tr><td><code>serviceError</code></td><td>Payee internal failure after payment (candidate for a refund; see <a href="#disputes"></a>).</td><td>500</td></tr>
+        <tr><td><code>sessionExpired</code></td><td><a>UsageSession</a> past <code>expires</code> or not active.</td><td>409</td></tr>
+        <tr><td><code>sessionInvalid</code></td><td>Session ID unknown or payer/payee mismatch.</td><td>409</td></tr>
+        <tr><td><code>accrualExceedsBudget</code></td><td>Metered total would exceed <code>maxAmount</code>.</td><td>402</td></tr>
+        <tr><td><code>invalidAccrual</code></td><td>Missing or invalid <code>accrualKind</code>, proof, sequence, or charge inconsistent with pricing.</td><td>400</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="disputes">
+    <h2>Disputes, refunds, and reversals</h2>
+    <p>
+      Payment can succeed while delivery fails (<code>serviceError</code>),
+      partially completes (<code>partial</code>), or is contested. AVP-Micro keeps
+      a signed, append-only chain so such cases are adjudicable after the fact.
+    </p>
+    <ul>
+      <li>
+        A <a>payee service</a> that received settlement but cannot deliver
+        <em class="rfc2119">SHOULD</em> issue a signed
+        <code>PaymentReceipt</code> with <code>status</code> set to
+        <code>failed</code> or <code>partial</code>, or initiate a
+        rail-level reversal, and <em class="rfc2119">SHOULD</em> reference the
+        original <code>execution</code>.
+      </li>
+      <li>
+        The reversal of value itself happens on the <a>settlement rail</a> and is
+        out of scope; AVP-Micro provides the <em>evidence</em> (matched
+        authorization, execution, and receipt) needed to substantiate a dispute.
+      </li>
+      <li>
+        Extension specifications <em class="rfc2119">MAY</em> define
+        <code>Refund</code> or <code>Reversal</code> objects that reference a
+        prior <code>execution</code> and carry their own proof; such objects
+        <em class="rfc2119">MUST</em> be defined in a dedicated context per
+        <a href="#extensions"></a>.
+      </li>
+    </ul>
+  </section>
+
+  <section id="extensions">
+    <h2>Extensions and interoperability</h2>
+
+    <p>
+      New credential types, pricing models, settlement method strings, and
+      transports can be defined without changing the core message types. Because
+      the AVP-Micro Payments context defines no <code>@vocab</code> fallback,
+      extension specifications <em class="rfc2119">MUST</em> register their terms
+      in a dedicated JSON-LD context, <em class="rfc2119">MUST NOT</em> redefine
+      core terms, and instances <em class="rfc2119">MUST</em> include the
+      extension context alongside the core context.
+    </p>
+
+    <p>
+      Anticipated extensions include <code>Refund</code> / <code>Reversal</code>
+      objects (<a href="#disputes"></a>) and a
+      <code>DelegatedAuthorizationCredential</code> supporting multi-step
+      delegation chains (for example organization → department → agent), in which
+      each credential authorizes issuance of a more constrained credential further
+      down the chain and a verifier walks the chain to a trusted root. Such
+      delegation is out of scope for this version; the single-issuer
+      Spending Authorization Credential model defined by [[DSA]] is
+      normative here.
+    </p>
+
+    <p>
+      AVP-Micro is compatible with [[OPEN-PAYMENTS]] account semantics,
+      [[GNAP]] grant negotiation where used by a wallet deployment, and HTTP
+      payment challenge flows that carry authorization objects in headers or
+      bodies, provided the data model in <a href="#data-model"></a> is preserved.
+    </p>
+  </section>
+
+  <section id="audit">
+    <h2>Audit, logging, and reconciliation</h2>
+
+    <p>
+      Parties <em class="rfc2119">SHOULD</em> retain append-only records of offers,
+      quotes, authorizations, executions, receipts, <a>UsageSession</a> objects,
+      <a>UsageAccrual</a> series, and <a>SessionBudgetAuthorization</a> messages
+      sufficient to reconstruct the signed message chain for reconciliation and
+      dispute resolution. Because each object carries its own proof, storing the
+      verbatim signed JSON is sufficient as audit evidence. Receipts
+      <em class="rfc2119">MAY</em> be represented as verifiable credentials for
+      third-party verification. Logs <em class="rfc2119">SHOULD NOT</em> retain
+      private keys or full credential payloads beyond what reconciliation
+      requires.
+    </p>
+  </section>
+
+  <section id="security">
+    <h2>Security considerations</h2>
+
+    <p>
+      AVP-Micro moves high-value decisions (spending) across trust boundaries.
+      Implementations <em class="rfc2119">MUST</em> protect private signing keys,
+      <em class="rfc2119">SHOULD</em> isolate agent keys in hardware or a separate
+      process, and <em class="rfc2119">MUST</em> evaluate issuer trust (see [[DSA]]
+      Trust establishment) before honoring credentials.
+    </p>
+
+    <p>The table summarizes the principal payment threats and the mechanisms that address them; credential-theft, issuer-trust, and DID-infrastructure threats are addressed by [[DSA]].</p>
+    <table class="simple">
+      <thead>
+        <tr><th>Threat</th><th>Mechanism</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Credential theft / replay (use a stolen VC)</td><td>Verification-method binding to the subject DID (<a href="#key-binding">key binding</a> and [[DSA]] Securing mechanisms); the thief cannot produce the payer's proof.</td></tr>
+        <tr><td>Amount or settlement-target tampering between quote and settlement</td><td>Payee-signed quote, restated economic terms in the signed authorization, and <code>quoteDigest</code> (<a href="#payment-authorization"></a>, <a href="#wallet-one-off"></a>).</td></tr>
+        <tr><td>Request substitution (pay for A, deliver B)</td><td><code>serviceRequestHash</code> bound across quote and authorization (<a href="#request-binding"></a>).</td></tr>
+        <tr><td>Authorization replay</td><td><code>nonce</code> + <code>timestamp</code> + <code>expires</code> with bounded clock skew (<a href="#integrity"></a>).</td></tr>
+        <tr><td>Over-spending across transactions</td><td><code>maxPerTransaction</code>, <code>dailyLimit</code> with serialized aggregation (<a href="#daily-limit"></a>), and budgeted sessions.</td></tr>
+        <tr><td>Inflated or duplicated streaming charges</td><td>Signed accruals, <code>sequence</code> monotonicity, pricing-consistency checks, and the <code>maxAmount</code> cap (<a href="#streaming-integrity"></a>).</td></tr>
+        <tr><td>Untrusted or over-scoped issuer</td><td>Explicit, scoped trust policy and revocation via [[BITSTRING-STATUS-LIST]] (see [[DSA]] Trust establishment).</td></tr>
+        <tr><td>Unverified term injection via JSON-LD</td><td><code>@protected</code> context with no <code>@vocab</code>; unknown terms are dropped (<a href="#namespace"></a>).</td></tr>
+        <tr><td>DID-method infrastructure compromise (DNS/TLS, ledger)</td><td>Out of scope for value transfer; deployers account for it in their trust policy (see [[DSA]] Trust establishment).</td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      Settlement rails have their own threat models (finality, chargebacks,
+      privacy of payment pointers). This specification does not alter those
+      properties; it adds an auditable authorization layer above them. Deployments
+      <em class="rfc2119">SHOULD</em> constrain quote and authorization lifetimes
+      to the minimum operationally acceptable window.
+    </p>
+  </section>
+
+  <section id="privacy">
+    <h2>Privacy considerations</h2>
+
+    <p>
+      Agents <em class="rfc2119">SHOULD</em> disclose the minimum verifiable
+      claims necessary for a transaction. Selective disclosure is not a property
+      of the base [[vc-data-model-2.0]]; deployments that need it
+      <em class="rfc2119">SHOULD</em> use a mechanism that provides it, such as
+      SD-JWT VC [[SD-JWT-VC]] or a Data Integrity cryptosuite with selective
+      disclosure. Pairwise identifiers are compatible with these mechanisms.
+    </p>
+
+    <p>
+      Correlation can arise from DID resolution, repeated payer DIDs, issuer
+      identifiers, and settlement metadata. High-privacy deployments
+      <em class="rfc2119">SHOULD</em> analyze timing and identifier rotation, and
+      <em class="rfc2119">SHOULD NOT</em> place principal or end-user PII in a
+      Spending Authorization Credential, which travels to wallets and
+      potentially payees.
+    </p>
+
+    <p>
+      Long-lived <a>UsageSession</a> identifiers and repeated <a>UsageAccrual</a>
+      traffic can fingerprint agents. Deployments <em class="rfc2119">MAY</em>
+      use shorter sessions, rotated session IDs, or minimal meter fields where
+      policy allows.
+    </p>
+  </section>
+
+  <section id="i18n">
+    <h2>Internationalization considerations</h2>
+    <p>
+      The <code>currency</code> member <em class="rfc2119">SHOULD</em> carry an
+      ISO 4217 alphabetic code for fiat currencies; currency and asset formatting
+      are defined by [[DSA]]. A deployment
+      <em class="rfc2119">MAY</em> use a non-ISO asset code (for example a token
+      symbol); when it does, both parties <em class="rfc2119">MUST</em> agree on
+      the code's meaning and scale out of band, and an
+      <code>assetScale</code> <em class="rfc2119">SHOULD</em> be supplied. Decimal
+      amounts use a <code>.</code> as the decimal separator regardless of locale
+      (see <a href="#amount-format"></a>); locale-specific formatting is a
+      presentation concern and <em class="rfc2119">MUST NOT</em> appear in the
+      wire format. Human-readable strings such as <code>merchantName</code>
+      <em class="rfc2119">MAY</em> use VC 2.0 language-tagged values.
+    </p>
+  </section>
+
+  <section id="accessibility" class="informative">
+    <h2>Accessibility considerations</h2>
+    <p>
+      AVP-Micro defines machine-to-machine data objects and a verification
+      algorithm; it has no user interface and therefore introduces no direct
+      accessibility requirements. User agents that surface AVP-Micro information
+      to people — for example a wallet prompting for approval under
+      <code>requiresApprovalAbove</code>, or a tool that renders a
+      <a>PaymentReceipt</a> — are expected to follow general Web accessibility
+      guidance ([[WCAG22]]) for that presentation, and any human-readable strings
+      carried in messages should use VC 2.0 language-tagged values
+      (<a href="#i18n"></a>) so assistive technologies can present them correctly.
+    </p>
+  </section>
+
+  <section id="examples" class="informative">
+    <h2>Examples</h2>
+    <p>
+      The fragments below show shape only (proofs elided). Complete,
+      cryptographically verifiable instances — a full one-off chain
+      (quote → spending-authorization credential → authorization → execution →
+      receipt) and a full streaming chain (session → budget authorization →
+      accrual → execution → session receipt) signed with <code>did:key</code>
+      Ed25519 keys and
+      <code>eddsa-jcs-2022</code> proofs — are published under
+      <a href="test-vectors/"><code>test-vectors/</code></a>, with JSON Schema in
+      <a href="schemas/"><code>schemas/</code></a> and SHACL shapes in
+      <a href="shapes/avp-shapes.ttl"><code>shapes/avp-shapes.ttl</code></a>. The
+      embedded Spending Authorization Credential is defined by [[DSA]] and
+      keeps the three-entry DSA context within the <code>vp</code>.
+    </p>
+
+    <section id="ex-payment-authorization">
+      <h3>PaymentAuthorization (fragment)</h3>
+      <pre class="example json" title="PaymentAuthorization (payer-signed; embeds credential VP)">
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:authz:999",
+  "type": "PaymentAuthorization",
+  "quote": "urn:avp:quote:789",
+  "quoteDigest": "sha-256:Xb1n...redacted",
+  "payer": "did:web:example.com:agents:buyer-01",
+  "payee": "did:web:provider.com:services:tool-api",
+  "amount": "0.001",
+  "currency": "USD",
+  "settlementMethod": "open-payments",
+  "settlementTarget": "https://wallet.example.com/alice-addr",
+  "serviceRequestHash": "sha-256:abc123...redacted",
+  "timestamp": "2026-03-25T21:30:02Z",
+  "expires": "2026-03-25T21:31:02Z",
+  "nonce": "n-39102",
+  "wallet": "did:web:example.com:wallet",
+  "vp": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://w3id.org/security/data-integrity/v2",
+      "https://w3id.org/spending-authority/v1"
+    ],
+    "type": "VerifiablePresentation",
+    "verifiableCredential": [{ }]
+  },
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:web:example.com:agents:buyer-01#key-1"
+  }
+}
+      </pre>
+    </section>
+
+    <section id="ex-streaming">
+      <h3>Streaming (session, budget authorization, accrual)</h3>
+      <pre class="example json" title="UsageSession (payee-signed budget contract)">
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:session:001",
+  "type": "UsageSession",
+  "payer": "did:example:agent:streamer1",
+  "payee": "did:example:services:realtime-sensor",
+  "currency": "USD",
+  "pricingModel": { "type": "PerUnit", "amount": "0.001", "unit": "datapoint" },
+  "maxAmount": "0.50",
+  "meterType": "sensorSamples",
+  "meterUnit": "datapoint",
+  "startingBalance": "0.50",
+  "settlementMethod": "open-payments",
+  "settlementTarget": "https://wallet.example.com/sensor-addr",
+  "settlementMode": "deferred",
+  "timestamp": "2026-03-25T21:40:00Z",
+  "expires": "2026-03-25T22:00:00Z",
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+}
+      </pre>
+      <pre class="example json" title="SessionBudgetAuthorization (payer-signed; commits to session budget)">
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:session-auth:aa",
+  "type": "SessionBudgetAuthorization",
+  "usageSession": "urn:avp:session:001",
+  "sessionDigest": "sha-256:Q9x...redacted",
+  "payer": "did:example:agent:streamer1",
+  "payee": "did:example:services:realtime-sensor",
+  "committedAmount": "0.50",
+  "currency": "USD",
+  "timestamp": "2026-03-25T21:40:05Z",
+  "expires": "2026-03-25T21:41:05Z",
+  "nonce": "sess-n-88421",
+  "wallet": "did:example:wallet:acme",
+  "vp": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://w3id.org/security/data-integrity/v2",
+      "https://w3id.org/spending-authority/v1"
+    ],
+    "type": "VerifiablePresentation",
+    "verifiableCredential": [{ }]
+  },
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+}
+      </pre>
+      <pre class="example json" title="UsageAccrual (cumulative meter report)">
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:usage:123",
+  "type": "UsageAccrual",
+  "session": "urn:avp:session:001",
+  "accrualKind": "cumulative",
+  "meterReading": "15",
+  "amountAccrued": "0.015",
+  "currency": "USD",
+  "sequence": 3,
+  "timestamp": "2026-03-25T21:45:00Z",
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+}
+      </pre>
+      <pre class="example json" title="PaymentReceipt (session settlement)">
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:receipt:sess-final",
+  "type": "PaymentReceipt",
+  "usageSession": "urn:avp:session:001",
+  "payer": "did:example:agent:streamer1",
+  "payee": "did:example:services:realtime-sensor",
+  "amount": "0.048",
+  "currency": "USD",
+  "status": "fulfilled",
+  "totalMeterReading": "48",
+  "fulfilledAt": "2026-03-25T21:58:00Z",
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+}
+      </pre>
+    </section>
+  </section>
+
+  <section id="conformance-classes">
+    <h2>Conformance classes</h2>
+
+    <p>
+      This specification defines the following conformance classes:
+    </p>
+    <dl>
+      <dt><dfn data-lt="AVP-Micro payer agents">AVP-Micro payer agent</dfn></dt>
+      <dd>
+        Software that produces conforming <a>PaymentAuthorization</a> and/or
+        <a>SessionBudgetAuthorization</a> messages and associated verifiable
+        presentations. It <em class="rfc2119">MUST</em> restate and sign the
+        <a>economic terms</a> and <em class="rfc2119">MUST</em> honor
+        <code>requiresApprovalAbove</code>.
+      </dd>
+      <dt><dfn>AVP-Micro wallet</dfn></dt>
+      <dd>
+        Software that implements <a href="#wallet-processing"></a> and produces
+        signed <a>PaymentExecution</a> records, including for <a>streaming mode</a>
+        when supported. It <em class="rfc2119">MUST</em> perform
+        verification-method binding (<a href="#key-binding">key binding</a> and [[DSA]]
+        Securing mechanisms) and trust evaluation (see [[DSA]] Trust establishment).
+      </dd>
+      <dt><dfn>AVP-Micro payee</dfn></dt>
+      <dd>
+        Software that issues <a>PaymentOffer</a> advertisements and signed
+        <a>PaymentQuote</a> and <a>PaymentReceipt</a> messages, and
+        <em class="rfc2119">MAY</em> issue
+        signed <a>UsageSession</a> and <a>UsageAccrual</a> for streaming.
+        Quotes, receipts, sessions, and accruals it emits
+        <em class="rfc2119">MUST</em> be secured per <a href="#securing"></a>.
+      </dd>
+      <dt><dfn>AVP-Micro verifier</dfn></dt>
+      <dd>
+        Software (for example an auditor) that, given a retained message chain,
+        re-verifies all proofs, the verification-method bindings, the digest and
+        economic-term equalities, and the budget arithmetic, without initiating
+        settlement. It <em class="rfc2119">MUST</em> resolve DID state as of
+        <code>proof.created</code> (see [[DSA]] Securing mechanisms) and
+        <em class="rfc2119">MUST</em> apply execution-signer binding
+        (<a href="#execution-binding">execution binding</a>).
+      </dd>
+    </dl>
+    <p>
+      Two interoperability profiles let implementers adopt a small surface first
+      and add auditability later:
+    </p>
+    <dl>
+      <dt><dfn>core profile</dfn></dt>
+      <dd>
+        The minimal interoperable target: the one-off flow
+        (<a>PaymentQuote</a> → <a>PaymentAuthorization</a> →
+        <a>PaymentExecution</a> → <a>PaymentReceipt</a>) with the
+        mandatory-to-implement securing mechanism. A core implementation
+        <em class="rfc2119">MUST</em> produce and verify each object's
+        <code>eddsa-jcs-2022</code> proof and enforce the
+        <a href="#wallet-one-off">one-off wallet-verification</a> checks, but
+        <em class="rfc2119">MAY</em> omit streaming
+        (<a href="#streaming"></a>) and is not required to populate the optional
+        <code>wallet</code> member. As noted in [[DSA]]
+        (<a href="#securing">securing mechanisms</a>), a core implementation needs
+        only a JCS canonicalizer, an Ed25519 implementation, and the
+        <a href="schemas/">JSON Schema</a> — <em>not</em> a JSON-LD/RDF toolchain.
+      </dd>
+      <dt><dfn>auditable profile</dfn></dt>
+      <dd>
+        A superset claimed when a message chain is intended to be re-verified by
+        an <a>AVP-Micro verifier</a> the deployment does not control. In the
+        auditable profile, every <a>PaymentAuthorization</a> and
+        <a>SessionBudgetAuthorization</a> <em class="rfc2119">MUST</em> populate
+        the <code>wallet</code> member
+        (<a href="#execution-binding">execution binding</a>), so that the
+        authorized wallet identity is recoverable from the signed objects alone.
+        Outside this profile the <code>wallet</code> member remains
+        <em class="rfc2119">RECOMMENDED</em>.
+      </dd>
+    </dl>
+    <p>
+      The published <a href="test-vectors/">test vectors</a> together with the
+      shared verification and validation harness constitute a reference interop
+      suite for both profiles: a conforming implementation
+      <em class="rfc2119">SHOULD</em> verify every published vector and reproduce
+      the signed one-off and streaming chains.
+    </p>
+  </section>
+
+  <section id="security-privacy-self-review" class="informative">
+    <h2>Security and Privacy Self-Review</h2>
+    <p>
+      This appendix answers the questions of the W3C TAG
+      <a href="https://www.w3.org/TR/security-privacy-questionnaire/">Self-Review
+      Questionnaire: Security and Privacy</a> [[SECURITY-PRIVACY-QUESTIONNAIRE]]
+      for the payments subset; the identity, credential, and trust answers are in
+      [[DSA]]. AVP-Micro defines data objects and a verification algorithm rather
+      than a browser feature, so several questions are answered as not applicable.
+    </p>
+    <dl>
+      <dt>What information does this feature expose, and for what purposes?</dt>
+      <dd>
+        Payer/payee/issuer DIDs, the <a>economic terms</a> of a transaction, the
+        constraints in a Spending Authorization Credential, and digests of
+        the service request and output. The purpose is to let a <a>wallet
+        service</a> authorize spending and let a <a>verifier</a> audit it. Objects
+        expose only what is needed to evaluate a single transaction; see the next
+        answer.
+      </dd>
+      <dt>Do features expose the minimum information necessary?</dt>
+      <dd>
+        Agents are directed to disclose the minimum verifiable claims
+        (<a href="#privacy"></a>). The base [[vc-data-model-2.0]] lacks selective
+        disclosure, so deployments needing it are pointed to [[SD-JWT-VC]] or a
+        selective-disclosure cryptosuite. PII <em class="rfc2119">SHOULD NOT</em>
+        be placed in credentials that travel to wallets and payees.
+      </dd>
+      <dt>Do features handle personally identifiable or financial information?</dt>
+      <dd>
+        Yes — value transfer. Amounts are committed to by signatures; limits and
+        category constraints bound exposure; settlement metadata is rail-specific
+        and out of scope. Correlation risks (repeated DIDs, issuer identifiers,
+        session IDs, timing) are addressed in <a href="#privacy"></a>.
+      </dd>
+      <dt>Does this feature introduce new state that persists across sessions?</dt>
+      <dd>
+        Verifiers retain seen <code>nonce</code> values for the replay window
+        (<a href="#integrity"></a>) and parties retain a signed message chain for
+        audit (<a href="#audit"></a>). The specification directs that private keys
+        and full credential payloads not be retained beyond reconciliation needs.
+      </dd>
+      <dt>How does the feature deal with information from origins a user is not
+        interacting with / third parties?</dt>
+      <dd>
+        Trust is never inherited from the message sender: a wallet
+        <em class="rfc2119">MUST</em> evaluate credential issuers against its own
+        configured trust roots and <em class="rfc2119">MUST NOT</em> treat a
+        payee's <code>acceptedCredentialIssuers</code> as a trust root (see [[DSA]]
+        Trust establishment).
+      </dd>
+      <dt>What are the feature's safe defaults, and what happens on error?</dt>
+      <dd>
+        Undefined JSON-LD terms are not given protocol semantics
+        (<code>@protected</code>, no <code>@vocab</code>), processors
+        <em class="rfc2119">MUST NOT</em> make authorization, settlement, or
+        delivery decisions from them, unrecognized cryptosuites are rejected,
+        absent credential constraints are treated as
+        <q>not permitted by the credential</q> rather than permissive, and every
+        denial path has an explicit error code (<a href="#errors"></a>) and an
+        audit receipt.
+      </dd>
+      <dt>What are the risks of abuse, and the mitigations?</dt>
+      <dd>
+        The threat/mitigation table in <a href="#security"></a> enumerates
+        term and request tampering, over-spending, inflated streaming charges, and
+        term injection, together with the mechanisms that address each; credential
+        theft/replay and untrusted issuers are addressed by [[DSA]].
+      </dd>
+      <dt>Does the feature expose sensors, the underlying platform, native UI,
+        or allow access to other devices?</dt>
+      <dd>Not applicable; AVP-Micro is a transport-agnostic data model.</dd>
+      <dt>How does the feature behave in private-browsing/incognito modes?</dt>
+      <dd>
+        Not applicable as a browser feature. Agents that need unlinkability are
+        directed to pairwise/rotated identifiers and short sessions
+        (<a href="#privacy"></a>).
+      </dd>
+    </dl>
+  </section>
+
+  <section id="acknowledgements" class="informative">
+    <h2>Acknowledgements</h2>
+    <p>
+      This specification incorporates concepts from the broader decentralized
+      identity and payments communities, including work on Verifiable
+      Credentials, Decentralized Identifiers, Data Integrity, Open Payments, and
+      HTTP payment challenges.
+    </p>
+  </section>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:offer:compute",
+  "type": "PaymentOffer",
+  "payee": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+  "pricingModel": {
+    "type": "CompositePricing",
+    "currency": "USD",
+    "components": [
+      {
+        "type": "Allowance",
+        "dimension": "dim:Requests",
+        "unit": "qudtu:NUM",
+        "freeQuantity": "1000000"
+      },
+      {
+        "type": "PerUnit",
+        "dimension": "dim:Requests",
+        "unit": "qudtu:NUM",
+        "amount": "0.0000002"
+      },
+      {
+        "type": "PerUnit",
+        "dimension": "dim:ComputeMemoryTime",
+        "unit": "aunit:GigaByteSecond",
+        "amount": "0.0000166667"
+      }
+    ]
+  },
+  "quoteEndpoint": "https://provider.com/fn-api/quote",
+  "acceptedSettlementMethods": [
+    "internal-ledger"
+  ],
+  "acceptedCredentialIssuers": [
+    "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79"
+  ],
+  "categories": [
+    "cat:EphemeralRuntimeSessions"
+  ],
+  "offerValidity": "2026-03-25T23:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2026-03-25T21:29:01Z",
+    "verificationMethod": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi#z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z4MJhdE77LyNq4MBCoB43CrKFRaZkQtFspy47ABHXo77ubPxU7ofWt1Gbim17PGJmLSqHVPpjCZXN2ezLoxiqMbbK"
+  }
+}

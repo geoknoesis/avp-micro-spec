@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/avp-micro/interop/sd-jwt-vc/schemas/interop.schema.json",
+  "title": "AVP-Micro -- SD-JWT-VC interop profile data objects",
+  "description": "JSON Schema for the two bridged forms: the decoded SD-JWT-VC mandate payload (A->V export, $def SpendingAuthorityMandateClaims) and the AVP-Micro EmbeddedSdJwtVcMandate (V->A import, $def EmbeddedSdJwtVcMandate). Validate an instance against the relevant $def.",
+  "$defs": {
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+" },
+    "decimal": {
+      "type": "string",
+      "description": "Non-negative decimal amount as a string.",
+      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+    },
+    "compactSdJwt": {
+      "type": "string",
+      "description": "An SD-JWT (optionally with disclosures and a key-binding JWT), compact serialization: base64url segments joined by '.', disclosures joined by '~'.",
+      "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+(~[A-Za-z0-9_-]*)*$"
+    },
+    "compactPresentation": {
+      "type": "string",
+      "description": "An SD-JWT presentation: an issuer-signed JWS, '~', any disclosures, then a key-binding JWT.",
+      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+){2}~([A-Za-z0-9_-]*~)*[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+){2}$"
+    },
+
+    "limits": {
+      "type": "object",
+      "description": "Spending constraints, mirroring DSA credentialSubject limit fields.",
+      "properties": {
+        "per_txn": { "$ref": "#/$defs/decimal" },
+        "per_day": { "$ref": "#/$defs/decimal" },
+        "tz": { "type": "string" },
+        "approval_above": { "$ref": "#/$defs/decimal" }
+      },
+      "additionalProperties": false
+    },
+
+    "SpendingAuthorityMandateClaims": {
+      "type": "object",
+      "description": "The decoded payload of an SD-JWT-VC produced by exporting a DSA SpendingAuthorizationCredential (A->V). The 'avp_vc' member is present only for the proof-preserving embedded profile (vct ...+embedded).",
+      "required": ["vct", "iss", "sub", "cnf", "currency"],
+      "properties": {
+        "vct": { "type": "string", "enum": ["mandate.spending-authority.avp", "mandate.spending-authority.avp+embedded"] },
+        "iss": { "type": "string", "format": "uri" },
+        "sub": { "type": "string", "format": "uri" },
+        "cnf": {
+          "type": "object",
+          "description": "Holder key confirmation (RFC 7800). The agent key named as DSA credentialSubject.id.",
+          "required": ["jwk"],
+          "properties": { "jwk": { "type": "object" } }
+        },
+        "currency": { "type": "string" },
+        "limits": { "$ref": "#/$defs/limits" },
+        "allowed_payees": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "allowed_service_types": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "nbf": { "type": "integer" },
+        "exp": { "type": "integer" },
+        "jti": { "type": "string" },
+        "status": { "type": "object", "description": "IETF Token Status List reference." },
+        "avp_vc": {
+          "type": "string",
+          "contentEncoding": "base64url",
+          "description": "base64url of the exact JCS-canonical SpendingAuthorizationCredential bytes, including its eddsa-jcs-2022 proof. Carries the authority in the proof-preserving profile."
+        }
+      }
+    },
+
+    "EmbeddedSdJwtVcMandate": {
+      "type": "object",
+      "description": "An AVP-Micro SpendingAuthorizationCredential produced by importing an SD-JWT-VC mandate (V->A). The outer claims are a projection; iop:embeddedSdJwtVc carries the authenticated authority.",
+      "required": ["@context", "type", "issuer", "credentialSubject", "embeddedSdJwtVc", "bridgeMode"],
+      "properties": {
+        "@context": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "https://www.w3.org/ns/credentials/v2" },
+            { "const": "https://w3id.org/security/data-integrity/v2" },
+            { "const": "https://w3id.org/spending-authority/v1" },
+            { "const": "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1" }
+          ],
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "array",
+          "allOf": [
+            { "contains": { "const": "VerifiableCredential" } },
+            { "contains": { "const": "SpendingAuthorizationCredential" } },
+            { "contains": { "const": "EmbeddedSdJwtVcMandate" } }
+          ]
+        },
+        "issuer": { "oneOf": [ { "$ref": "#/$defs/did" }, { "type": "object", "required": ["id"], "properties": { "id": { "$ref": "#/$defs/did" } } } ] },
+        "validFrom": { "type": "string", "format": "date-time" },
+        "validUntil": { "type": "string", "format": "date-time" },
+        "credentialStatus": { "type": ["object", "array"] },
+        "credentialSubject": {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": { "$ref": "#/$defs/did" },
+            "currency": { "type": "string" },
+            "maxPerTransaction": { "$ref": "#/$defs/decimal" },
+            "dailyLimit": { "$ref": "#/$defs/decimal" },
+            "limitTimezone": { "type": "string" },
+            "requiresApprovalAbove": { "$ref": "#/$defs/decimal" },
+            "allowedPayees": { "type": "array", "items": { "$ref": "#/$defs/did" } },
+            "allowedServiceTypes": { "type": "array", "items": { "type": "string", "format": "uri" } }
+          }
+        },
+        "embeddedSdJwtVc": { "$ref": "#/$defs/compactSdJwt" },
+        "bridgeMode": { "type": "string", "enum": ["co-issued", "proof-preserving", "attested"] },
+        "sourceVct": { "type": "string" },
+        "attestingBridge": { "$ref": "#/$defs/did" },
+        "profileVersion": { "type": "string" },
+        "importAdvisory": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "proof": {
+          "type": "object",
+          "description": "Present in co-issued and attested modes; absent in proof-preserving mode (the outer object is then an unsigned projection).",
+          "required": ["type", "cryptosuite", "created", "verificationMethod", "proofPurpose", "proofValue"],
+          "properties": {
+            "type": { "const": "DataIntegrityProof" },
+            "cryptosuite": { "const": "eddsa-jcs-2022" },
+            "created": { "type": "string", "format": "date-time" },
+            "verificationMethod": { "type": "string", "minLength": 1 },
+            "proofPurpose": { "const": "assertionMethod" },
+            "proofValue": { "type": "string", "pattern": "^z[1-9A-HJ-NP-Za-km-z]+$" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "bridgeMode": { "const": "attested" } } },
+          "then": { "required": ["attestingBridge", "proof"] }
+        },
+        {
+          "if": { "properties": { "bridgeMode": { "const": "proof-preserving" } } },
+          "then": { "not": { "required": ["proof"] } }
+        },
+        {
+          "if": { "properties": { "bridgeMode": { "const": "co-issued" } } },
+          "then": { "required": ["proof"] }
+        }
+      ]
+    },
+
+    "EmbeddedKbJwtAuthorization": {
+      "type": "object",
+      "description": "An AVP-Micro PaymentAuthorization (per-purchase action, L3) produced by importing an SD-JWT-VC presentation (V->A). The outer claims are a projection; iop:embeddedKbJwtPresentation carries the authenticated authority.",
+      "required": ["@context", "type", "payer", "payee", "amount", "currency",
+                   "embeddedKbJwtPresentation", "bridgeMode"],
+      "properties": {
+        "@context": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "https://www.w3.org/ns/credentials/v2" },
+            { "const": "https://w3id.org/security/data-integrity/v2" },
+            { "const": "https://w3id.org/spending-authority/v1" },
+            { "const": "https://w3id.org/avp-micro/v1" },
+            { "const": "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1" }
+          ],
+          "minItems": 5,
+          "maxItems": 5
+        },
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "array",
+          "allOf": [
+            { "contains": { "const": "PaymentAuthorization" } },
+            { "contains": { "const": "EmbeddedKbJwtAuthorization" } }
+          ]
+        },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/decimal" },
+        "currency": { "type": "string" },
+        "quote": { "type": "string" },
+        "quoteDigest": { "type": "string" },
+        "serviceRequestHash": { "type": "string" },
+        "settlementMethod": { "type": "string" },
+        "settlementTarget": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "expires": { "type": "string", "format": "date-time" },
+        "nonce": { "type": "string" },
+        "wallet": { "$ref": "#/$defs/did" },
+        "embeddedKbJwtPresentation": { "$ref": "#/$defs/compactPresentation" },
+        "bridgeMode": { "type": "string", "enum": ["co-issued", "proof-preserving", "attested"] },
+        "profileVersion": { "type": "string" },
+        "proof": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "bridgeMode": { "const": "proof-preserving" } } },
+          "then": { "not": { "required": ["proof"] } }
+        },
+        {
+          "if": { "properties": { "bridgeMode": { "const": "co-issued" } } },
+          "then": { "required": ["proof"] }
+        }
+      ]
+    }
+  }
+}

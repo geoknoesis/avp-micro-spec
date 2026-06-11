@@ -1,0 +1,21 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "id": "@id",
+    "type": "@type",
+    "iop": "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "EmbeddedSdJwtVcMandate": "iop:EmbeddedSdJwtVcMandate",
+    "EmbeddedKbJwtAuthorization": "iop:EmbeddedKbJwtAuthorization",
+
+    "embeddedSdJwtVc": { "@id": "iop:embeddedSdJwtVc" },
+    "embeddedKbJwtPresentation": { "@id": "iop:embeddedKbJwtPresentation" },
+    "importAdvisory": { "@id": "iop:importAdvisory", "@container": "@set" },
+    "bridgeMode": { "@id": "iop:bridgeMode" },
+    "sourceVct": { "@id": "iop:sourceVct" },
+    "attestingBridge": { "@id": "iop:attestingBridge", "@type": "@id" },
+    "profileVersion": { "@id": "iop:profileVersion" }
+  }
+}

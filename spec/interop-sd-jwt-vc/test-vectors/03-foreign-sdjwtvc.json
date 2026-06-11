@@ -1,0 +1,33 @@
+{
+  "_note": "A foreign Verifiable-Intent / AP2-style SD-JWT-VC mandate (ES256, did:web issuer).",
+  "compact": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6aXNzdWVyLmV4YW1wbGUja2V5LTEiLCJ0eXAiOiJkYytzZC1qd3QifQ.eyJhbGxvd2VkX3BheWVlcyI6WyJkaWQ6a2V5Ono2TWtlblBBMnhjRDVDR0pWbWtnZWpicjRMekJBYTFlM0dWQ1FpSEZyWERnaDVWaSJdLCJjbmYiOnsiandrIjp7ImNydiI6IkVkMjU1MTkiLCJrdHkiOiJPS1AiLCJ4IjoiZ0U4SkR6bU5WSmdlazJTaVlNMmRSRnJHYkxxb0ZRdWRESlhEQVJYaHU0dyJ9fSwiY3VycmVuY3kiOiJVU0QiLCJleHAiOjE3ODI4NjQwMDAsImlzcyI6ImRpZDp3ZWI6aXNzdWVyLmV4YW1wbGUiLCJqdGkiOiJ1cm46dmk6bWFuZGF0ZTpmb3JlaWduOjAwMSIsImxpbWl0cyI6eyJwZXJfZGF5IjoiMTAuMDAiLCJwZXJfdHhuIjoiMC4xMCJ9LCJuYmYiOjE3NzUwMDE2MDAsInN0YXR1cyI6eyJzdGF0dXNfbGlzdCI6eyJpZHgiOjEyLCJ1cmkiOiJodHRwczovL2lzc3Vlci5leGFtcGxlL3N0YXR1cy85In19LCJzdWIiOiJkaWQ6a2V5Ono2TWtvNjg4VnQxdVpGUVpoOFd2YjhCbm1lbkVxVGFqWndFMkJ1Z1c4NW5XQTY1UiIsInZjdCI6Im1hbmRhdGUuc3BlbmRpbmctYXV0aG9yaXR5LmF2cCJ9.DZWKPwvedOI8jjRmQyNcWuwu5Pa6pLsNKtFxAcTDOG7w5mzPjqF9YH_SetwZ57-M97NcGmA18EXYPlBBSTHWkg~",
+  "payload": {
+    "vct": "mandate.spending-authority.avp",
+    "iss": "did:web:issuer.example",
+    "sub": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "cnf": {
+      "jwk": {
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "x": "gE8JDzmNVJgek2SiYM2dRFrGbLqoFQudDJXDARXhu4w"
+      }
+    },
+    "currency": "USD",
+    "limits": {
+      "per_txn": "0.10",
+      "per_day": "10.00"
+    },
+    "allowed_payees": [
+      "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"
+    ],
+    "nbf": 1775001600,
+    "exp": 1782864000,
+    "jti": "urn:vi:mandate:foreign:001",
+    "status": {
+      "status_list": {
+        "idx": 12,
+        "uri": "https://issuer.example/status/9"
+      }
+    }
+  }
+}

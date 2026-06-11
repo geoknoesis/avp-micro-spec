@@ -1,0 +1,7 @@
+cryptography>=41.0.0
+rdflib>=7.0.0
+pyld>=2.0.0
+jsonschema[format-nongpl]>=4.21.0
+pyshacl>=0.25.0
+requests>=2.31.0
+referencing>=0.31.0

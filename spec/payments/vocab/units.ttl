@@ -1,0 +1,38 @@
+# AVP-Micro composite billing units. Atomic units use QUDT directly; the composite
+# units below are DEFINED via a QUDT quantity kind plus a base unit and time factor,
+# so their semantics are pinned to a standard. Concept IRIs: <#LocalName> with
+# @base <https://w3id.org/avp-micro/unit> → https://w3id.org/avp-micro/unit#LocalName.
+@base <https://w3id.org/avp-micro/unit> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix avp:   <https://w3id.org/avp-micro/v1#> .
+@prefix qudt:  <http://qudt.org/schema/qudt/> .
+@prefix unit:  <http://qudt.org/vocab/unit/> .
+@prefix quantitykind: <http://qudt.org/vocab/quantitykind/> .
+
+<https://w3id.org/avp-micro/unit> a owl:Ontology ;
+  dct:title "AVP-Micro composite billing units"@en ;
+  owl:versionInfo "0.1.0" ;
+  rdfs:seeAlso <http://qudt.org/vocab/unit/> .
+
+# avp:baseUnit / avp:timeFactor relate a composite billing unit to QUDT.
+avp:baseUnit a owl:ObjectProperty ; rdfs:label "base unit"@en ;
+  rdfs:comment "The QUDT unit of the quantity component of a composite billing unit."@en .
+avp:timeFactor a owl:ObjectProperty ; rdfs:label "time factor"@en ;
+  rdfs:comment "The QUDT time unit a composite billing unit integrates the base unit over."@en .
+
+<#GigaByteSecond> a qudt:Unit ; rdfs:label "Gigabyte-second"@en ;
+  qudt:hasQuantityKind quantitykind:InformationEntropy ;
+  avp:baseUnit unit:GigaBYTE ; avp:timeFactor unit:SEC ;
+  rdfs:comment "Gigabytes of memory integrated over seconds of compute."@en .
+<#GigaByteHour> a qudt:Unit ; rdfs:label "Gigabyte-hour"@en ;
+  qudt:hasQuantityKind quantitykind:InformationEntropy ;
+  avp:baseUnit unit:GigaBYTE ; avp:timeFactor unit:HR .
+<#GigaByteMonth> a qudt:Unit ; rdfs:label "Gigabyte-month"@en ;
+  qudt:hasQuantityKind quantitykind:InformationEntropy ;
+  avp:baseUnit unit:GigaBYTE ; avp:timeFactor unit:MO ;
+  rdfs:comment "Gigabytes of storage integrated over months."@en .
+<#Datapoint> a qudt:Unit ; rdfs:label "Datapoint"@en ;
+  qudt:hasQuantityKind quantitykind:Dimensionless ;
+  rdfs:comment "A single counted datapoint (dimensionless)."@en .

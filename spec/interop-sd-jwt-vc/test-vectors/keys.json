@@ -1,0 +1,60 @@
+{
+  "_warning": "TEST KEYS ONLY. P-256 scalars are derived deterministically; do not reuse.",
+  "bridgeExporter": {
+    "did": "did:web:bridge.example",
+    "kid": "did:web:bridge.example#key-1",
+    "jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "8Xy153nQ92BN4KqsqOcZqO46UlqIilMh6yO4rZxZ2zY",
+      "y": "PRfy2n38zh5EUQgpV8A3esq0sg6Z6yFLrFFE-SHSFrM"
+    }
+  },
+  "viIssuer": {
+    "did": "did:web:issuer.example",
+    "kid": "did:web:issuer.example#key-1",
+    "jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "W2DS0DdFNUDHW25Pu_PNS7aNaRVe6CB_hIx9EsFkRvQ",
+      "y": "UA3o5M_QQdKkLfNJFgIbWHphsHllhpPjzKglG19OetA"
+    }
+  },
+  "coIssuer": {
+    "did": "did:web:acme.example",
+    "kid": "did:web:acme.example#es",
+    "jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "T82lZqkY6RV3DhN35FIbUmhY6JwTaL6pJouXLJAhHhE",
+      "y": "coSZMdOAz3zuy1LTpE2dKsJ9lty62n9LCB8yxaeDpSY"
+    },
+    "note": "Same principal as the did:key DSA issuer; this is its P-256 verification method."
+  },
+  "attestingBridge": {
+    "did": "did:key:z6Mkpsqx4hQbhACJf9ygK9FNy51oXwFxYVKqZhn3XJuNNzRf"
+  },
+  "didWebResolver": {
+    "did:web:bridge.example": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "8Xy153nQ92BN4KqsqOcZqO46UlqIilMh6yO4rZxZ2zY",
+      "y": "PRfy2n38zh5EUQgpV8A3esq0sg6Z6yFLrFFE-SHSFrM"
+    },
+    "did:web:issuer.example": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "W2DS0DdFNUDHW25Pu_PNS7aNaRVe6CB_hIx9EsFkRvQ",
+      "y": "UA3o5M_QQdKkLfNJFgIbWHphsHllhpPjzKglG19OetA"
+    },
+    "did:web:acme.example": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "T82lZqkY6RV3DhN35FIbUmhY6JwTaL6pJouXLJAhHhE",
+      "y": "coSZMdOAz3zuy1LTpE2dKsJ9lty62n9LCB8yxaeDpSY"
+    }
+  },
+  "trustedBridges": [
+    "did:key:z6Mkpsqx4hQbhACJf9ygK9FNy51oXwFxYVKqZhn3XJuNNzRf"
+  ]
+}

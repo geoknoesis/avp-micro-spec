@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Delegated Spending Authority</title>
+  <style>
+    /* Object-definition summary */
+    p.object-summary { font-style: italic; color: #333; margin-bottom: 0.5em; }
+    /* Diagram figures (hand-authored SVGs only — keeps ReSpec example figures unaffected) */
+    figure { margin: 1.5em 0; }
+    figure.fig-diagram { text-align: center; }
+    figure.fig-diagram svg { max-width: 100%; height: auto; }
+    figure.fig-diagram figcaption { font-size: 0.9em; color: #555; margin-top: 0.4em; }
+  </style>
+  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
+  <script class="remove">
+    // @ts-check
+    const respecConfig = {
+      specStatus: "unofficial",
+      shortName: "spending-authority",
+      subtitle: "Delegated, verifiable spending authority for autonomous agents using DIDs and Verifiable Credentials",
+      editors: [
+        {
+          name: "Stephane Fellah",
+          company: "Geoknoesis LLC",
+          companyURL: "https://geoknoesis.com",
+        },
+      ],
+      github: {
+        repoURL: "https://github.com/geoknoesis/avp-micro",
+        branch: "main",
+      },
+      license: "cc-by",
+      lint: { "no-unused-dfns": false },
+      xref: ["vc-data-model-2.0", "did-core", "INFRA"],
+      localBiblio: {
+        "RFC8785": {
+          title: "JSON Canonicalization Scheme (JCS)",
+          href: "https://www.rfc-editor.org/rfc/rfc8785",
+          authors: ["A. Rundgren", "B. Jordan", "S. Erdtman"],
+          date: "June 2020",
+          status: "Informational",
+          publisher: "IETF",
+        },
+        "RFC7515": {
+          title: "JSON Web Signature (JWS)",
+          href: "https://www.rfc-editor.org/rfc/rfc7515",
+          date: "May 2015",
+          status: "Proposed Standard",
+          publisher: "IETF",
+        },
+        "JSON-LD11": {
+          title: "JSON-LD 1.1",
+          href: "https://www.w3.org/TR/json-ld11/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "VC-DATA-INTEGRITY": {
+          title: "Verifiable Credential Data Integrity 1.0",
+          href: "https://www.w3.org/TR/vc-data-integrity/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "VC-DI-EDDSA": {
+          title: "Verifiable Credential Data Integrity EdDSA Cryptosuites v1.0",
+          href: "https://www.w3.org/TR/vc-di-eddsa/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "BITSTRING-STATUS-LIST": {
+          title: "Bitstring Status List v1.0",
+          href: "https://www.w3.org/TR/vc-bitstring-status-list/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "DID-KEY": {
+          title: "The did:key Method v0.7",
+          href: "https://w3c-ccg.github.io/did-key-spec/",
+          publisher: "W3C Credentials Community Group",
+        },
+        "SKOS": {
+          title: "SKOS Simple Knowledge Organization System Reference",
+          href: "https://www.w3.org/TR/skos-reference/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "SECURITY-PRIVACY-QUESTIONNAIRE": {
+          title: "Self-Review Questionnaire: Security and Privacy",
+          href: "https://www.w3.org/TR/security-privacy-questionnaire/",
+          publisher: "W3C TAG",
+        },
+      },
+    };
+  </script>
+</head>
+<body>
+  <section id="abstract">
+    <p>
+      <dfn>Delegated Spending Authority</dfn> (DSA) defines how a
+      <a>principal</a> delegates bounded spending authority to an autonomous
+      <a>payer agent</a> using <a data-cite="did-core#dfn-decentralized-identifiers">decentralized identifiers</a>
+      and <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">verifiable credentials</a>,
+      and how a relying party establishes trust in the issuers of those
+      credentials. It defines the identity, securing, credential, and trust
+      vocabulary that the AVP-Micro payments layer (and other delegated-spend
+      systems) build upon. Settlement and payment-message flow are out of scope.
+    </p>
+  </section>
+
+  <section id="sotd">
+    <p>
+      This document is an <strong>unofficial editor's draft</strong> prepared as a
+      candidate contribution to a W3C Community Group (CG). Given its reliance on
+      Decentralized Identifiers, the Verifiable Credentials Data Model, and Data
+      Integrity, the intended host is the
+      <a href="https://www.w3.org/community/credentials/">W3C Credentials
+      Community Group</a> (CCG), or a new CG chartered for agent payments. It is
+      published with W3C ReSpec and does <em>not</em> represent the consensus of
+      the W3C Membership or of any Working or Community Group. It is provided for
+      review and experimentation only and <em>MUST NOT</em> be cited as anything
+      other than work in progress.
+    </p>
+    <p>
+      <strong>Dependency maturity.</strong> Some referenced specifications are not
+      yet Recommendations: <code>did:key</code> [[DID-KEY]] is a CCG draft. It is
+      cited as the mandatory-to-implement DID method for interoperability testing;
+      the
+      <strong>mandatory-to-implement</strong> securing mechanism relies only on
+      W3C Recommendations ([[VC-DATA-INTEGRITY]], [[VC-DI-EDDSA]]) and the
+      IETF Informational [[RFC8785]]. Implementers should track the status of the
+      non-REC dependencies.
+    </p>
+    <p>
+      <strong>Contributions and IPR.</strong> Once adopted by a Community Group,
+      contributions to this specification are expected to be made under the
+      <a href="https://www.w3.org/community/about/process/cla/">W3C Community
+      Contributor License Agreement (CLA)</a>. The document text is offered under
+      the <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons
+      Attribution 4.0</a> license and accompanying code/test artifacts under the
+      <a href="https://opensource.org/license/bsd-3-clause">BSD-3-Clause</a>
+      license, pending CG adoption.
+    </p>
+    <p>
+      Issues, comments, and pull requests are tracked in the
+      <a href="https://github.com/geoknoesis/avp-micro">project repository</a>.
+      Before relying on this specification, complete a
+      <a href="https://www.w3.org/TR/security-privacy-questionnaire/">Security and
+      Privacy Self-Review</a> [[SECURITY-PRIVACY-QUESTIONNAIRE]]; an initial
+      threat model is in <a href="#security"></a>.
+    </p>
+  </section>
+
+  <section class="informative" id="introduction">
+    <h2>Introduction</h2>
+
+    <p>
+      Autonomous agents increasingly need to purchase APIs, data, and compute at
+      micro scale. Human-centric account flows, opaque bearer tokens, and
+      platform-specific identities poorly match high-frequency, low-value,
+      cross-domain machine transactions. A portable, transport-agnostic layer for
+      <strong>identity</strong> and <strong>delegated spending policy</strong> is
+      needed that is orthogonal to any particular settlement technology.
+    </p>
+
+    <p>
+      Delegated Spending Authority adds that layer. A <a>payer agent</a>
+      identifies itself with a
+      <a data-cite="did-core#dfn-decentralized-identifiers">decentralized identifier</a>,
+      and a <a>principal</a> that controls funds issues
+      <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">verifiable credentials</a>
+      that <strong>constrain how the agent may spend</strong> — currency, per-transaction
+      and daily ceilings, allowed payees, and allowed service categories. A
+      relying party verifies those credentials, binds them to the agent's keys,
+      and evaluates the issuer against an explicit trust policy before honoring
+      the delegated authority. This standing, transaction-independent authority is
+      separable from, and reusable by, any payment or settlement flow built on top
+      of it.
+    </p>
+
+    <p>
+      This specification is designed to align with the data models and
+      verification semantics of [[[vc-data-model-2.0]]] and the identifier and
+      resolution model of [[[did-core]]]. It does not define a new DID method.
+    </p>
+  </section>
+
+  <section class="informative" id="overview">
+    <h2>How it works</h2>
+
+    <p>
+      Delegated Spending Authority defines how an <strong>organisation (the
+      principal)</strong> grants a bounded right to spend to an autonomous
+      <strong>payer agent</strong>. The grant is encoded in a
+      <a>Spending Authorization Credential</a> — a
+      <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">Verifiable
+      Credential</a> that names the agent DID as its subject and carries
+      constraints: maximum amount per transaction, a daily cap, a list of
+      approved payees, and acceptable service categories.
+    </p>
+
+    <p>
+      A <strong>relying party</strong> (a wallet service or verifier) that
+      receives a message signed by the agent first verifies the
+      <a>Spending Authorization Credential</a> and checks that its issuer is
+      listed in the relying party's local <a>TrustedIssuer</a> configuration.
+      Optionally, an <a>IssuerScope</a> further restricts what that issuer is
+      trusted to authorise — the <em>more restrictive</em> of the credential
+      and the scope applies.
+    </p>
+
+    <p>
+      Trust in <strong>payee services</strong> is established via a
+      <a>Merchant Credential</a>, issued by a third-party trust anchor such as
+      an industry registry. A relying party can match the payee's attested
+      service categories against the agent's <code>allowedServiceTypes</code>
+      to enforce categorical spending policies.
+    </p>
+
+    <p>
+      Signed commitments are secured with cryptographic proofs. The baseline
+      mandatory-to-implement mechanism is the W3C Data Integrity
+      <code>eddsa-jcs-2022</code> cryptosuite with Ed25519 keys exposed through
+      <code>did:key</code> for interoperability testing; deployments can use
+      additional DID methods and cryptosuites when all relying parties support
+      them. See the <a href="#fig-arch">architecture diagram</a> for the role relationships
+      and the <a href="#fig-trust">constraint model diagram</a> for the delegation model.
+    </p>
+
+    <section id="overview-glance">
+      <h3>Roles and objects at a glance</h3>
+
+      <table class="simple" id="tab-roles">
+        <caption>Roles defined by this specification</caption>
+        <thead>
+          <tr>
+            <th scope="col">Role</th>
+            <th scope="col">Produces</th>
+            <th scope="col">Verifies / consumes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a>Principal</a></td>
+            <td><a>Spending Authorization Credential</a></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><a>Payer agent</a></td>
+            <td>—</td>
+            <td><a>Spending Authorization Credential</a>, <a>Merchant Credential</a></td>
+          </tr>
+          <tr>
+            <td>Trust anchor</td>
+            <td><a>Merchant Credential</a>, <a>Payment Capability Credential</a></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Relying party (wallet / <a>Verifier</a>)</td>
+            <td>—</td>
+            <td>All credentials; evaluates against <a>TrustedIssuer</a> config</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="simple" id="tab-objects">
+        <caption>Objects defined by this specification</caption>
+        <thead>
+          <tr>
+            <th scope="col">Object</th>
+            <th scope="col">One-line purpose</th>
+            <th scope="col">Signer</th>
+            <th scope="col">Section</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a>Spending Authorization Credential</a></td>
+            <td>Delegates bounded spending authority from a principal to a payer agent DID</td>
+            <td>Principal</td>
+            <td><a href="#spending-authorization-credential"></a></td>
+          </tr>
+          <tr>
+            <td><a>Payment Capability Credential</a></td>
+            <td>Attests a payer agent's funding capability and account address</td>
+            <td>Wallet provider / financial institution</td>
+            <td><a href="#payment-capability-credential"></a></td>
+          </tr>
+          <tr>
+            <td><a>Merchant Credential</a></td>
+            <td>Third-party attestation of a payee service's identity and categories</td>
+            <td>Trust anchor</td>
+            <td><a href="#merchant-credential"></a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    <figure id="fig-arch" class="fig-diagram">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 330"
+           role="img" aria-labelledby="fig-arch-title fig-arch-desc">
+        <title id="fig-arch-title">Delegated Spending Authority — roles and relationships</title>
+        <desc id="fig-arch-desc">
+          Two credential flows. Top row: the Principal issues a
+          SpendingAuthorizationCredential whose subject is the Payer Agent.
+          Bottom row: a Trust Anchor issues a MerchantCredential about a
+          Payee, which the Relying Party evaluates using its local TrustedIssuer
+          and IssuerScope configuration. The Payer Agent also presents its
+          credential to the Relying Party for verification.
+        </desc>
+        <defs>
+          <marker id="a-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#333"/>
+          </marker>
+          <marker id="a-arr-b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#005a9c"/>
+          </marker>
+          <marker id="a-arr-g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#888"/>
+          </marker>
+        </defs>
+
+        <!-- ── Row 1: identity delegation ─────────────────────────── -->
+        <rect x="20" y="28" width="120" height="54" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="80" y="53" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Principal</text>
+        <text x="80" y="70" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">controls funds</text>
+
+        <rect x="190" y="16" width="260" height="66" rx="5"
+              fill="#ddeeff" stroke="#005a9c" stroke-width="1.5"/>
+        <text x="320" y="40" text-anchor="middle"
+              font-family="sans-serif" font-size="12" font-weight="bold"
+              fill="#005a9c">SpendingAuthorizationCredential</text>
+        <text x="320" y="57" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#333">issuer: Principal · subject: Payer Agent</text>
+        <text x="320" y="73" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#555">currency, maxPerTransaction, allowedPayees…</text>
+
+        <rect x="500" y="28" width="120" height="54" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="560" y="53" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Payer Agent</text>
+        <text x="560" y="70" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">software agent</text>
+
+        <line x1="140" y1="55" x2="188" y2="50"
+              stroke="#005a9c" stroke-width="1.5" marker-end="url(#a-arr-b)"/>
+        <text x="165" y="44" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#005a9c">issues</text>
+        <line x1="450" y1="50" x2="498" y2="55"
+              stroke="#005a9c" stroke-width="1.5" marker-end="url(#a-arr-b)"/>
+        <text x="473" y="44" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#005a9c">held by</text>
+
+        <!-- ── Row 2: merchant trust ───────────────────────────────── -->
+        <rect x="20" y="220" width="120" height="54" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="80" y="245" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Trust Anchor</text>
+        <text x="80" y="262" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">e.g. industry registry</text>
+
+        <rect x="190" y="212" width="260" height="54" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="320" y="237" text-anchor="middle"
+              font-family="sans-serif" font-size="12" font-weight="bold"
+              fill="#333">MerchantCredential</text>
+        <text x="320" y="254" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#555">issuer: Trust Anchor · subject: payee service</text>
+
+        <rect x="500" y="210" width="120" height="76" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="560" y="234" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Relying Party</text>
+        <text x="560" y="250" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">wallet / verifier</text>
+        <rect x="508" y="256" width="104" height="24" rx="3"
+              fill="#fffde7" stroke="#aaa" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="560" y="268" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#666">TrustedIssuer</text>
+        <text x="560" y="278" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#666">+ IssuerScope config</text>
+
+        <line x1="140" y1="247" x2="188" y2="242"
+              stroke="#333" stroke-width="1.5" marker-end="url(#a-arr)"/>
+        <text x="165" y="235" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#555">issues</text>
+        <line x1="450" y1="242" x2="498" y2="247"
+              stroke="#333" stroke-width="1.5" marker-end="url(#a-arr)"/>
+        <text x="473" y="235" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#555">evaluated by</text>
+
+        <!-- ── Vertical: Payer Agent presents to Relying Party ──────── -->
+        <line x1="560" y1="82" x2="560" y2="208"
+              stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"
+              marker-end="url(#a-arr-g)"/>
+        <text x="610" y="150" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#888"
+              transform="rotate(90,610,150)">presents credential to</text>
+      </svg>
+      <figcaption>Figure: Delegated Spending Authority roles. The Principal issues a
+        <a>Spending Authorization Credential</a> naming the Payer Agent; a Trust Anchor
+        attests the Payee via a <a>Merchant Credential</a>; the Relying Party
+        evaluates both against its <a>TrustedIssuer</a> / <a>IssuerScope</a> policy.
+      </figcaption>
+    </figure>
+    <figure id="fig-trust" class="fig-diagram">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 270"
+           role="img" aria-labelledby="fig-trust-title fig-trust-desc">
+        <title id="fig-trust-title">Spending authority delegation and constraints</title>
+        <desc id="fig-trust-desc">
+          The Principal issues a SpendingAuthorizationCredential with
+          constraint fields (currency, maxPerTransaction, dailyLimit,
+          allowedPayees, allowedServiceTypes). The credential's subject is
+          the Payer Agent DID. At the Relying Party, an IssuerScope entry
+          may further restrict what the issuer is trusted to authorise;
+          the more restrictive of credential and scope applies.
+        </desc>
+        <defs>
+          <marker id="t-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#333"/>
+          </marker>
+          <marker id="t-arr-b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#005a9c"/>
+          </marker>
+        </defs>
+
+        <!-- Principal -->
+        <rect x="20" y="100" width="110" height="54" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="75" y="124" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Principal</text>
+        <text x="75" y="141" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">DID issuer</text>
+
+        <!-- SAC with constraints -->
+        <rect x="170" y="18" width="300" height="200" rx="6"
+              fill="#ddeeff" stroke="#005a9c" stroke-width="2"/>
+        <text x="320" y="40" text-anchor="middle"
+              font-family="sans-serif" font-size="12" font-weight="bold"
+              fill="#005a9c">SpendingAuthorizationCredential</text>
+        <text x="320" y="57" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#333">subject = Payer Agent DID</text>
+        <!-- constraint rows -->
+        <rect x="184" y="64" width="272" height="18" rx="3" fill="#fff" stroke="#aac" stroke-width="1"/>
+        <text x="194" y="77" font-family="sans-serif" font-size="10" fill="#333">currency: "USD"</text>
+        <rect x="184" y="86" width="272" height="18" rx="3" fill="#fff" stroke="#aac" stroke-width="1"/>
+        <text x="194" y="99" font-family="sans-serif" font-size="10" fill="#333">maxPerTransaction: "0.05"</text>
+        <rect x="184" y="108" width="272" height="18" rx="3" fill="#fff" stroke="#aac" stroke-width="1"/>
+        <text x="194" y="121" font-family="sans-serif" font-size="10" fill="#333">dailyLimit: "5.00"</text>
+        <rect x="184" y="130" width="272" height="18" rx="3" fill="#fff" stroke="#aac" stroke-width="1"/>
+        <text x="194" y="143" font-family="sans-serif" font-size="10" fill="#333">allowedPayees: ["did:web:provider.com:…"]</text>
+        <rect x="184" y="152" width="272" height="18" rx="3" fill="#fff" stroke="#aac" stroke-width="1"/>
+        <text x="194" y="165" font-family="sans-serif" font-size="10" fill="#333">allowedServiceTypes: ["cat:ChatCompletionApi"]</text>
+        <text x="320" y="203" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#888">absent = no authority for that dimension</text>
+
+        <!-- Payer Agent -->
+        <rect x="510" y="100" width="110" height="54" rx="5"
+              fill="#f5f5f5" stroke="#333" stroke-width="1.5"/>
+        <text x="565" y="124" text-anchor="middle"
+              font-family="sans-serif" font-size="13" fill="#333">Payer Agent</text>
+        <text x="565" y="141" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#666">DID subject</text>
+
+        <!-- Issue and grant arrows -->
+        <line x1="130" y1="127" x2="168" y2="120"
+              stroke="#005a9c" stroke-width="1.5" marker-end="url(#t-arr-b)"/>
+        <text x="149" y="113" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#005a9c">issues</text>
+        <line x1="470" y1="120" x2="508" y2="127"
+              stroke="#005a9c" stroke-width="1.5" marker-end="url(#t-arr-b)"/>
+        <text x="489" y="113" text-anchor="middle"
+              font-family="sans-serif" font-size="9" fill="#005a9c">grants to</text>
+
+        <!-- Relying Party IssuerScope note -->
+        <rect x="160" y="234" width="320" height="30" rx="4"
+              fill="#fffde7" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="320" y="248" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#555">Relying Party: IssuerScope may further restrict</text>
+        <text x="320" y="260" text-anchor="middle"
+              font-family="sans-serif" font-size="10" fill="#555">→ more restrictive of credential + scope applies</text>
+        <line x1="320" y1="218" x2="320" y2="232"
+              stroke="#888" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#t-arr)"/>
+      </svg>
+      <figcaption>Figure: Constraint encoding in a
+        <a>Spending Authorization Credential</a>. Absent members are not
+        constraints; present members are enforced. The Relying Party's
+        <a>IssuerScope</a> may additionally restrict the issuer's authority.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="conformance">
+    <h2>Conformance</h2>
+    <p>
+      This specification defines requirements for <a>DSA data objects</a>
+      and for software that produces or verifies them. All behavior described with
+      normative RFC 2119 language applies to implementations unless a section
+      is explicitly marked non-normative (for example, informative examples or
+      workflow summaries).
+    </p>
+    <p>
+      An implementation satisfies this specification if it obeys all
+      <em class="rfc2119">MUST</em> / <em class="rfc2119">MUST NOT</em>
+      requirements applicable to its <a href="#conformance-classes">conformance
+      class</a>.
+    </p>
+  </section>
+
+  <section id="terminology">
+    <h2>Terminology</h2>
+
+    <p>
+      The keywords <em class="rfc2119">MAY</em>, <em class="rfc2119">MUST</em>,
+      <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">OPTIONAL</em>,
+      <em class="rfc2119">RECOMMENDED</em>, <em class="rfc2119">REQUIRED</em>,
+      <em class="rfc2119">SHALL</em>, <em class="rfc2119">SHALL NOT</em>,
+      <em class="rfc2119">SHOULD</em>, and <em class="rfc2119">SHOULD NOT</em> in
+      this document are to be interpreted as described in
+      [[[RFC2119]]] when they appear in uppercase, as suggested by
+      [[[RFC8174]]].
+    </p>
+
+    <p>
+      This document uses terms from [[[INFRA]]], including
+      <a data-cite="INFRA#string">string</a>,
+      <a data-cite="INFRA#ordered-map">map</a>, and
+      <a data-cite="INFRA#list">list</a>.
+    </p>
+
+    <dl>
+      <dt><dfn data-lt="principals">Principal</dfn></dt>
+      <dd>
+        An entity (person or organization) that controls funds and that
+        <em class="rfc2119">MAY</em> issue <a>Spending Authorization Credential</a> instances
+        to one or more <a>payer agents</a>. A principal that issues credentials
+        <em class="rfc2119">MUST</em> be identified by a conforming DID
+        ([[did-core]], <a href="#did-requirements"></a>) and is the
+        <code>issuer</code> of the <a>Spending Authorization Credential</a> it
+        grants; a principal <em class="rfc2119">MAY</em> delegate credential
+        issuance to a wallet service or other provider acting on its
+        behalf, in which case the issuer DID is that of the delegate and the
+        relying party's <a href="#trust">trust policy</a> applies to the delegate.
+      </dd>
+
+      <dt><dfn data-lt="payer agents">Payer agent</dfn></dt>
+      <dd>
+        An autonomous software actor that initiates payment on behalf of a
+        <a>principal</a> and is identified by a DID.
+      </dd>
+
+      <dt><dfn data-lt="economic terms">Economic terms</dfn></dt>
+      <dd>
+        The tuple (<code>amount</code>, <code>currency</code>,
+        <code>settlementMethod</code>, <code>settlementTarget</code>) that defines
+        how much value moves, in what unit, over which rail, and to which
+        destination.
+      </dd>
+
+      <dt><dfn>Securing mechanism</dfn></dt>
+      <dd>
+        A cryptographic method (for example a Data Integrity proof or a JWS) that
+        provides integrity and sender authentication for a
+        <a>DSA data object</a>, as profiled in <a href="#securing"></a>.
+      </dd>
+    </dl>
+  </section>
+
+  <section id="namespace">
+    <h2>Namespace and JSON-LD context</h2>
+
+    <p>
+      The vocabulary IRIs for terms defined in this specification use the
+      HTTPS namespace prefix <code>https://w3id.org/spending-authority/v1#</code>
+      (prefix <code>dsa:</code>). Implementations <em class="rfc2119">MUST</em>
+      treat term definitions in this document as authoritative for interpreting
+      JSON-LD documents that include the Delegated Spending Authority context.
+    </p>
+
+    <p>
+      A JSON-LD 1.1 context document is published alongside this specification at
+      <a href="context/v1.jsonld"><code>context/v1.jsonld</code></a> and is
+      intended to be served from the canonical URL
+      <code>https://w3id.org/spending-authority/v1</code>. A companion RDFS/OWL
+      ontology at <a href="vocab/dsa.ttl"><code>vocab/dsa.ttl</code></a> gives the
+      classes and properties formal RDF semantics; the context and this document
+      remain authoritative for term identity and processing. Deployments
+      <em class="rfc2119">MUST</em> use that canonical HTTPS URL for the context
+      value when interoperability across implementations is required. The URL
+      <em class="rfc2119">MUST</em> resolve to this context before a publication
+      or conformance profile depends on network dereferencing; until the
+      <code>w3id.org</code> redirect is registered, implementations
+      <em class="rfc2119">MUST</em> load an equivalent local context by explicit
+      configuration.
+    </p>
+
+    <p>
+      All <a>DSA data objects</a> <em class="rfc2119">MUST</em> be valid
+      JSON-LD documents when processed with the [[[JSON-LD11]]] algorithms.
+      Every object that carries a <code>proof</code> or a <code>vp</code> member,
+      and every object that is itself a
+      <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">verifiable credential</a>
+      or <a data-cite="vc-data-model-2.0#dfn-verifiable-presentations">verifiable presentation</a>,
+      <em class="rfc2119">MUST</em> declare its <code>@context</code> as an array
+      containing, in this order, the Verifiable Credentials 2.0 context
+      <code>https://www.w3.org/ns/credentials/v2</code>, the Data Integrity
+      context <code>https://w3id.org/security/data-integrity/v2</code>, and the
+      Delegated Spending Authority context
+      <code>https://w3id.org/spending-authority/v1</code>. The Data
+      Integrity context is required because it defines proof terms for objects
+      outside the type-scoped verifiable credential and presentation terms in
+      [[vc-data-model-2.0]]. The DSA context maps <code>expires</code> and
+      <code>nonce</code> to Security Vocabulary IRIs rather than redefining them,
+      so the <code>@protected</code> contexts compose without conflict. Because signed objects are canonicalized with
+      [[RFC8785]] (JCS), which preserves array order, the order of the
+      <code>@context</code> entries is part of the signed bytes: producers and
+      verifiers <em class="rfc2119">MUST</em> use the array order given above so
+      that proofs are reproducible across implementations.
+    </p>
+
+    <aside class="note">
+      <p>
+        <strong>Why this matters for security.</strong>
+        The Delegated Spending Authority context is declared with
+        <code>"@protected": true</code> and deliberately defines <em>no</em>
+        <code>@vocab</code> fallback. Terms that are not defined by an included
+        context are dropped during JSON-LD expansion rather than coerced to an
+        ad-hoc IRI. Because the mandatory <code>eddsa-jcs-2022</code> proof signs
+        the raw JSON document using JCS, such members can still be part of the
+        signed bytes; processors nevertheless <em class="rfc2119">MUST NOT</em>
+        make authorization decisions from undefined terms. Extensions therefore
+        <em class="rfc2119">MUST</em> ship their own context.
+      </p>
+    </aside>
+
+    <p class="note">
+      Because DSA objects are routinely co-typed or nested with verifiable
+      credentials, the <code>expires</code> and <code>nonce</code> members are
+      mapped to the corresponding Security Vocabulary terms
+      (<code>https://w3id.org/security#expiration</code> and
+      <code>https://w3id.org/security#nonce</code>) rather than to DSA IRIs.
+      These definitions reuse Security Vocabulary IRIs already used by the
+      proof ecosystem, so the <code>@protected</code> contexts compose without a
+      term-redefinition conflict. All other members
+      use the <code>dsa:</code> namespace.
+    </p>
+
+    <p class="note">
+      Until the <code>w3id.org</code> redirects are registered, implementations
+      can load equivalent local context files by explicit configuration or serve
+      them from a controlled origin agreed out of band. The registration of
+      <code>https://w3id.org/spending-authority/v1</code> and
+      <code>https://w3id.org/avp-micro/cat</code> is a prerequisite for the
+      <em class="rfc2119">MUST</em> above.
+    </p>
+
+    <section id="agent-service-categories-vocab">
+      <h3>Agent service categories (SKOS)</h3>
+      <p>
+        An optional three-level [[SKOS]] vocabulary for <code>categories</code>
+        and <code>allowedServiceTypes</code> is published at
+        <a href="vocab/agent-service-categories.ttl"><code>vocab/agent-service-categories.ttl</code></a>.
+        The concept scheme IRI is
+        <code>https://w3id.org/avp-micro/cat/scheme/AgentServiceCategory</code>;
+        leaf concepts use the namespace
+        <code>https://w3id.org/avp-micro/cat#</code> and are abbreviated with the
+        <code>cat:</code> prefix defined in the Delegated Spending Authority
+        context (for example
+        <code>cat:ChatCompletionApi</code>). When category-valued members are
+        present, their values <em class="rfc2119">MUST</em> be absolute IRIs
+        (typically concepts from this scheme); they are interpreted as JSON-LD
+        node references. Use of this specific scheme is
+        <em class="rfc2119">OPTIONAL</em>; deployments
+        <em class="rfc2119">MAY</em> use another concept scheme, but both parties
+        to a transaction <em class="rfc2119">MUST</em> agree on the scheme for
+        category matching to be meaningful.
+        Regenerate with <code>vocab/generate_agent_service_skos.py</code>.
+      </p>
+    </section>
+  </section>
+
+  <section id="data-model">
+    <h2>Data model</h2>
+
+    <p>
+      A <dfn>DSA data object</dfn> is a JSON-LD document whose
+      <code>type</code> includes one of the classes defined in this section or in
+      an extension specification.
+    </p>
+
+    <section id="did-requirements">
+      <h3>DID documents and service endpoints</h3>
+
+      <p>
+        Every party that signs DSA messages or acts as a named payer,
+        payee, or wallet endpoint <em class="rfc2119">MUST</em> be identified
+        with a conforming DID as defined in [[[did-core]]]. For interoperability
+        testing, conforming software <em class="rfc2119">MUST</em> support the
+        <code>did:key</code> method [[DID-KEY]] with Ed25519 keys as the
+        mandatory-to-implement interoperability method and
+        <em class="rfc2119">SHOULD</em> support <code>did:web</code>. A deployment
+        <em class="rfc2119">MAY</em> require additional DID methods by profile.
+      </p>
+
+      <p>
+        A DID document used with DSA <em class="rfc2119">MUST</em> contain
+        at least one verification method suitable for proof verification, which
+        <em class="rfc2119">MUST</em> be of the
+        <code>Multikey</code> verification method type [[VC-DATA-INTEGRITY]]
+        (an Ed25519 key encoded as <code>publicKeyMultibase</code>). A DID
+        document <em class="rfc2119">MAY</em> advertise HTTP or other service
+        endpoints for quotes, wallet APIs, credential status, or receipts using
+        <code>service</code> entries. Specific <code>serviceEndpoint</code>
+        types and discovery rules are deployment-specific; this specification
+        defines the <em>data</em> carried in messages, not URL templates for
+        every API.
+      </p>
+    </section>
+
+    <section id="securing">
+      <h3>Securing mechanisms</h3>
+
+      <p>
+        Each DSA object that represents a commitment (see the per-message
+        requirements) <em class="rfc2119">MUST</em> be secured with at least one
+        <a>securing mechanism</a> that provides integrity and authenticates the
+        producer. Conforming software:
+      </p>
+      <ul>
+        <li>
+          <em class="rfc2119">MUST</em> support
+          <a data-cite="vc-data-model-2.0#securing-mechanisms">Data Integrity</a>
+          proofs [[VC-DATA-INTEGRITY]] of <code>type</code>
+          <code>DataIntegrityProof</code> with cryptosuite
+          <code>eddsa-jcs-2022</code> [[VC-DI-EDDSA]] as the
+          <strong>mandatory-to-implement</strong> object proof;
+        </li>
+        <li>
+          <em class="rfc2119">MAY</em> additionally support
+          <code>eddsa-rdfc-2022</code> [[VC-DI-EDDSA]] or JOSE-based proofs
+          (<code>JsonWebSignature2020</code> / detached JWS [[RFC7515]]).
+        </li>
+      </ul>
+
+      <p>
+        The <code>eddsa-jcs-2022</code> cryptosuite is mandated as the baseline
+        because it relies on JSON Canonicalization Scheme [[RFC8785]] rather than
+        RDF dataset canonicalization, which makes deterministic signing and
+        verification straightforward for the flat objects defined here. A
+        conforming verifier <em class="rfc2119">MUST</em> reject an object whose
+        only proof uses a cryptosuite it does not recognize.
+      </p>
+
+      <aside class="note">
+        <p>
+          <strong>A JSON-LD or RDF toolchain is not required to produce or verify
+          the mandatory proof.</strong> Because <code>eddsa-jcs-2022</code>
+          canonicalizes with [[RFC8785]] (JCS) over the JSON document itself —
+          not over an RDF dataset — a conforming producer or verifier needs only a
+          JCS canonicalizer and an Ed25519 implementation, both of which are
+          widely available. The accompanying <a href="schemas/">JSON Schema</a>
+          validates the same plain JSON. A JSON-LD processor is needed only to
+          consume these objects <em>as RDF</em> — for semantic integration,
+          ontology reasoning, or SHACL validation — and the requirement that every
+          object be valid JSON-LD (<a href="#namespace"></a>) exists so that such
+          consumers interoperate, not to oblige every implementer to run a
+          processor. Tamper resistance does not depend on JSON-LD processing: any
+          added, removed, or altered member changes the JCS bytes and therefore
+          breaks the signature, so a plain-JSON verifier that recomputes JCS over
+          the received object is as safe as an RDF-aware one.
+        </p>
+      </aside>
+
+      <p id="key-binding">
+        <strong>Verification-method binding.</strong> For any object that names a
+        <code>payer</code> and embeds a <a>Spending Authorization Credential</a>,
+        the verifying party
+        <em class="rfc2119">MUST</em> confirm that the
+        <code>proof.verificationMethod</code> dereferences to a verification
+        method whose <code>controller</code> is the <code>payer</code> DID, and
+        that the same DID equals the <code>credentialSubject.id</code> of the
+        embedded <a>Spending Authorization Credential</a>. A mismatch
+        <em class="rfc2119">MUST</em> cause rejection with
+        <code>invalidSignature</code> or <code>credentialRejected</code>. This
+        prevents an attacker who merely possesses a credential from authorizing
+        spending without control of the subject's keys.
+      </p>
+      <aside class="note">
+        <p>
+          <strong>Why key binding closes the "credential theft" attack.</strong>
+          An entity that obtains a <a>Spending Authorization Credential</a> —
+          say by intercepting it in transit — cannot use it to authorise
+          spending unless it also holds the corresponding private key. The
+          <code>proof.verificationMethod</code> check is what ties the
+          credential's authority to the specific key. Mere possession of the
+          credential is not sufficient.
+        </p>
+      </aside>
+
+      <p id="did-state-binding">
+        <strong>DID state at proof time.</strong> A proof
+        <em class="rfc2119">MUST</em> be verified against the verification method
+        as it existed in the signer's DID document <em>at the time the proof was
+        created</em> (the <code>proof.created</code> instant). For DID methods
+        whose documents can change (for example <code>did:web</code> or
+        ledger-based methods), a verifier performing after-the-fact audit
+        <em class="rfc2119">MUST</em> resolve the DID document version current at
+        <code>proof.created</code> — using the method's versioning facilities or a
+        retained, dated copy of the resolved document — rather than the latest
+        state, so that key rotation or other document changes occurring after
+        signing neither invalidate a historically valid proof nor let a rotated-in
+        key forge one. The mandatory-to-implement <code>did:key</code> method is
+        immutable and is therefore unaffected.
+      </p>
+    </section>
+
+    <section id="content-digest">
+      <h3>Content digests</h3>
+
+      <p>
+        A <dfn>content digest</dfn> is a string of the form
+        <code>&lt;alg&gt;:&lt;base64url&gt;</code>, where <code>&lt;alg&gt;</code>
+        is a hash algorithm identifier and <code>&lt;base64url&gt;</code> is the
+        base64url encoding (without padding, per [[RFC7515]] §2) of the digest
+        bytes. Conforming software <em class="rfc2119">MUST</em> support
+        <code>sha-256</code> and <em class="rfc2119">MUST NOT</em> accept a digest
+        whose algorithm it does not recognize. Example:
+        <code>sha-256:qa1n6G7l5b...</code>.
+      </p>
+
+      <p>
+        This generic content-digest form is used by credential and trust objects
+        to bind to opaque byte sequences (for example a service request or output
+        digest). Specifications that build on Delegated Spending Authority reuse
+        this form to define their own digest members.
+      </p>
+    </section>
+
+    <section id="credential-profiles">
+      <h3>Credential types</h3>
+
+      <p>
+        Delegated Spending Authority defines three <dfn>credential profiles</dfn>
+        as layered types
+        on the [[vc-data-model-2.0]]. Each profile <em class="rfc2119">MUST</em>
+        be serialized as a <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">verifiable credential</a>
+        using the VC 2.0 context and <em class="rfc2119">MUST</em> include a
+        <code>proof</code> satisfying a <a>securing mechanism</a> from
+        <a href="#securing"></a>. Credentials <em class="rfc2119">SHOULD</em>
+        carry a <a data-cite="vc-data-model-2.0#status">credentialStatus</a> entry
+        using [[BITSTRING-STATUS-LIST]] so that verifiers can check revocation and
+        suspension; verifiers <em class="rfc2119">MUST</em> honor status when
+        present.
+      </p>
+
+      <section id="spending-authorization-credential">
+        <h4><dfn>Spending Authorization Credential</dfn></h4>
+        <p>
+          Issued by a <a>principal</a> to a <a>payer agent</a>. The
+          <code>type</code> array <em class="rfc2119">MUST</em> include
+          <code>VerifiableCredential</code> and
+          <code>SpendingAuthorizationCredential</code>.
+        </p>
+        <p>
+          The <code>credentialSubject</code> <em class="rfc2119">MUST</em> be a
+          map whose <code>id</code> is the payer agent’s DID. The subject
+          <em class="rfc2119">MAY</em> include the following claims; a verifier
+          <em class="rfc2119">MUST</em> treat an absent constraint as not granting
+          authority for that constraint dimension and <em class="rfc2119">MUST
+          NOT</em> substitute a more permissive default. Where a deployment policy
+          imposes an additional limit, the <em>more restrictive</em> of credential
+          and policy applies.
+        </p>
+        <p class="object-summary">
+          A verifiable credential issued by a <a>principal</a> to a
+          <a>payer agent</a>, encoding the principal's spending-authority
+          constraints as claims on the agent DID.
+        </p>
+
+        <table class="simple">
+          <caption><code>credentialSubject</code> claims</caption>
+          <thead>
+            <tr>
+              <th scope="col">Member</th>
+              <th scope="col">Req.</th>
+              <th scope="col">Type</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td><em class="rfc2119">REQUIRED</em></td>
+              <td>DID</td>
+              <td>The payer agent's DID (the credential subject).</td>
+            </tr>
+            <tr>
+              <td><code>currency</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>string</td>
+              <td>ISO 4217 alphabetic currency code or deployment-defined asset code (see <a href="#i18n"></a>).</td>
+            </tr>
+            <tr>
+              <td><code>maxPerTransaction</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>decimal string</td>
+              <td>Maximum amount the agent may spend in a single payment.</td>
+            </tr>
+            <tr>
+              <td><code>dailyLimit</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>decimal string</td>
+              <td>Aggregate cap per calendar day. Day boundary is determined by <code>limitTimezone</code>.</td>
+            </tr>
+            <tr>
+              <td><code>limitTimezone</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>string</td>
+              <td>IANA time-zone name defining the day boundary for <code>dailyLimit</code>; absent means UTC.</td>
+            </tr>
+            <tr>
+              <td><code>allowedPayees</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>list of DIDs</td>
+              <td>Payee DIDs the agent is permitted to pay. Values <em class="rfc2119">MUST</em> be DIDs; pattern matching is out of scope.</td>
+            </tr>
+            <tr>
+              <td><code>allowedServiceTypes</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>list of IRIs</td>
+              <td>Service-category IRIs (typically <code>cat:</code> concepts) the agent may pay; matching per <a href="#category-matching"></a>.</td>
+            </tr>
+            <tr>
+              <td><code>requiresApprovalAbove</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>decimal string</td>
+              <td>Threshold above which the agent <em class="rfc2119">MUST</em> obtain out-of-band human approval. This is an agent-side obligation outside cryptographic enforcement.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          The credential's overall validity window uses the [[vc-data-model-2.0]]
+          <em>top-level</em> <code>validFrom</code> / <code>validUntil</code>
+          members ([[RFC3339]] timestamps); these are inherited from the VC 2.0
+          context and are <em>not</em> redefined by Delegated Spending Authority
+          nor carried as
+          subject claims. Verifiers <em class="rfc2119">MUST</em> reject a
+          credential used outside that window. An absent <code>validFrom</code>
+          imposes no lower bound and an absent <code>validUntil</code> no upper
+          bound; a credential with neither is unbounded in time and is invalidated
+          only by revocation or suspension (<code>credentialStatus</code>,
+          <a href="#credential-profiles"></a>). Issuers
+          <em class="rfc2119">SHOULD</em> set <code>validUntil</code> so that
+          authority is time-limited even if status cannot be checked.
+        </p>
+      </section>
+
+      <section id="payment-capability-credential">
+        <h4><dfn>Payment Capability Credential</dfn></h4>
+        <p>
+          Issued by a wallet provider or financial institution. The
+          <code>type</code> array <em class="rfc2119">MUST</em> include
+          <code>VerifiableCredential</code> and
+          <code>PaymentCapabilityCredential</code>.
+        </p>
+        <p class="object-summary">
+          A verifiable credential attesting a payer agent's payment capability
+          — account address, currency, and optional asset scale — issued by
+          the wallet provider or financial institution.
+        </p>
+        <p>
+          A <a>Payment Capability Credential</a> binds a payer agent DID to a
+          wallet account or payment capability. When a relying party requires
+          this credential, it <em class="rfc2119">MUST</em> verify the issuer
+          under local trust policy, verify the credential proof, confirm
+          <code>credentialSubject.id</code> is the payer agent DID, reject expired
+          credentials, and apply any <code>account</code>, <code>currency</code>,
+          <code>asset</code>, or <code>assetScale</code> claims as constraints on
+          the settlement target and economic terms.
+        </p>
+
+        <table class="simple">
+          <caption><code>credentialSubject</code> claims</caption>
+          <thead>
+            <tr>
+              <th scope="col">Member</th>
+              <th scope="col">Req.</th>
+              <th scope="col">Type</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td><em class="rfc2119">REQUIRED</em></td>
+              <td>DID</td>
+              <td>The payer agent's DID.</td>
+            </tr>
+            <tr>
+              <td><code>account</code></td>
+              <td><em class="rfc2119">SHOULD</em></td>
+              <td>string</td>
+              <td>Payment pointer, account URL, or on-ledger address.</td>
+            </tr>
+            <tr>
+              <td><code>currency</code></td>
+              <td><em class="rfc2119">SHOULD</em></td>
+              <td>string</td>
+              <td>ISO 4217 currency code.</td>
+            </tr>
+            <tr>
+              <td><code>asset</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>string</td>
+              <td>Non-ISO asset code (for example a token symbol).</td>
+            </tr>
+            <tr>
+              <td><code>assetScale</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>integer ≥ 0</td>
+              <td>Number of decimal places for the asset.</td>
+            </tr>
+            <tr>
+              <td><code>expires</code></td>
+              <td><em class="rfc2119">OPTIONAL</em></td>
+              <td>RFC 3339</td>
+              <td>Capability expiry; relying parties <em class="rfc2119">MUST</em> reject a credential used after this instant.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="merchant-credential">
+        <h4><dfn>Merchant Credential</dfn></h4>
+        <p>
+          Optional attestation about a payee service, issued by a trust
+          anchor (see <a href="#trust"></a>). The <code>type</code> array
+          <em class="rfc2119">MUST</em> include <code>VerifiableCredential</code>
+          and <code>MerchantCredential</code>. The subject
+          <em class="rfc2119">MUST</em> have an <code>id</code> equal to the
+          payee DID.
+        </p>
+        <p class="object-summary">
+          A verifiable credential issued by a trust anchor (such as an industry
+          registry) attesting a payee service's identity and the service
+          categories it provides.
+        </p>
+
+        <table class="simple">
+          <caption><code>credentialSubject</code> claims</caption>
+          <thead>
+            <tr>
+              <th scope="col">Member</th>
+              <th scope="col">Req.</th>
+              <th scope="col">Type</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td><em class="rfc2119">REQUIRED</em></td>
+              <td>DID</td>
+              <td>The payee service's DID.</td>
+            </tr>
+            <tr>
+              <td><code>merchantName</code> / <code>companyName</code></td>
+              <td><em class="rfc2119">SHOULD</em></td>
+              <td>string</td>
+              <td>Human-readable name of the payee service or organisation. May use VC 2.0 language-tagged values.</td>
+            </tr>
+            <tr>
+              <td><code>categories</code></td>
+              <td><em class="rfc2119">SHOULD</em></td>
+              <td>list of IRIs</td>
+              <td>Service-category IRIs from the agreed concept scheme. These are <strong>third-party attested</strong> and used for policy-enforcement matching (see <a href="#category-matching"></a>).</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">
+          The term <em>payee service</em> is used for the role; the
+          credential type and the <code>merchantName</code> claim retain the word
+          <q>merchant</q> only because it is the established label for a
+          business-identity attestation in existing commerce and trust-registry
+          ecosystems. The two terms denote the same role here.
+        </p>
+      </section>
+
+      <section id="category-matching">
+        <h5>Category matching</h5>
+        <p>
+          Categories can appear in two places with <em>different trust levels</em>:
+          a <a>Merchant Credential</a> carries categories attested by a
+          third-party trust anchor, whereas a payment offer carries
+          categories <em>self-asserted</em> by the payee. For
+          <strong>policy enforcement</strong>, a wallet
+          <em class="rfc2119">MUST</em> use only categories from a
+          <a>Merchant Credential</a> whose issuer is acceptable under its
+          <a href="#trust">trust policy</a>; it <em class="rfc2119">MUST NOT</em>
+          treat self-asserted payment-offer categories as satisfying an
+          <code>allowedServiceTypes</code> constraint, since a payee could assert
+          any category. Self-asserted categories <em class="rfc2119">MAY</em> be
+          used only for discovery, routing, or presentation.
+        </p>
+        <p>
+          Where a payee service asserts <code>categories</code> in a
+          <a>Merchant Credential</a> and the agent's
+          <a>Spending Authorization Credential</a> constrains
+          <code>allowedServiceTypes</code>, a wallet that enforces categorical
+          constraints <em class="rfc2119">MUST</em> require that at least one
+          attested category IRI is <em>authorized</em> by
+          <code>allowedServiceTypes</code> within the agreed concept scheme — that
+          is, the asserted category is identical to a member of
+          <code>allowedServiceTypes</code>, or some member of
+          <code>allowedServiceTypes</code> is a <code>skos:broaderTransitive</code>
+          ancestor of the asserted category. Equivalently, the asserted category
+          <em class="rfc2119">MUST</em> be the same as, or narrower than, an
+          allowed type; a payee asserting only a category <em>broader</em> than
+          every allowed type does <em>not</em> match. Because the published
+          vocabulary asserts only direct <code>skos:broader</code> relations,
+          implementations <em class="rfc2119">MUST</em> compute the transitive
+          closure of <code>skos:broader</code> (per [[SKOS]] semantics) when
+          evaluating this condition.
+          Comparison is over absolute IRIs. If the agent constrains
+          <code>allowedServiceTypes</code> but the payee asserts no verifiable
+          category, the wallet <em class="rfc2119">MUST</em> reject with
+          <code>policyViolation</code>.
+        </p>
+        <aside class="note">
+          <p>
+            <strong>Why the match direction matters.</strong>
+            The rule is "the asserted category must be the same as, or
+            <em>narrower than</em>, an allowed type" — not the reverse. A
+            payee self-asserting a <em>broader</em> category
+            (e.g. <code>cat:ComputeAndInference</code>) does not satisfy an
+            agent restricted to a narrower one
+            (e.g. <code>cat:ChatCompletionApi</code>). This prevents a payee
+            from claiming a permissive parent category to bypass a specific
+            restriction.
+          </p>
+        </aside>
+      </section>
+    </section>
+
+    <section id="daily-limit-claim">
+      <h3>Daily-limit claim and day boundary</h3>
+      <p id="daily-limit">
+        When <code>dailyLimit</code> is present in a
+        <a>Spending Authorization Credential</a>, the <q>day</q> boundary is the
+        calendar day in the credential's <code>limitTimezone</code>, or UTC if
+        that member is absent. The claim caps aggregate spend by the subject
+        across that calendar day. The cross-transaction
+        <em>aggregation and serialization</em> requirements that a wallet
+        applies when enforcing this claim are defined by the payments processing
+        layer that consumes the credential; this specification defines only the
+        claim and the day boundary it is measured against.
+      </p>
+      <aside class="note">
+        <p>
+          <strong>Why the timezone is in the credential.</strong>
+          "End of day" is ambiguous. Without <code>limitTimezone</code> a
+          daily limit resets at UTC midnight, which may not match the
+          principal's operational timezone. Encoding the intended timezone
+          in the credential itself lets the wallet enforce the correct day
+          boundary regardless of where it is deployed.
+        </p>
+      </aside>
+    </section>
+
+    <section id="amount-format">
+      <h3>Monetary amount format</h3>
+      <p>
+        All monetary members (<code>amount</code>, <code>maxPerTransaction</code>,
+        <code>dailyLimit</code>, <code>maxDailyTotal</code>)
+        <em class="rfc2119">MUST</em> be JSON
+        strings holding a decimal number, never JSON numbers, to avoid binary
+        floating-point rounding. The string <em class="rfc2119">MUST</em> match
+        <code>(0|[1-9][0-9]*)(\.[0-9]+)?</code> (no exponent, no leading
+        <code>+</code> or <code>-</code>, no thousands separators); monetary
+        amounts are non-negative. The number of fractional
+        digits <em class="rfc2119">MUST NOT</em> exceed the scale implied by the
+        <code>currency</code>/<code>asset</code> (for example two for most ISO
+        4217 currencies, or <code>assetScale</code> when supplied). Arithmetic
+        <em class="rfc2119">MUST</em> be exact
+        decimal arithmetic; comparisons against limits
+        <em class="rfc2119">MUST</em> use the full precision of the operands.
+      </p>
+    </section>
+  </section>
+
+  <section id="trust">
+    <h2>Trust establishment</h2>
+    <p>
+      Verification answers <q>is this proof valid and does it satisfy the stated
+      constraints?</q> It does <em>not</em> answer <q>should this issuer be
+      believed?</q> That decision rests on a deployment's trust policy, which is
+      out of band but security-critical.
+    </p>
+    <ul>
+      <li>
+        A relying party <em class="rfc2119">MUST</em> evaluate the
+        <em>issuer</em> of each <a>Spending Authorization Credential</a> against an
+        explicit, configured set of trusted principals before honoring it. A
+        payee-advertised list of acceptable credential issuers is an
+        assertion <em>by the payee</em> and <em class="rfc2119">MUST NOT</em> be
+        treated as a trust root.
+      </li>
+      <li>
+        A <a>payer agent</a> or wallet that relies on a <a>Merchant Credential</a>
+        <em class="rfc2119">MUST</em> evaluate the trust anchor that issued it
+        (for example an industry registry) against configured policy.
+      </li>
+      <li>
+        Trust policies <em class="rfc2119">SHOULD</em> be scoped (issuer X may
+        authorize spending only in currency Y up to amount Z) rather than
+        all-or-nothing, and <em class="rfc2119">SHOULD</em> support short
+        validity and revocation so compromise is contained.
+      </li>
+      <li>
+        Where DID methods derive authority from external infrastructure
+        (<code>did:web</code> from DNS/TLS, on-ledger methods from a ledger),
+        deployers <em class="rfc2119">MUST</em> account for that infrastructure in
+        their threat model (<a href="#security"></a>).
+      </li>
+    </ul>
+
+    <section id="trust-vocabulary">
+      <h3>Trust vocabulary</h3>
+      <p>
+        How a deployment <em>decides</em> which issuers to believe is local
+        policy and is intentionally not standardized here. This specification
+        does, however, define a small vocabulary so that a relying party's trust
+        configuration can be expressed, exchanged, and audited consistently. A
+        <dfn>TrustAnchor</dfn> is an entity, identified by a DID, whose
+        attestations a deployment elects to rely on — for example the issuer of
+        <a>Spending Authorization Credential</a> instances or of
+        <a>Merchant Credential</a> instances. A relying party's configuration is a
+        set of
+        <dfn data-lt="trusted issuers">TrustedIssuer</dfn> entries.
+      </p>
+      <p>A <a>TrustedIssuer</a> entry has:</p>
+      <ul>
+        <li><code>issuer</code> — DID of the trusted <a>TrustAnchor</a>, <em class="rfc2119">REQUIRED</em>.</li>
+        <li><code>issuerScope</code> — an <a>IssuerScope</a> bounding what the issuer is trusted to authorize, <em class="rfc2119">RECOMMENDED</em>; its absence means the deployment trusts the issuer without an additional scope bound.</li>
+        <li><code>validFrom</code> / <code>validUntil</code> — optional validity window for the trust grant.</li>
+      </ul>
+      <p>An <dfn>IssuerScope</dfn> <em class="rfc2119">MAY</em> constrain:</p>
+      <ul>
+        <li><code>currency</code> — the only currency the issuer may authorize.</li>
+        <li><code>maxPerTransaction</code> — ceiling the issuer may grant per transaction.</li>
+        <li><code>maxDailyTotal</code> — ceiling the issuer may grant per day.</li>
+        <li><code>allowedServiceTypes</code> — service-category IRIs the issuer may authorize.</li>
+      </ul>
+      <p>
+        When honoring a credential, a relying party <em class="rfc2119">MUST</em>
+        confirm
+        the credential's issuer matches a configured <a>TrustedIssuer</a>; when an
+        <a>IssuerScope</a> is present it <em class="rfc2119">MUST</em> reject (with
+        <code>credentialRejected</code>) any credential whose constraints exceed
+        that scope. Where both an <a>IssuerScope</a> and a credential constrain the
+        same dimension, the <em>more restrictive</em> value applies, consistent
+        with <a href="#spending-authorization-credential"></a>. Trust grants
+        <em class="rfc2119">SHOULD</em> be scoped and short-lived so that
+        compromise is contained. A deployment <em class="rfc2119">MAY</em> publish
+        its trusted-issuer set as a signed list; the distribution format and any
+        trust-registry resolution protocol are out of scope for this
+        specification.
+      </p>
+    </section>
+  </section>
+
+  <section id="security">
+    <h2>Security considerations</h2>
+
+    <p>
+      Delegated Spending Authority moves high-value decisions (spending) across
+      trust boundaries.
+      Implementations <em class="rfc2119">MUST</em> protect private signing keys,
+      <em class="rfc2119">SHOULD</em> isolate agent keys in hardware or a separate
+      process, and <em class="rfc2119">MUST</em> evaluate issuer trust
+      (<a href="#trust"></a>) before honoring credentials.
+    </p>
+
+    <p>The table summarizes the principal threats and the mechanisms that address them.</p>
+    <table class="simple">
+      <thead>
+        <tr><th>Threat</th><th>Mechanism</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Credential theft / replay (use a stolen VC)</td><td>Verification-method binding to the subject DID (<a href="#key-binding">key binding</a>); the thief cannot produce the payer's proof.</td></tr>
+        <tr><td>Over-scoping beyond delegated authority</td><td><code>maxPerTransaction</code>, <code>dailyLimit</code> with its day boundary (<a href="#daily-limit">daily-limit aggregation</a>), and the <em>more restrictive of credential and policy</em> rule (<a href="#spending-authorization-credential"></a>).</td></tr>
+        <tr><td>Untrusted or over-scoped issuer</td><td>Explicit, scoped trust policy and revocation via [[BITSTRING-STATUS-LIST]] (<a href="#trust"></a>).</td></tr>
+        <tr><td>Unverified term injection via JSON-LD</td><td><code>@protected</code> context with no <code>@vocab</code>; unknown terms are dropped (<a href="#namespace"></a>).</td></tr>
+        <tr><td>DID-method infrastructure compromise (DNS/TLS, ledger)</td><td>Out of scope for value transfer; deployers account for it in their trust policy (<a href="#trust"></a>), and proofs are verified against DID state at <code>proof.created</code> (<a href="#did-state-binding">DID state at proof time</a>).</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="privacy">
+    <h2>Privacy considerations</h2>
+
+    <p>
+      Agents <em class="rfc2119">SHOULD</em> disclose the minimum verifiable
+      claims necessary for a transaction. Selective disclosure is not a property
+      of the base [[vc-data-model-2.0]]; deployments that need it
+      <em class="rfc2119">SHOULD</em> use a mechanism that provides it, such as a
+      Data Integrity cryptosuite with selective
+      disclosure. Pairwise identifiers are compatible with these mechanisms.
+    </p>
+
+    <p>
+      Correlation can arise from DID resolution, repeated payer DIDs, issuer
+      identifiers, and settlement metadata. High-privacy deployments
+      <em class="rfc2119">SHOULD</em> analyze timing and identifier rotation, and
+      <em class="rfc2119">SHOULD NOT</em> place principal or end-user PII in a
+      <a>Spending Authorization Credential</a>, which travels to relying parties
+      and potentially payees.
+    </p>
+  </section>
+
+  <section id="i18n">
+    <h2>Internationalization considerations</h2>
+    <p>
+      The <code>currency</code> member <em class="rfc2119">SHOULD</em> carry an
+      ISO 4217 alphabetic code for fiat currencies. A deployment
+      <em class="rfc2119">MAY</em> use a non-ISO asset code (for example a token
+      symbol); when it does, both parties <em class="rfc2119">MUST</em> agree on
+      the code's meaning and scale out of band, and an
+      <code>assetScale</code> <em class="rfc2119">SHOULD</em> be supplied. Decimal
+      amounts use a <code>.</code> as the decimal separator regardless of locale
+      (see <a href="#amount-format"></a>); locale-specific formatting is a
+      presentation concern and <em class="rfc2119">MUST NOT</em> appear in the
+      wire format. Human-readable strings such as <code>merchantName</code>
+      <em class="rfc2119">MAY</em> use VC 2.0 language-tagged values.
+    </p>
+  </section>
+
+  <section id="accessibility" class="informative">
+    <h2>Accessibility considerations</h2>
+    <p>
+      Delegated Spending Authority defines machine-to-machine data objects and a
+      verification
+      algorithm; it has no user interface and therefore introduces no direct
+      accessibility requirements. User agents that surface DSA information
+      to people — for example a wallet prompting for approval under
+      <code>requiresApprovalAbove</code> — are expected to follow general Web
+      accessibility
+      guidance ([[WCAG22]]) for that presentation, and any human-readable strings
+      carried in messages should use VC 2.0 language-tagged values
+      (<a href="#i18n"></a>) so assistive technologies can present them correctly.
+    </p>
+  </section>
+
+  <section id="examples" class="informative">
+    <h2>Examples</h2>
+    <p>
+      The fragments below show shape only (proofs elided). Complete,
+      cryptographically verifiable instances — an issuer-signed
+      <a>Spending Authorization Credential</a>, a <a>Merchant Credential</a>, a
+      <a>Payment Capability Credential</a>, and a trust-configuration example —
+      signed with <code>did:key</code>
+      Ed25519 keys and
+      <code>eddsa-jcs-2022</code> proofs — are published under
+      <a href="test-vectors/"><code>test-vectors/</code></a>, with JSON Schema in
+      <a href="schemas/"><code>schemas/</code></a> and SHACL shapes in
+      <a href="shapes/dsa-shapes.ttl"><code>shapes/dsa-shapes.ttl</code></a>.
+    </p>
+
+    <section id="ex-spending-auth">
+      <h3>Spending Authorization Credential (fragment)</h3>
+      <pre class="example json" title="SpendingAuthorizationCredential (credentialSubject constraints)">
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1"
+  ],
+  "id": "urn:dsa:vc:spendauth:456",
+  "type": ["VerifiableCredential", "SpendingAuthorizationCredential"],
+  "issuer": "did:web:example.com:org123",
+  "validFrom": "2026-03-25T20:00:00Z",
+  "validUntil": "2026-06-25T20:00:00Z",
+  "credentialStatus": {
+    "id": "https://example.com/status/3#94567",
+    "type": "BitstringStatusListEntry",
+    "statusPurpose": "revocation",
+    "statusListIndex": "94567",
+    "statusListCredential": "https://example.com/status/3"
+  },
+  "credentialSubject": {
+    "id": "did:key:z6MkmaintenanceBot01...",
+    "currency": "USD",
+    "maxPerTransaction": "0.05",
+    "dailyLimit": "5.00",
+    "limitTimezone": "America/New_York",
+    "allowedPayees": ["did:web:provider.com:services:hvac-api"],
+    "allowedServiceTypes": ["cat:IotDeviceControl"]
+  },
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+}
+      </pre>
+    </section>
+
+    <section id="ex-merchant-credential">
+      <h3>Merchant Credential (fragment)</h3>
+      <pre class="example json" title="MerchantCredential (third-party-attested payee categories)">
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1"
+  ],
+  "id": "urn:dsa:vc:merchant:001",
+  "type": ["VerifiableCredential", "MerchantCredential"],
+  "issuer": "did:web:registry.example:trust-anchor",
+  "credentialSubject": {
+    "id": "did:web:provider.com:services:tool-api",
+    "merchantName": "Tool API Inc.",
+    "categories": ["cat:ChatCompletionApi"]
+  },
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+}
+      </pre>
+    </section>
+  </section>
+
+  <section id="conformance-classes">
+    <h2>Conformance classes</h2>
+
+    <p>
+      This specification defines the following conformance classes:
+    </p>
+    <dl>
+      <dt><dfn data-lt="credential issuers|principals (conformance)">DSA credential issuer</dfn> / principal</dt>
+      <dd>
+        Software, controlled by a <a>principal</a>, that produces conforming
+        <a>Spending Authorization Credential</a> instances (and optionally
+        <a>Merchant Credential</a> and <a>Payment Capability Credential</a>
+        instances). It <em class="rfc2119">MUST</em> issue credentials secured per
+        <a href="#securing"></a> whose <code>credentialSubject.id</code> is the
+        <a>payer agent</a> DID, and <em class="rfc2119">SHOULD</em> carry a
+        <code>credentialStatus</code> entry ([[BITSTRING-STATUS-LIST]]).
+      </dd>
+      <dt><dfn>DSA credential verifier</dfn></dt>
+      <dd>
+        Software that, given a <a>Spending Authorization Credential</a> (typically
+        within a verifiable presentation), re-verifies the credential proof, the
+        verification-method binding to the subject DID (<a href="#key-binding">key binding</a>),
+        the validity window, and revocation/suspension status when present, and
+        enforces the credential's constraints. It <em class="rfc2119">MUST</em>
+        resolve DID state as of <code>proof.created</code>
+        (<a href="#did-state-binding">DID state at proof time</a>) and <em class="rfc2119">MUST</em>
+        treat absent credential constraints as not granting authority.
+      </dd>
+      <dt><dfn>DSA trust evaluator</dfn></dt>
+      <dd>
+        Software that evaluates a credential's <em>issuer</em> against an explicit,
+        configured trust policy (<a href="#trust"></a>) before the credential is
+        honored. It <em class="rfc2119">MUST</em> confirm the issuer matches a
+        configured <a>TrustedIssuer</a>, <em class="rfc2119">MUST</em> reject (with
+        <code>credentialRejected</code>) any credential whose constraints exceed a
+        present <a>IssuerScope</a>, and <em class="rfc2119">MUST NOT</em> treat a
+        payee-advertised list of acceptable issuers as a trust
+        root.
+      </dd>
+    </dl>
+  </section>
+
+  <section id="security-privacy-self-review" class="informative">
+    <h2>Security and Privacy Self-Review</h2>
+    <p>
+      This appendix answers the questions of the W3C TAG
+      <a href="https://www.w3.org/TR/security-privacy-questionnaire/">Self-Review
+      Questionnaire: Security and Privacy</a> [[SECURITY-PRIVACY-QUESTIONNAIRE]].
+      Delegated Spending Authority defines data objects and a verification
+      algorithm rather than a
+      browser feature, so several questions are answered as not applicable.
+    </p>
+    <dl>
+      <dt>What information does this feature expose, and for what purposes?</dt>
+      <dd>
+        Payer/payee/issuer DIDs and the constraints in a
+        <a>Spending Authorization Credential</a>. The purpose is to let a relying
+        party authorize spending and let a verifier audit it. Objects
+        expose only what is needed to evaluate the delegated authority; see the
+        next answer.
+      </dd>
+      <dt>Do features expose the minimum information necessary?</dt>
+      <dd>
+        Agents are directed to disclose the minimum verifiable claims
+        (<a href="#privacy"></a>). The base [[vc-data-model-2.0]] lacks selective
+        disclosure, so deployments needing it are pointed to a
+        selective-disclosure cryptosuite. PII <em class="rfc2119">SHOULD NOT</em>
+        be placed in credentials that travel to relying parties and payees.
+      </dd>
+      <dt>Do features handle personally identifiable or financial information?</dt>
+      <dd>
+        Yes — spending authority. Limits and
+        category constraints bound exposure. Correlation risks (repeated DIDs,
+        issuer identifiers) are addressed in <a href="#privacy"></a>.
+      </dd>
+      <dt>Does this feature introduce new state that persists across sessions?</dt>
+      <dd>
+        Relying parties retain a configured trust policy and may retain credentials
+        for audit. The specification directs that private keys
+        and full credential payloads not be retained beyond reconciliation needs.
+      </dd>
+      <dt>How does the feature deal with information from origins a user is not
+        interacting with / third parties?</dt>
+      <dd>
+        Trust is never inherited from the message sender: a relying party
+        <em class="rfc2119">MUST</em> evaluate credential issuers against its own
+        configured trust roots and <em class="rfc2119">MUST NOT</em> treat a
+        payee's advertised list of acceptable issuers as a trust root
+        (<a href="#trust"></a>).
+      </dd>
+      <dt>What are the feature's safe defaults, and what happens on error?</dt>
+      <dd>
+        Undefined JSON-LD terms are not given protocol semantics
+        (<code>@protected</code>, no <code>@vocab</code>), processors
+        <em class="rfc2119">MUST NOT</em> make authorization decisions from them,
+        unrecognized cryptosuites are rejected, and absent credential constraints
+        are treated as <q>not permitted by the credential</q> rather than
+        permissive.
+      </dd>
+      <dt>What are the risks of abuse, and the mitigations?</dt>
+      <dd>
+        The threat/mitigation table in <a href="#security"></a> enumerates
+        credential theft/replay, over-scoping beyond delegated authority, untrusted
+        issuers, and term injection,
+        together with the mechanisms that address each.
+      </dd>
+      <dt>Does the feature expose sensors, the underlying platform, native UI,
+        or allow access to other devices?</dt>
+      <dd>Not applicable; Delegated Spending Authority is a transport-agnostic data model.</dd>
+      <dt>How does the feature behave in private-browsing/incognito modes?</dt>
+      <dd>
+        Not applicable as a browser feature. Agents that need unlinkability are
+        directed to pairwise/rotated identifiers (<a href="#privacy"></a>).
+      </dd>
+    </dl>
+  </section>
+
+  <section id="acknowledgements" class="informative">
+    <h2>Acknowledgements</h2>
+    <p>
+      This specification incorporates concepts from the broader decentralized
+      identity and payments communities, including work on Verifiable
+      Credentials, Decentralized Identifiers, Data Integrity, Open Payments, and
+      HTTP payment challenges.
+    </p>
+  </section>
+</body>
+</html>

@@ -1,0 +1,76 @@
+# Delegated Spending Authority core RDFS/OWL ontology.
+#
+# Declares the classes and properties whose JSON-LD term mappings are defined in
+# ../context/v1.jsonld, so that DSA credential and trust data has formal RDF
+# semantics (rdfs:Class / rdf:Property, labels, comments, and conservative
+# domains/ranges). This ontology is an interoperability aid; the JSON-LD context
+# and the prose specification are authoritative for term identity and processing.
+#
+# Namespace: https://w3id.org/spending-authority/v1#  (prefix dsa:)
+@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+<https://w3id.org/spending-authority/v1> a owl:Ontology ;
+  dct:title "Delegated Spending Authority core vocabulary"@en ;
+  dct:description "Classes and properties for delegated spending authority: credentials, trust configuration, and identity."@en ;
+  owl:versionInfo "0.1.0" .
+
+#################################################################
+# Classes
+#################################################################
+
+dsa:SpendingAuthorizationCredential a owl:Class ;
+  rdfs:label "Spending authorization credential"@en ;
+  rdfs:comment "A verifiable credential issued by a principal that constrains how a payer agent may spend."@en .
+
+dsa:PaymentCapabilityCredential a owl:Class ;
+  rdfs:label "Payment capability credential"@en ;
+  rdfs:comment "A verifiable credential attesting an agent's funding/account capability."@en .
+
+dsa:MerchantCredential a owl:Class ;
+  rdfs:label "Merchant credential"@en ;
+  rdfs:comment "A third-party-attested credential about a payee service."@en .
+
+dsa:TrustedIssuer a owl:Class ;
+  rdfs:label "Trusted issuer"@en ;
+  rdfs:comment "A trust-configuration entry naming a DID a deployment elects to trust, optionally scoped."@en .
+
+dsa:IssuerScope a owl:Class ;
+  rdfs:label "Issuer scope"@en ;
+  rdfs:comment "Bounds on what a trusted issuer may authorize."@en .
+
+#################################################################
+# Object properties (node references / DIDs / IRIs)
+#################################################################
+
+dsa:allowedPayees a owl:ObjectProperty ; rdfs:label "allowed payees"@en ;
+  rdfs:comment "Payee DIDs an agent may pay."@en .
+dsa:allowedServiceTypes a owl:ObjectProperty ; rdfs:label "allowed service types"@en ;
+  rdfs:comment "Service-category IRIs an agent may pay."@en .
+dsa:categories a owl:ObjectProperty ; rdfs:label "categories"@en ;
+  rdfs:comment "Self- or third-party-asserted service-category IRIs."@en .
+dsa:trustedIssuers a owl:ObjectProperty ; rdfs:label "trusted issuers"@en ;
+  rdfs:comment "The set of TrustedIssuer entries in a trust configuration."@en ;
+  rdfs:range dsa:TrustedIssuer .
+dsa:issuerScope a owl:ObjectProperty ; rdfs:label "issuer scope"@en ;
+  rdfs:domain dsa:TrustedIssuer ; rdfs:range dsa:IssuerScope .
+
+#################################################################
+# Datatype properties
+#################################################################
+
+dsa:currency a owl:DatatypeProperty ; rdfs:label "currency"@en ; rdfs:range xsd:string .
+dsa:maxPerTransaction a owl:DatatypeProperty ; rdfs:label "max per transaction"@en ; rdfs:range xsd:string .
+dsa:dailyLimit a owl:DatatypeProperty ; rdfs:label "daily limit"@en ; rdfs:range xsd:string .
+dsa:maxDailyTotal a owl:DatatypeProperty ; rdfs:label "max daily total"@en ; rdfs:range xsd:string .
+dsa:limitTimezone a owl:DatatypeProperty ; rdfs:label "limit timezone"@en ; rdfs:range xsd:string .
+dsa:requiresApprovalAbove a owl:DatatypeProperty ; rdfs:label "requires approval above"@en ; rdfs:range xsd:string .
+dsa:account a owl:DatatypeProperty ; rdfs:label "account"@en ; rdfs:range xsd:string .
+dsa:asset a owl:DatatypeProperty ; rdfs:label "asset"@en ; rdfs:range xsd:string .
+dsa:assetScale a owl:DatatypeProperty ; rdfs:label "asset scale"@en ; rdfs:range xsd:integer .
+dsa:merchantName a owl:DatatypeProperty ; rdfs:label "merchant name"@en .
+dsa:companyName a owl:DatatypeProperty ; rdfs:label "company name"@en .

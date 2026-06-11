@@ -1,0 +1,37 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "SpendingAuthorizationCredential",
+    "EmbeddedSdJwtVcMandate"
+  ],
+  "issuer": "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79",
+  "credentialSubject": {
+    "id": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "currency": "USD",
+    "maxPerTransaction": "0.05",
+    "dailyLimit": "5.00",
+    "allowedPayees": [
+      "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"
+    ]
+  },
+  "bridgeMode": "proof-preserving",
+  "sourceVct": "mandate.spending-authority.avp+embedded",
+  "embeddedSdJwtVc": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6YnJpZGdlLmV4YW1wbGUja2V5LTEiLCJ0eXAiOiJkYytzZC1qd3QifQ.eyJhbGxvd2VkX3BheWVlcyI6WyJkaWQ6a2V5Ono2TWtlblBBMnhjRDVDR0pWbWtnZWpicjRMekJBYTFlM0dWQ1FpSEZyWERnaDVWaSJdLCJhdnBfdmMiOiJleUpBWTI5dWRHVjRkQ0k2V3lKb2RIUndjem92TDNkM2R5NTNNeTV2Y21jdmJuTXZZM0psWkdWdWRHbGhiSE12ZGpJaUxDSm9kSFJ3Y3pvdkwzY3phV1F1YjNKbkwzTmxZM1Z5YVhSNUwyUmhkR0V0YVc1MFpXZHlhWFI1TDNZeUlpd2lhSFIwY0hNNkx5OTNNMmxrTG05eVp5OXpjR1Z1WkdsdVp5MWhkWFJvYjNKcGRIa3ZkakVpWFN3aVkzSmxaR1Z1ZEdsaGJGTjBZWFIxY3lJNmV5SnBaQ0k2SW1oMGRIQnpPaTh2YVhOemRXVnlMbVY0WVcxd2JHVXZjM1JoZEhWekx6TWpPVFExTmpjaUxDSnpkR0YwZFhOTWFYTjBRM0psWkdWdWRHbGhiQ0k2SW1oMGRIQnpPaTh2YVhOemRXVnlMbVY0WVcxd2JHVXZjM1JoZEhWekx6TWlMQ0p6ZEdGMGRYTk1hWE4wU1c1a1pYZ2lPaUk1TkRVMk55SXNJbk4wWVhSMWMxQjFjbkJ2YzJVaU9pSnlaWFp2WTJGMGFXOXVJaXdpZEhsd1pTSTZJa0pwZEhOMGNtbHVaMU4wWVhSMWMweHBjM1JGYm5SeWVTSjlMQ0pqY21Wa1pXNTBhV0ZzVTNWaWFtVmpkQ0k2ZXlKaGJHeHZkMlZrVUdGNVpXVnpJanBiSW1ScFpEcHJaWGs2ZWpaTmEyVnVVRUV5ZUdORU5VTkhTbFp0YTJkbGFtSnlORXg2UWtGaE1XVXpSMVpEVVdsSVJuSllSR2RvTlZacElsMHNJbU4xY25KbGJtTjVJam9pVlZORUlpd2laR0ZwYkhsTWFXMXBkQ0k2SWpVdU1EQWlMQ0pwWkNJNkltUnBaRHByWlhrNmVqWk5hMjgyT0RoV2RERjFXa1pSV21nNFYzWmlPRUp1YldWdVJYRlVZV3BhZDBVeVFuVm5WemcxYmxkQk5qVlNJaXdpYldGNFVHVnlWSEpoYm5OaFkzUnBiMjRpT2lJd0xqQTFJbjBzSW1sa0lqb2lkWEp1T21SellUcDJZenB6Y0dWdVpHRjFkR2c2TkRVMklpd2lhWE56ZFdWeUlqb2laR2xrT210bGVUcDZOazFyYWs0eE16aFROWFJqUjNKbmJuRkxaRGQxYm1OWVlucHVRVWhHYjJReVFXSlNNVmxMTVc1UVFtRm1OemtpTENKd2NtOXZaaUk2ZXlKamNtVmhkR1ZrSWpvaU1qQXlOaTB3TXkweU5WUXlNRG93TURvd01Wb2lMQ0pqY25sd2RHOXpkV2wwWlNJNkltVmtaSE5oTFdwamN5MHlNREl5SWl3aWNISnZiMlpRZFhKd2IzTmxJam9pWVhOelpYSjBhVzl1VFdWMGFHOWtJaXdpY0hKdmIyWldZV3gxWlNJNklub3lWM2RuTm5KbGIybDFWRXR2UkdoVVNqSjNaemxNVlZRelFqbHFjVmhuZFZBMFZHOW1ORlJJYTBSalZFUmhabWhJWkdsRE0xVXpXR1pHZUVWeVVsWTVhVXh6VVRWVk9WQTVZblpLWTNKaFdtTTFaV1Z6Y2xwa0lpd2lkSGx3WlNJNklrUmhkR0ZKYm5SbFozSnBkSGxRY205dlppSXNJblpsY21sbWFXTmhkR2x2YmsxbGRHaHZaQ0k2SW1ScFpEcHJaWGs2ZWpaTmEycE9NVE00VXpWMFkwZHlaMjV4UzJRM2RXNWpXR0o2YmtGSVJtOWtNa0ZpVWpGWlN6RnVVRUpoWmpjNUkzbzJUV3RxVGpFek9GTTFkR05IY21kdWNVdGtOM1Z1WTFoaWVtNUJTRVp2WkRKQllsSXhXVXN4YmxCQ1lXWTNPU0o5TENKMGVYQmxJanBiSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc0lpd2lVM0JsYm1ScGJtZEJkWFJvYjNKcGVtRjBhVzl1UTNKbFpHVnVkR2xoYkNKZExDSjJZV3hwWkVaeWIyMGlPaUl5TURJMkxUQXpMVEkxVkRJd09qQXdPakF3V2lJc0luWmhiR2xrVlc1MGFXd2lPaUl5TURJMkxUQTJMVEkxVkRJd09qQXdPakF3V2lKOSIsImNuZiI6eyJqd2siOnsiY3J2IjoiRWQyNTUxOSIsImt0eSI6Ik9LUCIsIngiOiJnRThKRHptTlZKZ2VrMlNpWU0yZFJGckdiTHFvRlF1ZERKWERBUlhodTR3In19LCJjdXJyZW5jeSI6IlVTRCIsImV4cCI6MTc4MjQxNzYwMCwiaXNzIjoiZGlkOmtleTp6Nk1rak4xMzhTNXRjR3JnbnFLZDd1bmNYYnpuQUhGb2QyQWJSMVlLMW5QQmFmNzkiLCJqdGkiOiJ1cm46ZHNhOnZjOnNwZW5kYXV0aDo0NTYiLCJsaW1pdHMiOnsicGVyX2RheSI6IjUuMDAiLCJwZXJfdHhuIjoiMC4wNSJ9LCJuYmYiOjE3NzQ0Njg4MDAsInN0YXR1cyI6eyJzdGF0dXNfbGlzdCI6eyJpZHgiOjk0NTY3LCJ1cmkiOiJodHRwczovL2lzc3Vlci5leGFtcGxlL3N0YXR1cy8zIn19LCJzdWIiOiJkaWQ6a2V5Ono2TWtvNjg4VnQxdVpGUVpoOFd2YjhCbm1lbkVxVGFqWndFMkJ1Z1c4NW5XQTY1UiIsInZjdCI6Im1hbmRhdGUuc3BlbmRpbmctYXV0aG9yaXR5LmF2cCtlbWJlZGRlZCJ9.HgEeaU9FXWQBdC9kyE4JGI992f4ZPOe--tQVFhaP_IkWcpKeSMrgyO72C8n4Vl4OyZvT7plC9ySRR9jv2N-USQ~",
+  "profileVersion": "0.1.0",
+  "id": "urn:dsa:vc:spendauth:456",
+  "validFrom": "2026-03-25T20:00:00Z",
+  "validUntil": "2026-06-25T20:00:00Z",
+  "credentialStatus": {
+    "id": "https://issuer.example/status/3#94567",
+    "type": "BitstringStatusListEntry",
+    "statusPurpose": "revocation",
+    "statusListIndex": "94567",
+    "statusListCredential": "https://issuer.example/status/3"
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "_note": "Pricing-evaluation conformance fixtures; not signed wire messages.",
+  "cases": [
+    {
+      "name": "per-call single",
+      "currency": "USD",
+      "pricingModel": {
+        "type": "PerCall",
+        "amount": "0.001",
+        "currency": "USD"
+      },
+      "usage": {},
+      "expected": "0.00100000"
+    },
+    {
+      "name": "per-unit linear",
+      "currency": "USD",
+      "pricingModel": {
+        "type": "PerUnit",
+        "dimension": "dim:Requests",
+        "unit": "qudtu:NUM",
+        "amount": "0.0000002",
+        "currency": "USD"
+      },
+      "usage": {
+        "dim:Requests": "1000000"
+      },
+      "expected": "0.20000000"
+    },
+    {
+      "name": "tiered graduated",
+      "currency": "USD",
+      "pricingModel": {
+        "type": "TieredRate",
+        "dimension": "dim:StorageDuration",
+        "unit": "aunit:GigaByteMonth",
+        "tierMode": "graduated",
+        "currency": "USD",
+        "tiers": [
+          {
+            "upTo": "51200",
+            "amount": "0.023"
+          },
+          {
+            "upTo": "512000",
+            "amount": "0.022"
+          },
+          {
+            "amount": "0.021"
+          }
+        ]
+      },
+      "usage": {
+        "dim:StorageDuration": "600000"
+      },
+      "expected": "13163.20000000"
+    },
+    {
+      "name": "composite lambda-like with allowance",
+      "currency": "USD",
+      "pricingModel": {
+        "type": "CompositePricing",
+        "currency": "USD",
+        "components": [
+          {
+            "type": "Allowance",
+            "dimension": "dim:Requests",
+            "unit": "qudtu:NUM",
+            "freeQuantity": "1000000"
+          },
+          {
+            "type": "PerUnit",
+            "dimension": "dim:Requests",
+            "unit": "qudtu:NUM",
+            "amount": "0.0000002"
+          },
+          {
+            "type": "PerUnit",
+            "dimension": "dim:ComputeMemoryTime",
+            "unit": "aunit:GigaByteSecond",
+            "amount": "0.0000166667"
+          }
+        ]
+      },
+      "usage": {
+        "dim:Requests": "3000000",
+        "dim:ComputeMemoryTime": "600000"
+      },
+      "expected": "10.40002000"
+    }
+  ]
+}

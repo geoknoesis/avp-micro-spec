@@ -1,0 +1,2252 @@
+# Concept IRIs: <#LocalName> with @base <https://w3id.org/avp-micro/cat> → https://w3id.org/avp-micro/cat#LocalName
+@base <https://w3id.org/avp-micro/cat> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix agcs: <https://w3id.org/avp-micro/cat/scheme/> .
+
+agcs:AgentServiceCategory a skos:ConceptScheme ;
+  dct:title "AVP-Micro agent service categories"@en ;
+  dct:description "Three-level SKOS hierarchy for classifying paid services in agent commerce (informative vocabulary)."@en ;
+  owl:versionInfo "0.1.0" ;
+  skos:hasTopConcept
+  <#ComputeAndInference> ,
+  <#DataKnowledgeAndFeeds> ,
+  <#ToolingAndIntegration> ,
+  <#MediaAndCreative> ,
+  <#CommunicationsAndReach> ,
+  <#HumanServices> ,
+  <#MarketplaceAndDiscovery> ,
+  <#PhysicalGoodsAndLogistics> ,
+  <#TrustRiskAndCompliance> .
+
+<#ComputeAndInference> a skos:Concept ;
+  skos:prefLabel "Compute and inference"@en ;
+  skos:notation "ComputeAndInference" ;
+  skos:topConceptOf agcs:AgentServiceCategory ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TextAndReasoningModels> a skos:Concept ;
+  skos:prefLabel "Text and reasoning models"@en ;
+  skos:notation "TextAndReasoningModels" ;
+  skos:broader <#ComputeAndInference> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ChatCompletionApi> a skos:Concept ;
+  skos:prefLabel "Chat completion API"@en ;
+  skos:notation "ChatCompletionApi" ;
+  skos:broader <#TextAndReasoningModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ToolUseFunctionCalling> a skos:Concept ;
+  skos:prefLabel "Tool use / function calling"@en ;
+  skos:notation "ToolUseFunctionCalling" ;
+  skos:broader <#TextAndReasoningModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#StructuredJsonOutput> a skos:Concept ;
+  skos:prefLabel "Structured JSON / schema-constrained output"@en ;
+  skos:notation "StructuredJsonOutput" ;
+  skos:broader <#TextAndReasoningModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LongContextReasoning> a skos:Concept ;
+  skos:prefLabel "Long-context reasoning"@en ;
+  skos:notation "LongContextReasoning" ;
+  skos:broader <#TextAndReasoningModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VisionAndMultimodalModels> a skos:Concept ;
+  skos:prefLabel "Vision and multimodal models"@en ;
+  skos:notation "VisionAndMultimodalModels" ;
+  skos:broader <#ComputeAndInference> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ImageCaptioningVqa> a skos:Concept ;
+  skos:prefLabel "Image captioning and VQA"@en ;
+  skos:notation "ImageCaptioningVqa" ;
+  skos:broader <#VisionAndMultimodalModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DocumentOcrLayout> a skos:Concept ;
+  skos:prefLabel "Document OCR and layout"@en ;
+  skos:notation "DocumentOcrLayout" ;
+  skos:broader <#VisionAndMultimodalModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VideoUnderstanding> a skos:Concept ;
+  skos:prefLabel "Video understanding"@en ;
+  skos:notation "VideoUnderstanding" ;
+  skos:broader <#VisionAndMultimodalModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MultimodalFusion> a skos:Concept ;
+  skos:prefLabel "Multimodal fusion models"@en ;
+  skos:notation "MultimodalFusion" ;
+  skos:broader <#VisionAndMultimodalModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AudioSpeechModels> a skos:Concept ;
+  skos:prefLabel "Audio and speech models"@en ;
+  skos:notation "AudioSpeechModels" ;
+  skos:broader <#ComputeAndInference> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SpeechToText> a skos:Concept ;
+  skos:prefLabel "Speech-to-text"@en ;
+  skos:notation "SpeechToText" ;
+  skos:broader <#AudioSpeechModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TextToSpeech> a skos:Concept ;
+  skos:prefLabel "Text-to-speech"@en ;
+  skos:notation "TextToSpeech" ;
+  skos:broader <#AudioSpeechModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SpeakerDiarization> a skos:Concept ;
+  skos:prefLabel "Speaker diarization"@en ;
+  skos:notation "SpeakerDiarization" ;
+  skos:broader <#AudioSpeechModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VoiceBiometrics> a skos:Concept ;
+  skos:prefLabel "Voice biometrics"@en ;
+  skos:notation "VoiceBiometrics" ;
+  skos:broader <#AudioSpeechModels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#EmbeddingsAndSimilarity> a skos:Concept ;
+  skos:prefLabel "Embeddings and similarity"@en ;
+  skos:notation "EmbeddingsAndSimilarity" ;
+  skos:broader <#ComputeAndInference> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TextEmbeddings> a skos:Concept ;
+  skos:prefLabel "Text embeddings"@en ;
+  skos:notation "TextEmbeddings" ;
+  skos:broader <#EmbeddingsAndSimilarity> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MultimodalEmbeddings> a skos:Concept ;
+  skos:prefLabel "Multimodal embeddings"@en ;
+  skos:notation "MultimodalEmbeddings" ;
+  skos:broader <#EmbeddingsAndSimilarity> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SemanticReranking> a skos:Concept ;
+  skos:prefLabel "Semantic reranking"@en ;
+  skos:notation "SemanticReranking" ;
+  skos:broader <#EmbeddingsAndSimilarity> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DuplicateNearDuplicateDetection> a skos:Concept ;
+  skos:prefLabel "Duplicate / near-duplicate detection"@en ;
+  skos:notation "DuplicateNearDuplicateDetection" ;
+  skos:broader <#EmbeddingsAndSimilarity> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InferenceRealtime> a skos:Concept ;
+  skos:prefLabel "Realtime inference"@en ;
+  skos:notation "InferenceRealtime" ;
+  skos:broader <#ComputeAndInference> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LowLatencyLlm> a skos:Concept ;
+  skos:prefLabel "Low-latency LLM API"@en ;
+  skos:notation "LowLatencyLlm" ;
+  skos:broader <#InferenceRealtime> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#StreamingTokenInference> a skos:Concept ;
+  skos:prefLabel "Streaming token inference"@en ;
+  skos:notation "StreamingTokenInference" ;
+  skos:broader <#InferenceRealtime> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#EdgeDeviceInference> a skos:Concept ;
+  skos:prefLabel "Edge / on-device inference"@en ;
+  skos:notation "EdgeDeviceInference" ;
+  skos:broader <#InferenceRealtime> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InferenceBatch> a skos:Concept ;
+  skos:prefLabel "Batch inference"@en ;
+  skos:notation "InferenceBatch" ;
+  skos:broader <#ComputeAndInference> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AsyncBatchScoring> a skos:Concept ;
+  skos:prefLabel "Async batch scoring"@en ;
+  skos:notation "AsyncBatchScoring" ;
+  skos:broader <#InferenceBatch> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BatchContentGeneration> a skos:Concept ;
+  skos:prefLabel "Batch content generation"@en ;
+  skos:notation "BatchContentGeneration" ;
+  skos:broader <#InferenceBatch> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#OfflineEvaluationRuns> a skos:Concept ;
+  skos:prefLabel "Offline evaluation runs"@en ;
+  skos:notation "OfflineEvaluationRuns" ;
+  skos:broader <#InferenceBatch> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TrainingAndFineTuning> a skos:Concept ;
+  skos:prefLabel "Training and fine-tuning"@en ;
+  skos:notation "TrainingAndFineTuning" ;
+  skos:broader <#ComputeAndInference> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SupervisedFineTuning> a skos:Concept ;
+  skos:prefLabel "Supervised fine-tuning"@en ;
+  skos:notation "SupervisedFineTuning" ;
+  skos:broader <#TrainingAndFineTuning> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PreferenceAlignmentRlhf> a skos:Concept ;
+  skos:prefLabel "Preference alignment / RLHF"@en ;
+  skos:notation "PreferenceAlignmentRlhf" ;
+  skos:broader <#TrainingAndFineTuning> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CustomModelTraining> a skos:Concept ;
+  skos:prefLabel "Custom model training"@en ;
+  skos:notation "CustomModelTraining" ;
+  skos:broader <#TrainingAndFineTuning> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SandboxedCodeExecution> a skos:Concept ;
+  skos:prefLabel "Sandboxed code execution"@en ;
+  skos:notation "SandboxedCodeExecution" ;
+  skos:broader <#ComputeAndInference> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ContainerSandboxApi> a skos:Concept ;
+  skos:prefLabel "Container sandbox API"@en ;
+  skos:notation "ContainerSandboxApi" ;
+  skos:broader <#SandboxedCodeExecution> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#NotebookInteractiveExecution> a skos:Concept ;
+  skos:prefLabel "Notebook / interactive execution"@en ;
+  skos:notation "NotebookInteractiveExecution" ;
+  skos:broader <#SandboxedCodeExecution> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#EphemeralRuntimeSessions> a skos:Concept ;
+  skos:prefLabel "Ephemeral runtime sessions"@en ;
+  skos:notation "EphemeralRuntimeSessions" ;
+  skos:broader <#SandboxedCodeExecution> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ComputeAndInference> skos:narrower
+    <#TextAndReasoningModels> ,
+    <#VisionAndMultimodalModels> ,
+    <#AudioSpeechModels> ,
+    <#EmbeddingsAndSimilarity> ,
+    <#InferenceRealtime> ,
+    <#InferenceBatch> ,
+    <#TrainingAndFineTuning> ,
+    <#SandboxedCodeExecution> .
+
+<#TextAndReasoningModels> skos:narrower
+    <#ChatCompletionApi> ,
+    <#ToolUseFunctionCalling> ,
+    <#StructuredJsonOutput> ,
+    <#LongContextReasoning> .
+
+<#VisionAndMultimodalModels> skos:narrower
+    <#ImageCaptioningVqa> ,
+    <#DocumentOcrLayout> ,
+    <#VideoUnderstanding> ,
+    <#MultimodalFusion> .
+
+<#AudioSpeechModels> skos:narrower
+    <#SpeechToText> ,
+    <#TextToSpeech> ,
+    <#SpeakerDiarization> ,
+    <#VoiceBiometrics> .
+
+<#EmbeddingsAndSimilarity> skos:narrower
+    <#TextEmbeddings> ,
+    <#MultimodalEmbeddings> ,
+    <#SemanticReranking> ,
+    <#DuplicateNearDuplicateDetection> .
+
+<#InferenceRealtime> skos:narrower
+    <#LowLatencyLlm> ,
+    <#StreamingTokenInference> ,
+    <#EdgeDeviceInference> .
+
+<#InferenceBatch> skos:narrower
+    <#AsyncBatchScoring> ,
+    <#BatchContentGeneration> ,
+    <#OfflineEvaluationRuns> .
+
+<#TrainingAndFineTuning> skos:narrower
+    <#SupervisedFineTuning> ,
+    <#PreferenceAlignmentRlhf> ,
+    <#CustomModelTraining> .
+
+<#SandboxedCodeExecution> skos:narrower
+    <#ContainerSandboxApi> ,
+    <#NotebookInteractiveExecution> ,
+    <#EphemeralRuntimeSessions> .
+
+<#DataKnowledgeAndFeeds> a skos:Concept ;
+  skos:prefLabel "Data, knowledge, and feeds"@en ;
+  skos:notation "DataKnowledgeAndFeeds" ;
+  skos:topConceptOf agcs:AgentServiceCategory ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BulkDatasetsAndSnapshots> a skos:Concept ;
+  skos:prefLabel "Bulk datasets and snapshots"@en ;
+  skos:notation "BulkDatasetsAndSnapshots" ;
+  skos:broader <#DataKnowledgeAndFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TabularFileBundles> a skos:Concept ;
+  skos:prefLabel "Tabular file bundles"@en ;
+  skos:notation "TabularFileBundles" ;
+  skos:broader <#BulkDatasetsAndSnapshots> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WarehouseTableExports> a skos:Concept ;
+  skos:prefLabel "Warehouse table exports"@en ;
+  skos:notation "WarehouseTableExports" ;
+  skos:broader <#BulkDatasetsAndSnapshots> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LabeledDatasetSales> a skos:Concept ;
+  skos:prefLabel "Labeled dataset sales"@en ;
+  skos:notation "LabeledDatasetSales" ;
+  skos:broader <#BulkDatasetsAndSnapshots> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LiveQueryAndRecordApis> a skos:Concept ;
+  skos:prefLabel "Live query and record APIs"@en ;
+  skos:notation "LiveQueryAndRecordApis" ;
+  skos:broader <#DataKnowledgeAndFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RestRecordCrud> a skos:Concept ;
+  skos:prefLabel "REST record CRUD"@en ;
+  skos:notation "RestRecordCrud" ;
+  skos:broader <#LiveQueryAndRecordApis> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#GraphqlDataApi> a skos:Concept ;
+  skos:prefLabel "GraphQL data API"@en ;
+  skos:notation "GraphqlDataApi" ;
+  skos:broader <#LiveQueryAndRecordApis> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SqlOverHttpOrWire> a skos:Concept ;
+  skos:prefLabel "SQL over HTTP / wire"@en ;
+  skos:notation "SqlOverHttpOrWire" ;
+  skos:broader <#LiveQueryAndRecordApis> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#StreamsAndPubSub> a skos:Concept ;
+  skos:prefLabel "Streams and pub/sub"@en ;
+  skos:notation "StreamsAndPubSub" ;
+  skos:broader <#DataKnowledgeAndFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#KafkaCompatibleStreams> a skos:Concept ;
+  skos:prefLabel "Kafka-compatible streams"@en ;
+  skos:notation "KafkaCompatibleStreams" ;
+  skos:broader <#StreamsAndPubSub> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WebsocketEventFeeds> a skos:Concept ;
+  skos:prefLabel "WebSocket event feeds"@en ;
+  skos:notation "WebsocketEventFeeds" ;
+  skos:broader <#StreamsAndPubSub> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MqttDeviceStreams> a skos:Concept ;
+  skos:prefLabel "MQTT device streams"@en ;
+  skos:notation "MqttDeviceStreams" ;
+  skos:broader <#StreamsAndPubSub> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SearchIndexAndDiscovery> a skos:Concept ;
+  skos:prefLabel "Search, index, and discovery"@en ;
+  skos:notation "SearchIndexAndDiscovery" ;
+  skos:broader <#DataKnowledgeAndFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#FullTextSearchApi> a skos:Concept ;
+  skos:prefLabel "Full-text search API"@en ;
+  skos:notation "FullTextSearchApi" ;
+  skos:broader <#SearchIndexAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VectorHybridSearch> a skos:Concept ;
+  skos:prefLabel "Vector / hybrid search"@en ;
+  skos:notation "VectorHybridSearch" ;
+  skos:broader <#SearchIndexAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#FacetedCatalogBrowse> a skos:Concept ;
+  skos:prefLabel "Faceted catalog browse"@en ;
+  skos:notation "FacetedCatalogBrowse" ;
+  skos:broader <#SearchIndexAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#KnowledgeBasesCorporaAndRag> a skos:Concept ;
+  skos:prefLabel "Knowledge bases, corpora, and RAG"@en ;
+  skos:notation "KnowledgeBasesCorporaAndRag" ;
+  skos:broader <#DataKnowledgeAndFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CuratedKbSubscription> a skos:Concept ;
+  skos:prefLabel "Curated KB subscription"@en ;
+  skos:notation "CuratedKbSubscription" ;
+  skos:broader <#KnowledgeBasesCorporaAndRag> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PrivateCorpusHosting> a skos:Concept ;
+  skos:prefLabel "Private corpus hosting"@en ;
+  skos:notation "PrivateCorpusHosting" ;
+  skos:broader <#KnowledgeBasesCorporaAndRag> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RagIngestionPipeline> a skos:Concept ;
+  skos:prefLabel "RAG ingestion pipeline"@en ;
+  skos:notation "RagIngestionPipeline" ;
+  skos:broader <#KnowledgeBasesCorporaAndRag> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MarketReferenceAndGeoData> a skos:Concept ;
+  skos:prefLabel "Market, reference, and geo data"@en ;
+  skos:notation "MarketReferenceAndGeoData" ;
+  skos:broader <#DataKnowledgeAndFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#FinancialMarketDataFeeds> a skos:Concept ;
+  skos:prefLabel "Financial market data feeds"@en ;
+  skos:notation "FinancialMarketDataFeeds" ;
+  skos:broader <#MarketReferenceAndGeoData> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#GeospatialFeatureLayers> a skos:Concept ;
+  skos:prefLabel "Geospatial feature layers"@en ;
+  skos:notation "GeospatialFeatureLayers" ;
+  skos:broader <#MarketReferenceAndGeoData> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WeatherAndClimateSeries> a skos:Concept ;
+  skos:prefLabel "Weather and climate series"@en ;
+  skos:notation "WeatherAndClimateSeries" ;
+  skos:broader <#MarketReferenceAndGeoData> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WebSearchAndCrawlFeeds> a skos:Concept ;
+  skos:prefLabel "Web search and crawl feeds"@en ;
+  skos:notation "WebSearchAndCrawlFeeds" ;
+  skos:broader <#DataKnowledgeAndFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SerpApiAccess> a skos:Concept ;
+  skos:prefLabel "SERP API access"@en ;
+  skos:notation "SerpApiAccess" ;
+  skos:broader <#WebSearchAndCrawlFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CrawlAsAService> a skos:Concept ;
+  skos:prefLabel "Crawl-as-a-service"@en ;
+  skos:notation "CrawlAsAService" ;
+  skos:broader <#WebSearchAndCrawlFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#StructuredWebExtraction> a skos:Concept ;
+  skos:prefLabel "Structured web extraction"@en ;
+  skos:notation "StructuredWebExtraction" ;
+  skos:broader <#WebSearchAndCrawlFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TimeSeriesAndTelemetryFeeds> a skos:Concept ;
+  skos:prefLabel "Time series and telemetry feeds"@en ;
+  skos:notation "TimeSeriesAndTelemetryFeeds" ;
+  skos:broader <#DataKnowledgeAndFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MetricsAndApmStreams> a skos:Concept ;
+  skos:prefLabel "Metrics and APM streams"@en ;
+  skos:notation "MetricsAndApmStreams" ;
+  skos:broader <#TimeSeriesAndTelemetryFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#IndustrialSensorTelemetry> a skos:Concept ;
+  skos:prefLabel "Industrial sensor telemetry"@en ;
+  skos:notation "IndustrialSensorTelemetry" ;
+  skos:broader <#TimeSeriesAndTelemetryFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ApplicationLogStreams> a skos:Concept ;
+  skos:prefLabel "Application log streams"@en ;
+  skos:notation "ApplicationLogStreams" ;
+  skos:broader <#TimeSeriesAndTelemetryFeeds> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DataKnowledgeAndFeeds> skos:narrower
+    <#BulkDatasetsAndSnapshots> ,
+    <#LiveQueryAndRecordApis> ,
+    <#StreamsAndPubSub> ,
+    <#SearchIndexAndDiscovery> ,
+    <#KnowledgeBasesCorporaAndRag> ,
+    <#MarketReferenceAndGeoData> ,
+    <#WebSearchAndCrawlFeeds> ,
+    <#TimeSeriesAndTelemetryFeeds> .
+
+<#BulkDatasetsAndSnapshots> skos:narrower
+    <#TabularFileBundles> ,
+    <#WarehouseTableExports> ,
+    <#LabeledDatasetSales> .
+
+<#LiveQueryAndRecordApis> skos:narrower
+    <#RestRecordCrud> ,
+    <#GraphqlDataApi> ,
+    <#SqlOverHttpOrWire> .
+
+<#StreamsAndPubSub> skos:narrower
+    <#KafkaCompatibleStreams> ,
+    <#WebsocketEventFeeds> ,
+    <#MqttDeviceStreams> .
+
+<#SearchIndexAndDiscovery> skos:narrower
+    <#FullTextSearchApi> ,
+    <#VectorHybridSearch> ,
+    <#FacetedCatalogBrowse> .
+
+<#KnowledgeBasesCorporaAndRag> skos:narrower
+    <#CuratedKbSubscription> ,
+    <#PrivateCorpusHosting> ,
+    <#RagIngestionPipeline> .
+
+<#MarketReferenceAndGeoData> skos:narrower
+    <#FinancialMarketDataFeeds> ,
+    <#GeospatialFeatureLayers> ,
+    <#WeatherAndClimateSeries> .
+
+<#WebSearchAndCrawlFeeds> skos:narrower
+    <#SerpApiAccess> ,
+    <#CrawlAsAService> ,
+    <#StructuredWebExtraction> .
+
+<#TimeSeriesAndTelemetryFeeds> skos:narrower
+    <#MetricsAndApmStreams> ,
+    <#IndustrialSensorTelemetry> ,
+    <#ApplicationLogStreams> .
+
+<#ToolingAndIntegration> a skos:Concept ;
+  skos:prefLabel "Tooling and integration"@en ;
+  skos:notation "ToolingAndIntegration" ;
+  skos:topConceptOf agcs:AgentServiceCategory ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SaasBusinessApplications> a skos:Concept ;
+  skos:prefLabel "SaaS business applications"@en ;
+  skos:notation "SaasBusinessApplications" ;
+  skos:broader <#ToolingAndIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CrmIntegration> a skos:Concept ;
+  skos:prefLabel "CRM integration"@en ;
+  skos:notation "CrmIntegration" ;
+  skos:broader <#SaasBusinessApplications> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ErpIntegration> a skos:Concept ;
+  skos:prefLabel "ERP integration"@en ;
+  skos:notation "ErpIntegration" ;
+  skos:broader <#SaasBusinessApplications> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#HrAndItsmIntegration> a skos:Concept ;
+  skos:prefLabel "HR and ITSM integration"@en ;
+  skos:notation "HrAndItsmIntegration" ;
+  skos:broader <#SaasBusinessApplications> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CloudDevOpsAndRepos> a skos:Concept ;
+  skos:prefLabel "Cloud, DevOps, and repositories"@en ;
+  skos:notation "CloudDevOpsAndRepos" ;
+  skos:broader <#ToolingAndIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CloudControlPlaneApi> a skos:Concept ;
+  skos:prefLabel "Cloud control plane API"@en ;
+  skos:notation "CloudControlPlaneApi" ;
+  skos:broader <#CloudDevOpsAndRepos> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CicdPipelineIntegration> a skos:Concept ;
+  skos:prefLabel "CI/CD pipeline integration"@en ;
+  skos:notation "CicdPipelineIntegration" ;
+  skos:broader <#CloudDevOpsAndRepos> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SourceRepositoryAutomation> a skos:Concept ;
+  skos:prefLabel "Source repository automation"@en ;
+  skos:notation "SourceRepositoryAutomation" ;
+  skos:broader <#CloudDevOpsAndRepos> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WorkflowOrchestration> a skos:Concept ;
+  skos:prefLabel "Workflow orchestration"@en ;
+  skos:notation "WorkflowOrchestration" ;
+  skos:broader <#ToolingAndIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DagWorkflowEngine> a skos:Concept ;
+  skos:prefLabel "DAG workflow engine"@en ;
+  skos:notation "DagWorkflowEngine" ;
+  skos:broader <#WorkflowOrchestration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#HumanInTheLoopSteps> a skos:Concept ;
+  skos:prefLabel "Human-in-the-loop steps"@en ;
+  skos:notation "HumanInTheLoopSteps" ;
+  skos:broader <#WorkflowOrchestration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#EventDrivenOrchestration> a skos:Concept ;
+  skos:prefLabel "Event-driven orchestration"@en ;
+  skos:notation "EventDrivenOrchestration" ;
+  skos:broader <#WorkflowOrchestration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BrowserDesktopAutomation> a skos:Concept ;
+  skos:prefLabel "Browser and desktop automation"@en ;
+  skos:notation "BrowserDesktopAutomation" ;
+  skos:broader <#ToolingAndIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#HeadlessBrowserAutomation> a skos:Concept ;
+  skos:prefLabel "Headless browser automation"@en ;
+  skos:notation "HeadlessBrowserAutomation" ;
+  skos:broader <#BrowserDesktopAutomation> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DesktopRpa> a skos:Concept ;
+  skos:prefLabel "Desktop RPA"@en ;
+  skos:notation "DesktopRpa" ;
+  skos:broader <#BrowserDesktopAutomation> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RecordedMacroReplay> a skos:Concept ;
+  skos:prefLabel "Recorded macro replay"@en ;
+  skos:notation "RecordedMacroReplay" ;
+  skos:broader <#BrowserDesktopAutomation> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#IotDeviceControl> a skos:Concept ;
+  skos:prefLabel "IoT device control"@en ;
+  skos:notation "IotDeviceControl" ;
+  skos:broader <#ToolingAndIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DeviceTwinCommands> a skos:Concept ;
+  skos:prefLabel "Device twin commands"@en ;
+  skos:notation "DeviceTwinCommands" ;
+  skos:broader <#IotDeviceControl> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#FleetProvisioningUpdates> a skos:Concept ;
+  skos:prefLabel "Fleet provisioning updates"@en ;
+  skos:notation "FleetProvisioningUpdates" ;
+  skos:broader <#IotDeviceControl> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#EdgeRuleDeployment> a skos:Concept ;
+  skos:prefLabel "Edge rule deployment"@en ;
+  skos:notation "EdgeRuleDeployment" ;
+  skos:broader <#IotDeviceControl> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DocumentAndContentPlatforms> a skos:Concept ;
+  skos:prefLabel "Document and content platforms"@en ;
+  skos:notation "DocumentAndContentPlatforms" ;
+  skos:broader <#ToolingAndIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CloudDriveFileAutomation> a skos:Concept ;
+  skos:prefLabel "Cloud drive file automation"@en ;
+  skos:notation "CloudDriveFileAutomation" ;
+  skos:broader <#DocumentAndContentPlatforms> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WikiKnowledgePageApi> a skos:Concept ;
+  skos:prefLabel "Wiki / knowledge page API"@en ;
+  skos:notation "WikiKnowledgePageApi" ;
+  skos:broader <#DocumentAndContentPlatforms> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CmsHeadlessContent> a skos:Concept ;
+  skos:prefLabel "CMS / headless content"@en ;
+  skos:notation "CmsHeadlessContent" ;
+  skos:broader <#DocumentAndContentPlatforms> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#EcommerceOpsAndSellerTools> a skos:Concept ;
+  skos:prefLabel "E-commerce ops and seller tools"@en ;
+  skos:notation "EcommerceOpsAndSellerTools" ;
+  skos:broader <#ToolingAndIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ListingAndSkuApi> a skos:Concept ;
+  skos:prefLabel "Listing and SKU API"@en ;
+  skos:notation "ListingAndSkuApi" ;
+  skos:broader <#EcommerceOpsAndSellerTools> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InventorySync> a skos:Concept ;
+  skos:prefLabel "Inventory sync"@en ;
+  skos:notation "InventorySync" ;
+  skos:broader <#EcommerceOpsAndSellerTools> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#OrderAndFulfillmentHooks> a skos:Concept ;
+  skos:prefLabel "Order and fulfillment hooks"@en ;
+  skos:notation "OrderAndFulfillmentHooks" ;
+  skos:broader <#EcommerceOpsAndSellerTools> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CollaborationAndMessagingIntegration> a skos:Concept ;
+  skos:prefLabel "Collaboration and messaging integration"@en ;
+  skos:notation "CollaborationAndMessagingIntegration" ;
+  skos:broader <#ToolingAndIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TeamChatPostingApi> a skos:Concept ;
+  skos:prefLabel "Team chat posting API"@en ;
+  skos:notation "TeamChatPostingApi" ;
+  skos:broader <#CollaborationAndMessagingIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CalendarSchedulingHooks> a skos:Concept ;
+  skos:prefLabel "Calendar scheduling hooks"@en ;
+  skos:notation "CalendarSchedulingHooks" ;
+  skos:broader <#CollaborationAndMessagingIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#IssueTrackerAutomation> a skos:Concept ;
+  skos:prefLabel "Issue tracker automation"@en ;
+  skos:notation "IssueTrackerAutomation" ;
+  skos:broader <#CollaborationAndMessagingIntegration> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ToolingAndIntegration> skos:narrower
+    <#SaasBusinessApplications> ,
+    <#CloudDevOpsAndRepos> ,
+    <#WorkflowOrchestration> ,
+    <#BrowserDesktopAutomation> ,
+    <#IotDeviceControl> ,
+    <#DocumentAndContentPlatforms> ,
+    <#EcommerceOpsAndSellerTools> ,
+    <#CollaborationAndMessagingIntegration> .
+
+<#SaasBusinessApplications> skos:narrower
+    <#CrmIntegration> ,
+    <#ErpIntegration> ,
+    <#HrAndItsmIntegration> .
+
+<#CloudDevOpsAndRepos> skos:narrower
+    <#CloudControlPlaneApi> ,
+    <#CicdPipelineIntegration> ,
+    <#SourceRepositoryAutomation> .
+
+<#WorkflowOrchestration> skos:narrower
+    <#DagWorkflowEngine> ,
+    <#HumanInTheLoopSteps> ,
+    <#EventDrivenOrchestration> .
+
+<#BrowserDesktopAutomation> skos:narrower
+    <#HeadlessBrowserAutomation> ,
+    <#DesktopRpa> ,
+    <#RecordedMacroReplay> .
+
+<#IotDeviceControl> skos:narrower
+    <#DeviceTwinCommands> ,
+    <#FleetProvisioningUpdates> ,
+    <#EdgeRuleDeployment> .
+
+<#DocumentAndContentPlatforms> skos:narrower
+    <#CloudDriveFileAutomation> ,
+    <#WikiKnowledgePageApi> ,
+    <#CmsHeadlessContent> .
+
+<#EcommerceOpsAndSellerTools> skos:narrower
+    <#ListingAndSkuApi> ,
+    <#InventorySync> ,
+    <#OrderAndFulfillmentHooks> .
+
+<#CollaborationAndMessagingIntegration> skos:narrower
+    <#TeamChatPostingApi> ,
+    <#CalendarSchedulingHooks> ,
+    <#IssueTrackerAutomation> .
+
+<#MediaAndCreative> a skos:Concept ;
+  skos:prefLabel "Media and creative"@en ;
+  skos:notation "MediaAndCreative" ;
+  skos:topConceptOf agcs:AgentServiceCategory ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ImageGenerationAndEditing> a skos:Concept ;
+  skos:prefLabel "Image generation and editing"@en ;
+  skos:notation "ImageGenerationAndEditing" ;
+  skos:broader <#MediaAndCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TextToImageGeneration> a skos:Concept ;
+  skos:prefLabel "Text-to-image generation"@en ;
+  skos:notation "TextToImageGeneration" ;
+  skos:broader <#ImageGenerationAndEditing> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InpaintingOutpainting> a skos:Concept ;
+  skos:prefLabel "Inpainting / outpainting"@en ;
+  skos:notation "InpaintingOutpainting" ;
+  skos:broader <#ImageGenerationAndEditing> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BackgroundRemovalEnhancement> a skos:Concept ;
+  skos:prefLabel "Background removal / enhancement"@en ;
+  skos:notation "BackgroundRemovalEnhancement" ;
+  skos:broader <#ImageGenerationAndEditing> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VideoGenerationAndEditing> a skos:Concept ;
+  skos:prefLabel "Video generation and editing"@en ;
+  skos:notation "VideoGenerationAndEditing" ;
+  skos:broader <#MediaAndCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TextOrStoryboardToVideo> a skos:Concept ;
+  skos:prefLabel "Text / storyboard to video"@en ;
+  skos:notation "TextOrStoryboardToVideo" ;
+  skos:broader <#VideoGenerationAndEditing> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VideoEditingApi> a skos:Concept ;
+  skos:prefLabel "Video editing API"@en ;
+  skos:notation "VideoEditingApi" ;
+  skos:broader <#VideoGenerationAndEditing> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SubtitlingAndLocalization> a skos:Concept ;
+  skos:prefLabel "Subtitling and localization"@en ;
+  skos:notation "SubtitlingAndLocalization" ;
+  skos:broader <#VideoGenerationAndEditing> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AudioMusicAndVoiceCreative> a skos:Concept ;
+  skos:prefLabel "Audio, music, and voice (creative)"@en ;
+  skos:notation "AudioMusicAndVoiceCreative" ;
+  skos:broader <#MediaAndCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MusicAndSfxGeneration> a skos:Concept ;
+  skos:prefLabel "Music and SFX generation"@en ;
+  skos:notation "MusicAndSfxGeneration" ;
+  skos:broader <#AudioMusicAndVoiceCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VoiceoverProduction> a skos:Concept ;
+  skos:prefLabel "Voiceover production"@en ;
+  skos:notation "VoiceoverProduction" ;
+  skos:broader <#AudioMusicAndVoiceCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PodcastProductionServices> a skos:Concept ;
+  skos:prefLabel "Podcast production services"@en ;
+  skos:notation "PodcastProductionServices" ;
+  skos:broader <#AudioMusicAndVoiceCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#StockAndLicensedAssets> a skos:Concept ;
+  skos:prefLabel "Stock and licensed assets"@en ;
+  skos:notation "StockAndLicensedAssets" ;
+  skos:broader <#MediaAndCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RoyaltyFreeStockLibrary> a skos:Concept ;
+  skos:prefLabel "Royalty-free stock library"@en ;
+  skos:notation "RoyaltyFreeStockLibrary" ;
+  skos:broader <#StockAndLicensedAssets> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RightsManagedLicensing> a skos:Concept ;
+  skos:prefLabel "Rights-managed licensing"@en ;
+  skos:notation "RightsManagedLicensing" ;
+  skos:broader <#StockAndLicensedAssets> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#EnterpriseAssetEntitlements> a skos:Concept ;
+  skos:prefLabel "Enterprise asset entitlements"@en ;
+  skos:notation "EnterpriseAssetEntitlements" ;
+  skos:broader <#StockAndLicensedAssets> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CopywritingAndLocalizedContent> a skos:Concept ;
+  skos:prefLabel "Copywriting and localized content"@en ;
+  skos:notation "CopywritingAndLocalizedContent" ;
+  skos:broader <#MediaAndCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MarketingCopyPackages> a skos:Concept ;
+  skos:prefLabel "Marketing copy packages"@en ;
+  skos:notation "MarketingCopyPackages" ;
+  skos:broader <#CopywritingAndLocalizedContent> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TranscreationServices> a skos:Concept ;
+  skos:prefLabel "Transcreation services"@en ;
+  skos:notation "TranscreationServices" ;
+  skos:broader <#CopywritingAndLocalizedContent> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SeoAndMetadataPacks> a skos:Concept ;
+  skos:prefLabel "SEO and metadata packs"@en ;
+  skos:notation "SeoAndMetadataPacks" ;
+  skos:broader <#CopywritingAndLocalizedContent> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DesignTemplatesAndBrandSystems> a skos:Concept ;
+  skos:prefLabel "Design templates and brand systems"@en ;
+  skos:notation "DesignTemplatesAndBrandSystems" ;
+  skos:broader <#MediaAndCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#UiKitAndDesignTokens> a skos:Concept ;
+  skos:prefLabel "UI kit and design tokens"@en ;
+  skos:notation "UiKitAndDesignTokens" ;
+  skos:broader <#DesignTemplatesAndBrandSystems> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SlideDeckTemplates> a skos:Concept ;
+  skos:prefLabel "Slide deck templates"@en ;
+  skos:notation "SlideDeckTemplates" ;
+  skos:broader <#DesignTemplatesAndBrandSystems> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BrandGuidelinePacks> a skos:Concept ;
+  skos:prefLabel "Brand guideline packs"@en ;
+  skos:notation "BrandGuidelinePacks" ;
+  skos:broader <#DesignTemplatesAndBrandSystems> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ThreeDimensionalAndSpatialAssets> a skos:Concept ;
+  skos:prefLabel "3D and spatial assets"@en ;
+  skos:notation "ThreeDimensionalAndSpatialAssets" ;
+  skos:broader <#MediaAndCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MeshAndModelMarketplace> a skos:Concept ;
+  skos:prefLabel "Mesh and model marketplace"@en ;
+  skos:notation "MeshAndModelMarketplace" ;
+  skos:broader <#ThreeDimensionalAndSpatialAssets> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ArVrScenePackages> a skos:Concept ;
+  skos:prefLabel "AR/VR scene packages"@en ;
+  skos:notation "ArVrScenePackages" ;
+  skos:broader <#ThreeDimensionalAndSpatialAssets> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CadAndBimDerivatives> a skos:Concept ;
+  skos:prefLabel "CAD and BIM derivatives"@en ;
+  skos:notation "CadAndBimDerivatives" ;
+  skos:broader <#ThreeDimensionalAndSpatialAssets> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InteractiveAndExperientialMedia> a skos:Concept ;
+  skos:prefLabel "Interactive and experiential media"@en ;
+  skos:notation "InteractiveAndExperientialMedia" ;
+  skos:broader <#MediaAndCreative> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LightweightGamesAndDemos> a skos:Concept ;
+  skos:prefLabel "Lightweight games and demos"@en ;
+  skos:notation "LightweightGamesAndDemos" ;
+  skos:broader <#InteractiveAndExperientialMedia> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InteractiveAdsAndWidgets> a skos:Concept ;
+  skos:prefLabel "Interactive ads and widgets"@en ;
+  skos:notation "InteractiveAdsAndWidgets" ;
+  skos:broader <#InteractiveAndExperientialMedia> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ConfigurableProductDemos> a skos:Concept ;
+  skos:prefLabel "Configurable product demos"@en ;
+  skos:notation "ConfigurableProductDemos" ;
+  skos:broader <#InteractiveAndExperientialMedia> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MediaAndCreative> skos:narrower
+    <#ImageGenerationAndEditing> ,
+    <#VideoGenerationAndEditing> ,
+    <#AudioMusicAndVoiceCreative> ,
+    <#StockAndLicensedAssets> ,
+    <#CopywritingAndLocalizedContent> ,
+    <#DesignTemplatesAndBrandSystems> ,
+    <#ThreeDimensionalAndSpatialAssets> ,
+    <#InteractiveAndExperientialMedia> .
+
+<#ImageGenerationAndEditing> skos:narrower
+    <#TextToImageGeneration> ,
+    <#InpaintingOutpainting> ,
+    <#BackgroundRemovalEnhancement> .
+
+<#VideoGenerationAndEditing> skos:narrower
+    <#TextOrStoryboardToVideo> ,
+    <#VideoEditingApi> ,
+    <#SubtitlingAndLocalization> .
+
+<#AudioMusicAndVoiceCreative> skos:narrower
+    <#MusicAndSfxGeneration> ,
+    <#VoiceoverProduction> ,
+    <#PodcastProductionServices> .
+
+<#StockAndLicensedAssets> skos:narrower
+    <#RoyaltyFreeStockLibrary> ,
+    <#RightsManagedLicensing> ,
+    <#EnterpriseAssetEntitlements> .
+
+<#CopywritingAndLocalizedContent> skos:narrower
+    <#MarketingCopyPackages> ,
+    <#TranscreationServices> ,
+    <#SeoAndMetadataPacks> .
+
+<#DesignTemplatesAndBrandSystems> skos:narrower
+    <#UiKitAndDesignTokens> ,
+    <#SlideDeckTemplates> ,
+    <#BrandGuidelinePacks> .
+
+<#ThreeDimensionalAndSpatialAssets> skos:narrower
+    <#MeshAndModelMarketplace> ,
+    <#ArVrScenePackages> ,
+    <#CadAndBimDerivatives> .
+
+<#InteractiveAndExperientialMedia> skos:narrower
+    <#LightweightGamesAndDemos> ,
+    <#InteractiveAdsAndWidgets> ,
+    <#ConfigurableProductDemos> .
+
+<#CommunicationsAndReach> a skos:Concept ;
+  skos:prefLabel "Communications and reach"@en ;
+  skos:notation "CommunicationsAndReach" ;
+  skos:topConceptOf agcs:AgentServiceCategory ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#EmailDelivery> a skos:Concept ;
+  skos:prefLabel "Email delivery"@en ;
+  skos:notation "EmailDelivery" ;
+  skos:broader <#CommunicationsAndReach> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TransactionalEmailApi> a skos:Concept ;
+  skos:prefLabel "Transactional email API"@en ;
+  skos:notation "TransactionalEmailApi" ;
+  skos:broader <#EmailDelivery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MarketingEmailCampaigns> a skos:Concept ;
+  skos:prefLabel "Marketing email campaigns"@en ;
+  skos:notation "MarketingEmailCampaigns" ;
+  skos:broader <#EmailDelivery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InboxPlacementAndWarmup> a skos:Concept ;
+  skos:prefLabel "Inbox placement / warmup"@en ;
+  skos:notation "InboxPlacementAndWarmup" ;
+  skos:broader <#EmailDelivery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SmsAndMessagingChannels> a skos:Concept ;
+  skos:prefLabel "SMS and messaging channels"@en ;
+  skos:notation "SmsAndMessagingChannels" ;
+  skos:broader <#CommunicationsAndReach> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SmsMmsGateway> a skos:Concept ;
+  skos:prefLabel "SMS/MMS gateway"@en ;
+  skos:notation "SmsMmsGateway" ;
+  skos:broader <#SmsAndMessagingChannels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RcsAndRichMessaging> a skos:Concept ;
+  skos:prefLabel "RCS and rich messaging"@en ;
+  skos:notation "RcsAndRichMessaging" ;
+  skos:broader <#SmsAndMessagingChannels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#OtpAndVerificationSms> a skos:Concept ;
+  skos:prefLabel "OTP and verification SMS"@en ;
+  skos:notation "OtpAndVerificationSms" ;
+  skos:broader <#SmsAndMessagingChannels> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VoiceAndTelephony> a skos:Concept ;
+  skos:prefLabel "Voice and telephony"@en ;
+  skos:notation "VoiceAndTelephony" ;
+  skos:broader <#CommunicationsAndReach> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PstnOriginationTermination> a skos:Concept ;
+  skos:prefLabel "PSTN origination/termination"@en ;
+  skos:notation "PstnOriginationTermination" ;
+  skos:broader <#VoiceAndTelephony> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SipTrunking> a skos:Concept ;
+  skos:prefLabel "SIP trunking"@en ;
+  skos:notation "SipTrunking" ;
+  skos:broader <#VoiceAndTelephony> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#IvrAndCallControl> a skos:Concept ;
+  skos:prefLabel "IVR and call control"@en ;
+  skos:notation "IvrAndCallControl" ;
+  skos:broader <#VoiceAndTelephony> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PushAndInAppMessaging> a skos:Concept ;
+  skos:prefLabel "Push and in-app messaging"@en ;
+  skos:notation "PushAndInAppMessaging" ;
+  skos:broader <#CommunicationsAndReach> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MobilePushNotifications> a skos:Concept ;
+  skos:prefLabel "Mobile push notifications"@en ;
+  skos:notation "MobilePushNotifications" ;
+  skos:broader <#PushAndInAppMessaging> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InAppChatSdkBackend> a skos:Concept ;
+  skos:prefLabel "In-app chat SDK backend"@en ;
+  skos:notation "InAppChatSdkBackend" ;
+  skos:broader <#PushAndInAppMessaging> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WebPushNotifications> a skos:Concept ;
+  skos:prefLabel "Web push notifications"@en ;
+  skos:notation "WebPushNotifications" ;
+  skos:broader <#PushAndInAppMessaging> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PostalAndPhysicalMail> a skos:Concept ;
+  skos:prefLabel "Postal and physical mail"@en ;
+  skos:notation "PostalAndPhysicalMail" ;
+  skos:broader <#CommunicationsAndReach> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PrintAndMailApi> a skos:Concept ;
+  skos:prefLabel "Print-and-mail API"@en ;
+  skos:notation "PrintAndMailApi" ;
+  skos:broader <#PostalAndPhysicalMail> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AddressVerification> a skos:Concept ;
+  skos:prefLabel "Address verification"@en ;
+  skos:notation "AddressVerification" ;
+  skos:broader <#PostalAndPhysicalMail> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CertifiedAndRegisteredMail> a skos:Concept ;
+  skos:prefLabel "Certified / registered mail"@en ;
+  skos:notation "CertifiedAndRegisteredMail" ;
+  skos:broader <#PostalAndPhysicalMail> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SocialDistribution> a skos:Concept ;
+  skos:prefLabel "Social distribution"@en ;
+  skos:notation "SocialDistribution" ;
+  skos:broader <#CommunicationsAndReach> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ScheduledSocialPosting> a skos:Concept ;
+  skos:prefLabel "Scheduled social posting"@en ;
+  skos:notation "ScheduledSocialPosting" ;
+  skos:broader <#SocialDistribution> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PaidSocialBoostApis> a skos:Concept ;
+  skos:prefLabel "Paid social boost APIs"@en ;
+  skos:notation "PaidSocialBoostApis" ;
+  skos:broader <#SocialDistribution> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InfluencerCampaignCoordination> a skos:Concept ;
+  skos:prefLabel "Influencer campaign coordination"@en ;
+  skos:notation "InfluencerCampaignCoordination" ;
+  skos:broader <#SocialDistribution> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MeetingsAndWebinars> a skos:Concept ;
+  skos:prefLabel "Meetings and webinars"@en ;
+  skos:notation "MeetingsAndWebinars" ;
+  skos:broader <#CommunicationsAndReach> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VideoConferencingApi> a skos:Concept ;
+  skos:prefLabel "Video conferencing API"@en ;
+  skos:notation "VideoConferencingApi" ;
+  skos:broader <#MeetingsAndWebinars> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WebinarHosting> a skos:Concept ;
+  skos:prefLabel "Webinar hosting"@en ;
+  skos:notation "WebinarHosting" ;
+  skos:broader <#MeetingsAndWebinars> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RecordingAndTranscriptionHooks> a skos:Concept ;
+  skos:prefLabel "Recording and transcription hooks"@en ;
+  skos:notation "RecordingAndTranscriptionHooks" ;
+  skos:broader <#MeetingsAndWebinars> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BroadcastAndAlerts> a skos:Concept ;
+  skos:prefLabel "Broadcast and alerts"@en ;
+  skos:notation "BroadcastAndAlerts" ;
+  skos:broader <#CommunicationsAndReach> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MassNotificationSystems> a skos:Concept ;
+  skos:prefLabel "Mass notification systems"@en ;
+  skos:notation "MassNotificationSystems" ;
+  skos:broader <#BroadcastAndAlerts> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#EmergencyAlertGateways> a skos:Concept ;
+  skos:prefLabel "Emergency alert gateways"@en ;
+  skos:notation "EmergencyAlertGateways" ;
+  skos:broader <#BroadcastAndAlerts> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#OperationalPaging> a skos:Concept ;
+  skos:prefLabel "Operational paging"@en ;
+  skos:notation "OperationalPaging" ;
+  skos:broader <#BroadcastAndAlerts> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CommunicationsAndReach> skos:narrower
+    <#EmailDelivery> ,
+    <#SmsAndMessagingChannels> ,
+    <#VoiceAndTelephony> ,
+    <#PushAndInAppMessaging> ,
+    <#PostalAndPhysicalMail> ,
+    <#SocialDistribution> ,
+    <#MeetingsAndWebinars> ,
+    <#BroadcastAndAlerts> .
+
+<#EmailDelivery> skos:narrower
+    <#TransactionalEmailApi> ,
+    <#MarketingEmailCampaigns> ,
+    <#InboxPlacementAndWarmup> .
+
+<#SmsAndMessagingChannels> skos:narrower
+    <#SmsMmsGateway> ,
+    <#RcsAndRichMessaging> ,
+    <#OtpAndVerificationSms> .
+
+<#VoiceAndTelephony> skos:narrower
+    <#PstnOriginationTermination> ,
+    <#SipTrunking> ,
+    <#IvrAndCallControl> .
+
+<#PushAndInAppMessaging> skos:narrower
+    <#MobilePushNotifications> ,
+    <#InAppChatSdkBackend> ,
+    <#WebPushNotifications> .
+
+<#PostalAndPhysicalMail> skos:narrower
+    <#PrintAndMailApi> ,
+    <#AddressVerification> ,
+    <#CertifiedAndRegisteredMail> .
+
+<#SocialDistribution> skos:narrower
+    <#ScheduledSocialPosting> ,
+    <#PaidSocialBoostApis> ,
+    <#InfluencerCampaignCoordination> .
+
+<#MeetingsAndWebinars> skos:narrower
+    <#VideoConferencingApi> ,
+    <#WebinarHosting> ,
+    <#RecordingAndTranscriptionHooks> .
+
+<#BroadcastAndAlerts> skos:narrower
+    <#MassNotificationSystems> ,
+    <#EmergencyAlertGateways> ,
+    <#OperationalPaging> .
+
+<#HumanServices> a skos:Concept ;
+  skos:prefLabel "Human services"@en ;
+  skos:notation "HumanServices" ;
+  skos:topConceptOf agcs:AgentServiceCategory ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DataLabelingAndAnnotation> a skos:Concept ;
+  skos:prefLabel "Data labeling and annotation"@en ;
+  skos:notation "DataLabelingAndAnnotation" ;
+  skos:broader <#HumanServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ImageVideoBoundingBoxes> a skos:Concept ;
+  skos:prefLabel "Image/video bounding boxes"@en ;
+  skos:notation "ImageVideoBoundingBoxes" ;
+  skos:broader <#DataLabelingAndAnnotation> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#NlpSpanAndClassification> a skos:Concept ;
+  skos:prefLabel "NLP span and classification"@en ;
+  skos:notation "NlpSpanAndClassification" ;
+  skos:broader <#DataLabelingAndAnnotation> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LidarAndSensorAnnotation> a skos:Concept ;
+  skos:prefLabel "LiDAR and sensor annotation"@en ;
+  skos:notation "LidarAndSensorAnnotation" ;
+  skos:broader <#DataLabelingAndAnnotation> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ModerationAndSafetyReview> a skos:Concept ;
+  skos:prefLabel "Moderation and safety review"@en ;
+  skos:notation "ModerationAndSafetyReview" ;
+  skos:broader <#HumanServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PolicyBasedContentReview> a skos:Concept ;
+  skos:prefLabel "Policy-based content review"@en ;
+  skos:notation "PolicyBasedContentReview" ;
+  skos:broader <#ModerationAndSafetyReview> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AppealsAndEscalation> a skos:Concept ;
+  skos:prefLabel "Appeals and escalation"@en ;
+  skos:notation "AppealsAndEscalation" ;
+  skos:broader <#ModerationAndSafetyReview> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ChildSafetySpecialistReview> a skos:Concept ;
+  skos:prefLabel "Child safety specialist review"@en ;
+  skos:notation "ChildSafetySpecialistReview" ;
+  skos:broader <#ModerationAndSafetyReview> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ExpertReviewAndQualityAssurance> a skos:Concept ;
+  skos:prefLabel "Expert review and quality assurance"@en ;
+  skos:notation "ExpertReviewAndQualityAssurance" ;
+  skos:broader <#HumanServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DomainExpertEvaluation> a skos:Concept ;
+  skos:prefLabel "Domain expert evaluation"@en ;
+  skos:notation "DomainExpertEvaluation" ;
+  skos:broader <#ExpertReviewAndQualityAssurance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RedTeamAndAdversarialReview> a skos:Concept ;
+  skos:prefLabel "Red team / adversarial review"@en ;
+  skos:notation "RedTeamAndAdversarialReview" ;
+  skos:broader <#ExpertReviewAndQualityAssurance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#GoldSetAndBenchmarkCuration> a skos:Concept ;
+  skos:prefLabel "Gold set / benchmark curation"@en ;
+  skos:notation "GoldSetAndBenchmarkCuration" ;
+  skos:broader <#ExpertReviewAndQualityAssurance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CreativeProductionByPeople> a skos:Concept ;
+  skos:prefLabel "Creative production by people"@en ;
+  skos:notation "CreativeProductionByPeople" ;
+  skos:broader <#HumanServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#VideoEditingServices> a skos:Concept ;
+  skos:prefLabel "Video editing services"@en ;
+  skos:notation "VideoEditingServices" ;
+  skos:broader <#CreativeProductionByPeople> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#GraphicDesignServices> a skos:Concept ;
+  skos:prefLabel "Graphic design services"@en ;
+  skos:notation "GraphicDesignServices" ;
+  skos:broader <#CreativeProductionByPeople> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PhotoRetouching> a skos:Concept ;
+  skos:prefLabel "Photo retouching"@en ;
+  skos:notation "PhotoRetouching" ;
+  skos:broader <#CreativeProductionByPeople> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ResearchSurveysAndInterviews> a skos:Concept ;
+  skos:prefLabel "Research, surveys, and interviews"@en ;
+  skos:notation "ResearchSurveysAndInterviews" ;
+  skos:broader <#HumanServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PanelSurveys> a skos:Concept ;
+  skos:prefLabel "Panel surveys"@en ;
+  skos:notation "PanelSurveys" ;
+  skos:broader <#ResearchSurveysAndInterviews> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#UserInterviewsRecruitment> a skos:Concept ;
+  skos:prefLabel "User interviews recruitment"@en ;
+  skos:notation "UserInterviewsRecruitment" ;
+  skos:broader <#ResearchSurveysAndInterviews> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#B2bExpertCalls> a skos:Concept ;
+  skos:prefLabel "B2B expert calls"@en ;
+  skos:notation "B2bExpertCalls" ;
+  skos:broader <#ResearchSurveysAndInterviews> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CustomerSupportAndCxOperations> a skos:Concept ;
+  skos:prefLabel "Customer support and CX operations"@en ;
+  skos:notation "CustomerSupportAndCxOperations" ;
+  skos:broader <#HumanServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#OutsourcedTier1Support> a skos:Concept ;
+  skos:prefLabel "Outsourced tier-1 support"@en ;
+  skos:notation "OutsourcedTier1Support" ;
+  skos:broader <#CustomerSupportAndCxOperations> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BackOfficeTicketHandling> a skos:Concept ;
+  skos:prefLabel "Back-office ticket handling"@en ;
+  skos:notation "BackOfficeTicketHandling" ;
+  skos:broader <#CustomerSupportAndCxOperations> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#QualityMonitoringCoaching> a skos:Concept ;
+  skos:prefLabel "Quality monitoring / coaching"@en ;
+  skos:notation "QualityMonitoringCoaching" ;
+  skos:broader <#CustomerSupportAndCxOperations> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TranslationAndLocalization> a skos:Concept ;
+  skos:prefLabel "Translation and localization"@en ;
+  skos:notation "TranslationAndLocalization" ;
+  skos:broader <#HumanServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#HumanTranslationServices> a skos:Concept ;
+  skos:prefLabel "Human translation services"@en ;
+  skos:notation "HumanTranslationServices" ;
+  skos:broader <#TranslationAndLocalization> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LinguisticQa> a skos:Concept ;
+  skos:prefLabel "Linguistic QA"@en ;
+  skos:notation "LinguisticQa" ;
+  skos:broader <#TranslationAndLocalization> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ContinuousLocalizationWorkflow> a skos:Concept ;
+  skos:prefLabel "Continuous localization workflow"@en ;
+  skos:notation "ContinuousLocalizationWorkflow" ;
+  skos:broader <#TranslationAndLocalization> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MicrotasksAndCrowdsourcing> a skos:Concept ;
+  skos:prefLabel "Microtasks and crowdsourcing"@en ;
+  skos:notation "MicrotasksAndCrowdsourcing" ;
+  skos:broader <#HumanServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#GeneralMicrotaskMarketplace> a skos:Concept ;
+  skos:prefLabel "General microtask marketplace"@en ;
+  skos:notation "GeneralMicrotaskMarketplace" ;
+  skos:broader <#MicrotasksAndCrowdsourcing> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#JudgingAndRankingTasks> a skos:Concept ;
+  skos:prefLabel "Judging and ranking tasks"@en ;
+  skos:notation "JudgingAndRankingTasks" ;
+  skos:broader <#MicrotasksAndCrowdsourcing> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PaidBetaAndUxTasks> a skos:Concept ;
+  skos:prefLabel "Paid beta / UX tasks"@en ;
+  skos:notation "PaidBetaAndUxTasks" ;
+  skos:broader <#MicrotasksAndCrowdsourcing> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#HumanServices> skos:narrower
+    <#DataLabelingAndAnnotation> ,
+    <#ModerationAndSafetyReview> ,
+    <#ExpertReviewAndQualityAssurance> ,
+    <#CreativeProductionByPeople> ,
+    <#ResearchSurveysAndInterviews> ,
+    <#CustomerSupportAndCxOperations> ,
+    <#TranslationAndLocalization> ,
+    <#MicrotasksAndCrowdsourcing> .
+
+<#DataLabelingAndAnnotation> skos:narrower
+    <#ImageVideoBoundingBoxes> ,
+    <#NlpSpanAndClassification> ,
+    <#LidarAndSensorAnnotation> .
+
+<#ModerationAndSafetyReview> skos:narrower
+    <#PolicyBasedContentReview> ,
+    <#AppealsAndEscalation> ,
+    <#ChildSafetySpecialistReview> .
+
+<#ExpertReviewAndQualityAssurance> skos:narrower
+    <#DomainExpertEvaluation> ,
+    <#RedTeamAndAdversarialReview> ,
+    <#GoldSetAndBenchmarkCuration> .
+
+<#CreativeProductionByPeople> skos:narrower
+    <#VideoEditingServices> ,
+    <#GraphicDesignServices> ,
+    <#PhotoRetouching> .
+
+<#ResearchSurveysAndInterviews> skos:narrower
+    <#PanelSurveys> ,
+    <#UserInterviewsRecruitment> ,
+    <#B2bExpertCalls> .
+
+<#CustomerSupportAndCxOperations> skos:narrower
+    <#OutsourcedTier1Support> ,
+    <#BackOfficeTicketHandling> ,
+    <#QualityMonitoringCoaching> .
+
+<#TranslationAndLocalization> skos:narrower
+    <#HumanTranslationServices> ,
+    <#LinguisticQa> ,
+    <#ContinuousLocalizationWorkflow> .
+
+<#MicrotasksAndCrowdsourcing> skos:narrower
+    <#GeneralMicrotaskMarketplace> ,
+    <#JudgingAndRankingTasks> ,
+    <#PaidBetaAndUxTasks> .
+
+<#MarketplaceAndDiscovery> a skos:Concept ;
+  skos:prefLabel "Marketplace and discovery"@en ;
+  skos:notation "MarketplaceAndDiscovery" ;
+  skos:topConceptOf agcs:AgentServiceCategory ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ApiAndModelMarketplaces> a skos:Concept ;
+  skos:prefLabel "API and model marketplaces"@en ;
+  skos:notation "ApiAndModelMarketplaces" ;
+  skos:broader <#MarketplaceAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#HostedModelEndpointsListing> a skos:Concept ;
+  skos:prefLabel "Hosted model endpoints listing"@en ;
+  skos:notation "HostedModelEndpointsListing" ;
+  skos:broader <#ApiAndModelMarketplaces> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ApiProductSubscriptions> a skos:Concept ;
+  skos:prefLabel "API product subscriptions"@en ;
+  skos:notation "ApiProductSubscriptions" ;
+  skos:broader <#ApiAndModelMarketplaces> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PrivateOfferNegotiation> a skos:Concept ;
+  skos:prefLabel "Private offer negotiation"@en ;
+  skos:notation "PrivateOfferNegotiation" ;
+  skos:broader <#ApiAndModelMarketplaces> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DataProductMarketplaces> a skos:Concept ;
+  skos:prefLabel "Data product marketplaces"@en ;
+  skos:notation "DataProductMarketplaces" ;
+  skos:broader <#MarketplaceAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DatasetListings> a skos:Concept ;
+  skos:prefLabel "Dataset listings"@en ;
+  skos:notation "DatasetListings" ;
+  skos:broader <#DataProductMarketplaces> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#StreamAndFeedSubscriptions> a skos:Concept ;
+  skos:prefLabel "Stream and feed subscriptions"@en ;
+  skos:notation "StreamAndFeedSubscriptions" ;
+  skos:broader <#DataProductMarketplaces> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DataLicensingTerms> a skos:Concept ;
+  skos:prefLabel "Data licensing terms"@en ;
+  skos:notation "DataLicensingTerms" ;
+  skos:broader <#DataProductMarketplaces> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AgentAndPluginDirectories> a skos:Concept ;
+  skos:prefLabel "Agent and plugin directories"@en ;
+  skos:notation "AgentAndPluginDirectories" ;
+  skos:broader <#MarketplaceAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#McpAndToolPlugins> a skos:Concept ;
+  skos:prefLabel "MCP and tool plugins"@en ;
+  skos:notation "McpAndToolPlugins" ;
+  skos:broader <#AgentAndPluginDirectories> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AgentSkillPacks> a skos:Concept ;
+  skos:prefLabel "Agent skill packs"@en ;
+  skos:notation "AgentSkillPacks" ;
+  skos:broader <#AgentAndPluginDirectories> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WorkflowTemplateMarketplace> a skos:Concept ;
+  skos:prefLabel "Workflow template marketplace"@en ;
+  skos:notation "WorkflowTemplateMarketplace" ;
+  skos:broader <#AgentAndPluginDirectories> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LeadGenerationAndDemandGen> a skos:Concept ;
+  skos:prefLabel "Lead generation and demand gen"@en ;
+  skos:notation "LeadGenerationAndDemandGen" ;
+  skos:broader <#MarketplaceAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#B2bLeadLists> a skos:Concept ;
+  skos:prefLabel "B2B lead lists"@en ;
+  skos:notation "B2bLeadLists" ;
+  skos:broader <#LeadGenerationAndDemandGen> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#IntentSignalFeeds> a skos:Concept ;
+  skos:prefLabel "Intent signal feeds"@en ;
+  skos:notation "IntentSignalFeeds" ;
+  skos:broader <#LeadGenerationAndDemandGen> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AppointmentSettingServices> a skos:Concept ;
+  skos:prefLabel "Appointment setting services"@en ;
+  skos:notation "AppointmentSettingServices" ;
+  skos:broader <#LeadGenerationAndDemandGen> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SupplyAndWholesaleAccess> a skos:Concept ;
+  skos:prefLabel "Supply and wholesale access"@en ;
+  skos:notation "SupplyAndWholesaleAccess" ;
+  skos:broader <#MarketplaceAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WholesaleCatalogAccess> a skos:Concept ;
+  skos:prefLabel "Wholesale catalog access"@en ;
+  skos:notation "WholesaleCatalogAccess" ;
+  skos:broader <#SupplyAndWholesaleAccess> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DropShipSupplierNetworks> a skos:Concept ;
+  skos:prefLabel "Drop-ship supplier networks"@en ;
+  skos:notation "DropShipSupplierNetworks" ;
+  skos:broader <#SupplyAndWholesaleAccess> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ProcurementRfqMatching> a skos:Concept ;
+  skos:prefLabel "Procurement RFQ matching"@en ;
+  skos:notation "ProcurementRfqMatching" ;
+  skos:broader <#SupplyAndWholesaleAccess> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AdvertisingAndSponsoredPlacement> a skos:Concept ;
+  skos:prefLabel "Advertising and sponsored placement"@en ;
+  skos:notation "AdvertisingAndSponsoredPlacement" ;
+  skos:broader <#MarketplaceAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SponsoredSearchResults> a skos:Concept ;
+  skos:prefLabel "Sponsored search results"@en ;
+  skos:notation "SponsoredSearchResults" ;
+  skos:broader <#AdvertisingAndSponsoredPlacement> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CategoryFeaturedListings> a skos:Concept ;
+  skos:prefLabel "Category featured listings"@en ;
+  skos:notation "CategoryFeaturedListings" ;
+  skos:broader <#AdvertisingAndSponsoredPlacement> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RetargetingAndAttributionApis> a skos:Concept ;
+  skos:prefLabel "Retargeting / attribution APIs"@en ;
+  skos:notation "RetargetingAndAttributionApis" ;
+  skos:broader <#AdvertisingAndSponsoredPlacement> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AuctionsAndDynamicMarkets> a skos:Concept ;
+  skos:prefLabel "Auctions and dynamic markets"@en ;
+  skos:notation "AuctionsAndDynamicMarkets" ;
+  skos:broader <#MarketplaceAndDiscovery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SpotAuctionVenues> a skos:Concept ;
+  skos:prefLabel "Spot auction venues"@en ;
+  skos:notation "SpotAuctionVenues" ;
+  skos:broader <#AuctionsAndDynamicMarkets> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ReverseAuctionPlatforms> a skos:Concept ;
+  skos:prefLabel "Reverse auction platforms"@en ;
+  skos:notation "ReverseAuctionPlatforms" ;
+  skos:broader <#AuctionsAndDynamicMarkets> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ExchangeStyleOrderBooks> a skos:Concept ;
+  skos:prefLabel "Exchange-style order books"@en ;
+  skos:notation "ExchangeStyleOrderBooks" ;
+  skos:broader <#AuctionsAndDynamicMarkets> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MarketplaceAndDiscovery> skos:narrower
+    <#ApiAndModelMarketplaces> ,
+    <#DataProductMarketplaces> ,
+    <#AgentAndPluginDirectories> ,
+    <#LeadGenerationAndDemandGen> ,
+    <#SupplyAndWholesaleAccess> ,
+    <#AdvertisingAndSponsoredPlacement> ,
+    <#AuctionsAndDynamicMarkets> .
+
+<#ApiAndModelMarketplaces> skos:narrower
+    <#HostedModelEndpointsListing> ,
+    <#ApiProductSubscriptions> ,
+    <#PrivateOfferNegotiation> .
+
+<#DataProductMarketplaces> skos:narrower
+    <#DatasetListings> ,
+    <#StreamAndFeedSubscriptions> ,
+    <#DataLicensingTerms> .
+
+<#AgentAndPluginDirectories> skos:narrower
+    <#McpAndToolPlugins> ,
+    <#AgentSkillPacks> ,
+    <#WorkflowTemplateMarketplace> .
+
+<#LeadGenerationAndDemandGen> skos:narrower
+    <#B2bLeadLists> ,
+    <#IntentSignalFeeds> ,
+    <#AppointmentSettingServices> .
+
+<#SupplyAndWholesaleAccess> skos:narrower
+    <#WholesaleCatalogAccess> ,
+    <#DropShipSupplierNetworks> ,
+    <#ProcurementRfqMatching> .
+
+<#AdvertisingAndSponsoredPlacement> skos:narrower
+    <#SponsoredSearchResults> ,
+    <#CategoryFeaturedListings> ,
+    <#RetargetingAndAttributionApis> .
+
+<#AuctionsAndDynamicMarkets> skos:narrower
+    <#SpotAuctionVenues> ,
+    <#ReverseAuctionPlatforms> ,
+    <#ExchangeStyleOrderBooks> .
+
+<#PhysicalGoodsAndLogistics> a skos:Concept ;
+  skos:prefLabel "Physical goods and logistics"@en ;
+  skos:notation "PhysicalGoodsAndLogistics" ;
+  skos:topConceptOf agcs:AgentServiceCategory ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RawMaterialsAndComponents> a skos:Concept ;
+  skos:prefLabel "Raw materials and components"@en ;
+  skos:notation "RawMaterialsAndComponents" ;
+  skos:broader <#PhysicalGoodsAndLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CommodityInputs> a skos:Concept ;
+  skos:prefLabel "Commodity inputs"@en ;
+  skos:notation "CommodityInputs" ;
+  skos:broader <#RawMaterialsAndComponents> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ElectronicComponents> a skos:Concept ;
+  skos:prefLabel "Electronic components"@en ;
+  skos:notation "ElectronicComponents" ;
+  skos:broader <#RawMaterialsAndComponents> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CustomManufacturedParts> a skos:Concept ;
+  skos:prefLabel "Custom manufactured parts"@en ;
+  skos:notation "CustomManufacturedParts" ;
+  skos:broader <#RawMaterialsAndComponents> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#FinishedGoodsAndRetailProducts> a skos:Concept ;
+  skos:prefLabel "Finished goods and retail products"@en ;
+  skos:notation "FinishedGoodsAndRetailProducts" ;
+  skos:broader <#PhysicalGoodsAndLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ConsumerPackagedGoods> a skos:Concept ;
+  skos:prefLabel "Consumer packaged goods"@en ;
+  skos:notation "ConsumerPackagedGoods" ;
+  skos:broader <#FinishedGoodsAndRetailProducts> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DurableGoods> a skos:Concept ;
+  skos:prefLabel "Durable goods"@en ;
+  skos:notation "DurableGoods" ;
+  skos:broader <#FinishedGoodsAndRetailProducts> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PrivateLabelSku> a skos:Concept ;
+  skos:prefLabel "Private label SKU"@en ;
+  skos:notation "PrivateLabelSku" ;
+  skos:broader <#FinishedGoodsAndRetailProducts> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PackagingAndConsumables> a skos:Concept ;
+  skos:prefLabel "Packaging and consumables"@en ;
+  skos:notation "PackagingAndConsumables" ;
+  skos:broader <#PhysicalGoodsAndLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ShippingPackagingSupplies> a skos:Concept ;
+  skos:prefLabel "Shipping packaging supplies"@en ;
+  skos:notation "ShippingPackagingSupplies" ;
+  skos:broader <#PackagingAndConsumables> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#MroConsumables> a skos:Concept ;
+  skos:prefLabel "MRO consumables"@en ;
+  skos:notation "MroConsumables" ;
+  skos:broader <#PackagingAndConsumables> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ColdChainSupplies> a skos:Concept ;
+  skos:prefLabel "Cold chain supplies"@en ;
+  skos:notation "ColdChainSupplies" ;
+  skos:broader <#PackagingAndConsumables> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WarehousingAndFulfillment> a skos:Concept ;
+  skos:prefLabel "Warehousing and fulfillment"@en ;
+  skos:notation "WarehousingAndFulfillment" ;
+  skos:broader <#PhysicalGoodsAndLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PickPackShip3pl> a skos:Concept ;
+  skos:prefLabel "Pick/pack/ship 3PL"@en ;
+  skos:notation "PickPackShip3pl" ;
+  skos:broader <#WarehousingAndFulfillment> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CrossDockTransload> a skos:Concept ;
+  skos:prefLabel "Cross-dock / transload"@en ;
+  skos:notation "CrossDockTransload" ;
+  skos:broader <#WarehousingAndFulfillment> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#KittingAndAssembly> a skos:Concept ;
+  skos:prefLabel "Kitting and assembly"@en ;
+  skos:notation "KittingAndAssembly" ;
+  skos:broader <#WarehousingAndFulfillment> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#FreightAndCargo> a skos:Concept ;
+  skos:prefLabel "Freight and cargo"@en ;
+  skos:notation "FreightAndCargo" ;
+  skos:broader <#PhysicalGoodsAndLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#FullTruckloadLtl> a skos:Concept ;
+  skos:prefLabel "Full truckload / LTL"@en ;
+  skos:notation "FullTruckloadLtl" ;
+  skos:broader <#FreightAndCargo> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AirAndOceanFreight> a skos:Concept ;
+  skos:prefLabel "Air and ocean freight"@en ;
+  skos:notation "AirAndOceanFreight" ;
+  skos:broader <#FreightAndCargo> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#FreightForwarding> a skos:Concept ;
+  skos:prefLabel "Freight forwarding"@en ;
+  skos:notation "FreightForwarding" ;
+  skos:broader <#FreightAndCargo> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LastMileDelivery> a skos:Concept ;
+  skos:prefLabel "Last-mile delivery"@en ;
+  skos:notation "LastMileDelivery" ;
+  skos:broader <#PhysicalGoodsAndLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CourierSameDay> a skos:Concept ;
+  skos:prefLabel "Courier / same-day"@en ;
+  skos:notation "CourierSameDay" ;
+  skos:broader <#LastMileDelivery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ParcelLockerDelivery> a skos:Concept ;
+  skos:prefLabel "Parcel locker delivery"@en ;
+  skos:notation "ParcelLockerDelivery" ;
+  skos:broader <#LastMileDelivery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WhiteGloveDelivery> a skos:Concept ;
+  skos:prefLabel "White glove delivery"@en ;
+  skos:notation "WhiteGloveDelivery" ;
+  skos:broader <#LastMileDelivery> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ReturnsAndReverseLogistics> a skos:Concept ;
+  skos:prefLabel "Returns and reverse logistics"@en ;
+  skos:notation "ReturnsAndReverseLogistics" ;
+  skos:broader <#PhysicalGoodsAndLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RmaProcessing> a skos:Concept ;
+  skos:prefLabel "RMA processing"@en ;
+  skos:notation "RmaProcessing" ;
+  skos:broader <#ReturnsAndReverseLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#RefurbishmentAndGrading> a skos:Concept ;
+  skos:prefLabel "Refurbishment and grading"@en ;
+  skos:notation "RefurbishmentAndGrading" ;
+  skos:broader <#ReturnsAndReverseLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#LiquidationChannels> a skos:Concept ;
+  skos:prefLabel "Liquidation channels"@en ;
+  skos:notation "LiquidationChannels" ;
+  skos:broader <#ReturnsAndReverseLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CustomsAndCrossBorder> a skos:Concept ;
+  skos:prefLabel "Customs and cross-border"@en ;
+  skos:notation "CustomsAndCrossBorder" ;
+  skos:broader <#PhysicalGoodsAndLogistics> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CustomsBrokerage> a skos:Concept ;
+  skos:prefLabel "Customs brokerage"@en ;
+  skos:notation "CustomsBrokerage" ;
+  skos:broader <#CustomsAndCrossBorder> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DutiesAndTaxEstimation> a skos:Concept ;
+  skos:prefLabel "Duties and tax estimation"@en ;
+  skos:notation "DutiesAndTaxEstimation" ;
+  skos:broader <#CustomsAndCrossBorder> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ExportComplianceScreening> a skos:Concept ;
+  skos:prefLabel "Export compliance screening"@en ;
+  skos:notation "ExportComplianceScreening" ;
+  skos:broader <#CustomsAndCrossBorder> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PhysicalGoodsAndLogistics> skos:narrower
+    <#RawMaterialsAndComponents> ,
+    <#FinishedGoodsAndRetailProducts> ,
+    <#PackagingAndConsumables> ,
+    <#WarehousingAndFulfillment> ,
+    <#FreightAndCargo> ,
+    <#LastMileDelivery> ,
+    <#ReturnsAndReverseLogistics> ,
+    <#CustomsAndCrossBorder> .
+
+<#RawMaterialsAndComponents> skos:narrower
+    <#CommodityInputs> ,
+    <#ElectronicComponents> ,
+    <#CustomManufacturedParts> .
+
+<#FinishedGoodsAndRetailProducts> skos:narrower
+    <#ConsumerPackagedGoods> ,
+    <#DurableGoods> ,
+    <#PrivateLabelSku> .
+
+<#PackagingAndConsumables> skos:narrower
+    <#ShippingPackagingSupplies> ,
+    <#MroConsumables> ,
+    <#ColdChainSupplies> .
+
+<#WarehousingAndFulfillment> skos:narrower
+    <#PickPackShip3pl> ,
+    <#CrossDockTransload> ,
+    <#KittingAndAssembly> .
+
+<#FreightAndCargo> skos:narrower
+    <#FullTruckloadLtl> ,
+    <#AirAndOceanFreight> ,
+    <#FreightForwarding> .
+
+<#LastMileDelivery> skos:narrower
+    <#CourierSameDay> ,
+    <#ParcelLockerDelivery> ,
+    <#WhiteGloveDelivery> .
+
+<#ReturnsAndReverseLogistics> skos:narrower
+    <#RmaProcessing> ,
+    <#RefurbishmentAndGrading> ,
+    <#LiquidationChannels> .
+
+<#CustomsAndCrossBorder> skos:narrower
+    <#CustomsBrokerage> ,
+    <#DutiesAndTaxEstimation> ,
+    <#ExportComplianceScreening> .
+
+<#TrustRiskAndCompliance> a skos:Concept ;
+  skos:prefLabel "Trust, risk, and compliance"@en ;
+  skos:notation "TrustRiskAndCompliance" ;
+  skos:topConceptOf agcs:AgentServiceCategory ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ConsumerIdentityKyc> a skos:Concept ;
+  skos:prefLabel "Consumer identity (KYC)"@en ;
+  skos:notation "ConsumerIdentityKyc" ;
+  skos:broader <#TrustRiskAndCompliance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DocumentIdVerification> a skos:Concept ;
+  skos:prefLabel "Document ID verification"@en ;
+  skos:notation "DocumentIdVerification" ;
+  skos:broader <#ConsumerIdentityKyc> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BiometricLivenessChecks> a skos:Concept ;
+  skos:prefLabel "Biometric liveness checks"@en ;
+  skos:notation "BiometricLivenessChecks" ;
+  skos:broader <#ConsumerIdentityKyc> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AddressAndPhoneVerification> a skos:Concept ;
+  skos:prefLabel "Address and phone verification"@en ;
+  skos:notation "AddressAndPhoneVerification" ;
+  skos:broader <#ConsumerIdentityKyc> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BusinessIdentityKyb> a skos:Concept ;
+  skos:prefLabel "Business identity (KYB)"@en ;
+  skos:notation "BusinessIdentityKyb" ;
+  skos:broader <#TrustRiskAndCompliance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#CompanyRegistryLookup> a skos:Concept ;
+  skos:prefLabel "Company registry lookup"@en ;
+  skos:notation "CompanyRegistryLookup" ;
+  skos:broader <#BusinessIdentityKyb> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#BeneficialOwnershipGraph> a skos:Concept ;
+  skos:prefLabel "Beneficial ownership graph"@en ;
+  skos:notation "BeneficialOwnershipGraph" ;
+  skos:broader <#BusinessIdentityKyb> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#UboAttestation> a skos:Concept ;
+  skos:prefLabel "UBO attestation"@en ;
+  skos:notation "UboAttestation" ;
+  skos:broader <#BusinessIdentityKyb> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#FraudAndRiskSignals> a skos:Concept ;
+  skos:prefLabel "Fraud and risk signals"@en ;
+  skos:notation "FraudAndRiskSignals" ;
+  skos:broader <#TrustRiskAndCompliance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TransactionRiskScoring> a skos:Concept ;
+  skos:prefLabel "Transaction risk scoring"@en ;
+  skos:notation "TransactionRiskScoring" ;
+  skos:broader <#FraudAndRiskSignals> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#DeviceAndBehaviorRisk> a skos:Concept ;
+  skos:prefLabel "Device and behavior risk"@en ;
+  skos:notation "DeviceAndBehaviorRisk" ;
+  skos:broader <#FraudAndRiskSignals> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AccountTakeoverSignals> a skos:Concept ;
+  skos:prefLabel "Account takeover signals"@en ;
+  skos:notation "AccountTakeoverSignals" ;
+  skos:broader <#FraudAndRiskSignals> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SanctionsAndWatchlists> a skos:Concept ;
+  skos:prefLabel "Sanctions and watchlists"@en ;
+  skos:notation "SanctionsAndWatchlists" ;
+  skos:broader <#TrustRiskAndCompliance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SanctionsScreeningApi> a skos:Concept ;
+  skos:prefLabel "Sanctions screening API"@en ;
+  skos:notation "SanctionsScreeningApi" ;
+  skos:broader <#SanctionsAndWatchlists> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#PepAndAdverseMedia> a skos:Concept ;
+  skos:prefLabel "PEP and adverse media"@en ;
+  skos:notation "PepAndAdverseMedia" ;
+  skos:broader <#SanctionsAndWatchlists> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#OngoingMonitoringAlerts> a skos:Concept ;
+  skos:prefLabel "Ongoing monitoring alerts"@en ;
+  skos:notation "OngoingMonitoringAlerts" ;
+  skos:broader <#SanctionsAndWatchlists> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#AuditAttestationAndEvidence> a skos:Concept ;
+  skos:prefLabel "Audit, attestation, and evidence"@en ;
+  skos:notation "AuditAttestationAndEvidence" ;
+  skos:broader <#TrustRiskAndCompliance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TimestampingAndHashAnchoring> a skos:Concept ;
+  skos:prefLabel "Timestamping / hash anchoring"@en ;
+  skos:notation "TimestampingAndHashAnchoring" ;
+  skos:broader <#AuditAttestationAndEvidence> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ThirdPartyAttestationReports> a skos:Concept ;
+  skos:prefLabel "Third-party attestation reports"@en ;
+  skos:notation "ThirdPartyAttestationReports" ;
+  skos:broader <#AuditAttestationAndEvidence> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ImmutableLogExport> a skos:Concept ;
+  skos:prefLabel "Immutable log export"@en ;
+  skos:notation "ImmutableLogExport" ;
+  skos:broader <#AuditAttestationAndEvidence> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ContentProvenanceAndIntegrity> a skos:Concept ;
+  skos:prefLabel "Content provenance and integrity"@en ;
+  skos:notation "ContentProvenanceAndIntegrity" ;
+  skos:broader <#TrustRiskAndCompliance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#C2paAndContentCredentials> a skos:Concept ;
+  skos:prefLabel "C2PA / content credentials"@en ;
+  skos:notation "C2paAndContentCredentials" ;
+  skos:broader <#ContentProvenanceAndIntegrity> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SyntheticMediaDetection> a skos:Concept ;
+  skos:prefLabel "Synthetic media detection"@en ;
+  skos:notation "SyntheticMediaDetection" ;
+  skos:broader <#ContentProvenanceAndIntegrity> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#WatermarkingAndFingerprinting> a skos:Concept ;
+  skos:prefLabel "Watermarking / fingerprinting"@en ;
+  skos:notation "WatermarkingAndFingerprinting" ;
+  skos:broader <#ContentProvenanceAndIntegrity> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ContractSignatureAndLegalWorkflow> a skos:Concept ;
+  skos:prefLabel "Contract signature and legal workflow"@en ;
+  skos:notation "ContractSignatureAndLegalWorkflow" ;
+  skos:broader <#TrustRiskAndCompliance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ESignaturePlatforms> a skos:Concept ;
+  skos:prefLabel "E-signature platforms"@en ;
+  skos:notation "ESignaturePlatforms" ;
+  skos:broader <#ContractSignatureAndLegalWorkflow> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ClauseAndTemplateLibraries> a skos:Concept ;
+  skos:prefLabel "Clause and template libraries"@en ;
+  skos:notation "ClauseAndTemplateLibraries" ;
+  skos:broader <#ContractSignatureAndLegalWorkflow> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ContractLifecycleAlerts> a skos:Concept ;
+  skos:prefLabel "Contract lifecycle alerts"@en ;
+  skos:notation "ContractLifecycleAlerts" ;
+  skos:broader <#ContractSignatureAndLegalWorkflow> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#InsuranceAndSuretyServices> a skos:Concept ;
+  skos:prefLabel "Insurance and surety services"@en ;
+  skos:notation "InsuranceAndSuretyServices" ;
+  skos:broader <#TrustRiskAndCompliance> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TransactionInsurance> a skos:Concept ;
+  skos:prefLabel "Transaction insurance"@en ;
+  skos:notation "TransactionInsurance" ;
+  skos:broader <#InsuranceAndSuretyServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#SuretyAndPerformanceBonds> a skos:Concept ;
+  skos:prefLabel "Surety / performance bonds"@en ;
+  skos:notation "SuretyAndPerformanceBonds" ;
+  skos:broader <#InsuranceAndSuretyServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#ShippingAndCargoInsurance> a skos:Concept ;
+  skos:prefLabel "Shipping / cargo insurance"@en ;
+  skos:notation "ShippingAndCargoInsurance" ;
+  skos:broader <#InsuranceAndSuretyServices> ;
+  skos:inScheme agcs:AgentServiceCategory .
+
+<#TrustRiskAndCompliance> skos:narrower
+    <#ConsumerIdentityKyc> ,
+    <#BusinessIdentityKyb> ,
+    <#FraudAndRiskSignals> ,
+    <#SanctionsAndWatchlists> ,
+    <#AuditAttestationAndEvidence> ,
+    <#ContentProvenanceAndIntegrity> ,
+    <#ContractSignatureAndLegalWorkflow> ,
+    <#InsuranceAndSuretyServices> .
+
+<#ConsumerIdentityKyc> skos:narrower
+    <#DocumentIdVerification> ,
+    <#BiometricLivenessChecks> ,
+    <#AddressAndPhoneVerification> .
+
+<#BusinessIdentityKyb> skos:narrower
+    <#CompanyRegistryLookup> ,
+    <#BeneficialOwnershipGraph> ,
+    <#UboAttestation> .
+
+<#FraudAndRiskSignals> skos:narrower
+    <#TransactionRiskScoring> ,
+    <#DeviceAndBehaviorRisk> ,
+    <#AccountTakeoverSignals> .
+
+<#SanctionsAndWatchlists> skos:narrower
+    <#SanctionsScreeningApi> ,
+    <#PepAndAdverseMedia> ,
+    <#OngoingMonitoringAlerts> .
+
+<#AuditAttestationAndEvidence> skos:narrower
+    <#TimestampingAndHashAnchoring> ,
+    <#ThirdPartyAttestationReports> ,
+    <#ImmutableLogExport> .
+
+<#ContentProvenanceAndIntegrity> skos:narrower
+    <#C2paAndContentCredentials> ,
+    <#SyntheticMediaDetection> ,
+    <#WatermarkingAndFingerprinting> .
+
+<#ContractSignatureAndLegalWorkflow> skos:narrower
+    <#ESignaturePlatforms> ,
+    <#ClauseAndTemplateLibraries> ,
+    <#ContractLifecycleAlerts> .
+
+<#InsuranceAndSuretyServices> skos:narrower
+    <#TransactionInsurance> ,
+    <#SuretyAndPerformanceBonds> ,
+    <#ShippingAndCargoInsurance> .
+

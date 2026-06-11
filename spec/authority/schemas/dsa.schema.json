@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/spending-authority/schemas/dsa.schema.json",
+  "title": "Delegated Spending Authority data objects",
+  "description": "JSON Schema for the SpendingAuthorizationCredential, PaymentCapabilityCredential, MerchantCredential, and trust-configuration structures. Validate an instance against the relevant $def, e.g. #/$defs/SpendingAuthorizationCredential.",
+  "$defs": {
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+" },
+    "iri": { "type": "string", "minLength": 1, "format": "uri" },
+    "idValue": { "type": "string", "minLength": 1 },
+    "decimal": {
+      "type": "string",
+      "description": "Non-negative decimal amount as a string.",
+      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+    },
+    "dateTime": { "type": "string", "format": "date-time" },
+    "contentDigest": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[A-Za-z0-9_-]+$" },
+    "categoryList": { "type": "array", "items": { "$ref": "#/$defs/iri" } },
+    "didList": { "type": "array", "items": { "$ref": "#/$defs/did" } },
+    "proof": {
+      "type": "object",
+      "required": ["type", "cryptosuite", "created", "verificationMethod", "proofPurpose", "proofValue"],
+      "properties": {
+        "type": { "const": "DataIntegrityProof" },
+        "cryptosuite": { "const": "eddsa-jcs-2022" },
+        "created": { "$ref": "#/$defs/dateTime" },
+        "verificationMethod": { "type": "string", "minLength": 1 },
+        "proofPurpose": { "const": "assertionMethod" },
+        "proofValue": { "type": "string", "pattern": "^z[1-9A-HJ-NP-Za-km-z]+$" }
+      }
+    },
+    "signedContext": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://www.w3.org/ns/credentials/v2" },
+        { "const": "https://w3id.org/security/data-integrity/v2" },
+        { "const": "https://w3id.org/spending-authority/v1" }
+      ],
+      "minItems": 3,
+      "maxItems": 3
+    },
+
+    "IssuerScope": {
+      "type": "object",
+      "description": "Bounds on what a trusted issuer may authorize. All members optional; the more restrictive of scope and credential applies.",
+      "properties": {
+        "currency": { "type": "string" },
+        "maxPerTransaction": { "$ref": "#/$defs/decimal" },
+        "maxDailyTotal": { "$ref": "#/$defs/decimal" },
+        "allowedServiceTypes": { "$ref": "#/$defs/categoryList" }
+      }
+    },
+    "TrustedIssuer": {
+      "type": "object",
+      "description": "A trust-configuration entry. Not a signed wire message; part of a wallet's local trust policy.",
+      "required": ["issuer"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/did" },
+        "issuerScope": { "$ref": "#/$defs/IssuerScope" },
+        "validFrom": { "$ref": "#/$defs/dateTime" },
+        "validUntil": { "$ref": "#/$defs/dateTime" }
+      }
+    },
+
+    "SpendingAuthorizationCredential": {
+      "type": "object",
+      "required": ["@context", "type", "issuer", "credentialSubject", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "type": "array", "allOf": [ { "contains": { "const": "VerifiableCredential" } }, { "contains": { "const": "SpendingAuthorizationCredential" } } ] },
+        "issuer": { "oneOf": [ { "$ref": "#/$defs/did" }, { "type": "object", "required": ["id"], "properties": { "id": { "$ref": "#/$defs/did" } } } ] },
+        "validFrom": { "$ref": "#/$defs/dateTime" },
+        "validUntil": { "$ref": "#/$defs/dateTime" },
+        "credentialStatus": { "type": ["object", "array"] },
+        "credentialSubject": {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": { "$ref": "#/$defs/did" },
+            "currency": { "type": "string" },
+            "maxPerTransaction": { "$ref": "#/$defs/decimal" },
+            "dailyLimit": { "$ref": "#/$defs/decimal" },
+            "limitTimezone": { "type": "string" },
+            "requiresApprovalAbove": { "$ref": "#/$defs/decimal" },
+            "allowedPayees": { "$ref": "#/$defs/didList" },
+            "allowedServiceTypes": { "$ref": "#/$defs/categoryList" }
+          }
+        },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+    "PaymentCapabilityCredential": {
+      "type": "object",
+      "required": ["@context", "type", "issuer", "credentialSubject", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "type": "array", "allOf": [ { "contains": { "const": "VerifiableCredential" } }, { "contains": { "const": "PaymentCapabilityCredential" } } ] },
+        "issuer": { "oneOf": [ { "$ref": "#/$defs/did" }, { "type": "object", "required": ["id"], "properties": { "id": { "$ref": "#/$defs/did" } } } ] },
+        "credentialSubject": {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": { "$ref": "#/$defs/did" },
+            "account": { "type": "string" },
+            "currency": { "type": "string" },
+            "asset": { "type": "string" },
+            "assetScale": { "type": "integer", "minimum": 0 },
+            "expires": { "$ref": "#/$defs/dateTime" }
+          }
+        },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+    "MerchantCredential": {
+      "type": "object",
+      "required": ["@context", "type", "issuer", "credentialSubject", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "type": "array", "allOf": [ { "contains": { "const": "VerifiableCredential" } }, { "contains": { "const": "MerchantCredential" } } ] },
+        "issuer": { "oneOf": [ { "$ref": "#/$defs/did" }, { "type": "object", "required": ["id"], "properties": { "id": { "$ref": "#/$defs/did" } } } ] },
+        "credentialSubject": {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": { "$ref": "#/$defs/did" },
+            "merchantName": { "type": "string" },
+            "companyName": { "type": "string" },
+            "categories": { "$ref": "#/$defs/categoryList" }
+          }
+        },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    }
+  }
+}

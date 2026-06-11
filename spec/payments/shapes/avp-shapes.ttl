@@ -1,0 +1,202 @@
+# AVP-Micro SHACL shapes.
+# Validate the RDF produced by expanding an AVP-Micro JSON-LD object (with the
+# VC 2.0 context + the AVP-Micro context) against these NodeShapes. They are a
+# second validation layer alongside the JSON Schema in ../schemas/; SHACL checks
+# the graph shape (node kinds, datatypes, cardinality, proof presence) of the
+# AVP-namespaced members. VC-namespaced members (issuer, credentialSubject) are
+# validated by the JSON Schema.
+#
+# Note: AVP monetary/string members carry no JSON-LD @type, so they expand to
+# RDF 1.1 simple literals; shapes therefore use sh:nodeKind sh:Literal + sh:pattern
+# rather than sh:datatype xsd:string. Members the context types as xsd:dateTime
+# are checked with sh:datatype xsd:dateTime. Enumerated values (status,
+# accrualKind) are enforced by the JSON Schema.
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix avp:  <https://w3id.org/avp-micro/v1#> .
+@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
+@prefix sec:  <https://w3id.org/security#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix dim:   <https://w3id.org/avp-micro/dim#> .
+@prefix aunit: <https://w3id.org/avp-micro/unit#> .
+@prefix qudtu: <http://qudt.org/vocab/unit/> .
+
+avp:DecimalAmount
+  a sh:NodeShape ;
+  sh:nodeKind sh:Literal ;
+  sh:pattern "^(0|[1-9][0-9]*)([.][0-9]+)?$" .
+
+avp:PositiveDecimalAmount
+  a sh:NodeShape ;
+  sh:nodeKind sh:Literal ;
+  sh:pattern "^(0[.][0-9]*[1-9][0-9]*|[1-9][0-9]*([.][0-9]+)?)$" .
+
+avp:ContentDigest
+  a sh:NodeShape ;
+  sh:nodeKind sh:Literal ;
+  sh:pattern "^[a-z0-9][a-z0-9-]*:[A-Za-z0-9_-]+$" .
+
+avp:PaymentOfferShape
+  a sh:NodeShape ;
+  sh:targetClass avp:PaymentOffer ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:pricingModel ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:quoteEndpoint ; sh:minCount 1 ] .
+
+avp:PaymentQuoteShape
+  a sh:NodeShape ;
+  sh:targetClass avp:PaymentQuote ;
+  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:amount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:settlementMethod ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:settlementTarget ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:serviceRequestHash ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+avp:PaymentAuthorizationShape
+  a sh:NodeShape ;
+  sh:targetClass avp:PaymentAuthorization ;
+  sh:property [ sh:path avp:quote ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:quoteDigest ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:amount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:settlementMethod ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:settlementTarget ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:serviceRequestHash ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:nonce ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:vp ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+avp:PaymentExecutionShape
+  a sh:NodeShape ;
+  sh:targetClass avp:PaymentExecution ;
+  sh:property [ sh:path avp:amount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ] ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:status ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+avp:PaymentReceiptShape
+  a sh:NodeShape ;
+  sh:targetClass avp:PaymentReceipt ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:status ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:amount ; sh:node avp:PositiveDecimalAmount ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] ;
+  sh:or (
+    [ sh:property [ sh:path avp:quote ; sh:minCount 1 ] ]
+    [ sh:property [ sh:path avp:usageSession ; sh:minCount 1 ] ]
+  ) .
+
+avp:UsageSessionShape
+  a sh:NodeShape ;
+  sh:targetClass avp:UsageSession ;
+  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:pricingModel ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:maxAmount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:settlementMethod ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:settlementTarget ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+avp:UsageAccrualShape
+  a sh:NodeShape ;
+  sh:targetClass avp:UsageAccrual ;
+  sh:property [ sh:path avp:session ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:accrualKind ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:amountAccrued ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ] ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+avp:SessionBudgetAuthorizationShape
+  a sh:NodeShape ;
+  sh:targetClass avp:SessionBudgetAuthorization ;
+  sh:property [ sh:path avp:usageSession ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:sessionDigest ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:committedAmount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ] ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:nonce ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:vp ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+avp:UsageSessionExtensionShape
+  a sh:NodeShape ;
+  sh:targetClass avp:UsageSessionExtension ;
+  sh:property [ sh:path avp:usageSession ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:sessionDigest ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] ;
+  sh:or (
+    [ sh:property [ sh:path avp:newMaxAmount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ] ]
+    [ sh:property [ sh:path avp:newExpires ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ]
+  ) .
+
+avp:DimensionValue
+  a sh:NodeShape ;
+  sh:nodeKind sh:IRI ;
+  sh:or (
+    [ sh:in ( dim:Calls dim:Requests dim:Invocations dim:ComputeTime dim:ComputeMemoryTime
+              dim:DataTransferIn dim:DataTransferOut dim:StorageDuration dim:Tokens
+              dim:InputTokens dim:OutputTokens dim:SensorSamples ) ]
+    [ sh:pattern "^https://w3id[.]org/avp-micro/dim/x/" ]
+  ) .
+
+avp:UnitValue
+  a sh:NodeShape ;
+  sh:nodeKind sh:IRI ;
+  sh:or (
+    [ sh:pattern "^http://qudt[.]org/vocab/unit/" ]
+    [ sh:in ( aunit:GigaByteSecond aunit:GigaByteHour aunit:GigaByteMonth aunit:Datapoint ) ]
+    [ sh:pattern "^https://w3id[.]org/avp-micro/unit/x/" ]
+  ) .
+
+avp:PerUnitRateShape
+  a sh:NodeShape ;
+  sh:targetClass avp:PerUnit ;
+  sh:property [ sh:path avp:dimension ; sh:node avp:DimensionValue ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:unit ; sh:node avp:UnitValue ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:amount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+avp:TieredRateShape
+  a sh:NodeShape ;
+  sh:targetClass avp:TieredRate ;
+  sh:property [ sh:path avp:dimension ; sh:node avp:DimensionValue ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:unit ; sh:node avp:UnitValue ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:tierMode ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:tiers ; sh:minCount 1 ] .
+
+avp:AllowanceShape
+  a sh:NodeShape ;
+  sh:targetClass avp:Allowance ;
+  sh:property [ sh:path avp:dimension ; sh:node avp:DimensionValue ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:unit ; sh:node avp:UnitValue ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:freeQuantity ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+avp:CommitmentRateShape
+  a sh:NodeShape ;
+  sh:targetClass avp:CommitmentRate ;
+  sh:property [ sh:path avp:upfront ; sh:node avp:DecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:recurring ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+avp:CompositePricingShape
+  a sh:NodeShape ;
+  sh:targetClass avp:CompositePricing ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:components ; sh:minCount 1 ] .
+
+avp:PerCallRateShape
+  a sh:NodeShape ;
+  sh:targetClass avp:PerCall ;
+  sh:property [ sh:path avp:amount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] .
