@@ -2,506 +2,399 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AVP-Micro — Trust and Authorization for AI Agent Payments</title>
-  <meta name="description" content="Open W3C specifications for delegated, verifiable spending authority for autonomous AI agents — DIDs, Verifiable Credentials 2.0, Data Integrity proofs, and a normative SD-JWT-VC bridge.">
+  <title>AVP-Micro Specification Suite</title>
+  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
+  <script class="remove">
+    const respecConfig = {
+      specStatus: "unofficial",
+      shortName: "avp-micro",
+      subtitle: "Vendor-neutral trust and authorization for AI agent payments",
+      edDraftURI: "https://geoknoesis.github.io/avp-micro-spec/",
+      editors: [
+        {
+          name: "Stephane Fellah",
+          company: "Geoknoesis LLC",
+          companyURL: "https://geoknoesis.com",
+        },
+      ],
+      github: {
+        repoURL: "https://github.com/geoknoesis/avp-micro-spec",
+        branch: "master",
+      },
+      license: "cc-by",
+      lint: { "no-unused-dfns": false },
+      xref: ["vc-data-model-2.0", "did-core", "INFRA"],
+      localBiblio: {
+        "DSA": {
+          title: "Delegated Spending Authority",
+          href: "spec/authority/",
+          publisher: "Geoknoesis LLC",
+        },
+        "AVP-PAYMENTS": {
+          title: "AVP-Micro Payments",
+          href: "spec/payments/",
+          publisher: "Geoknoesis LLC",
+        },
+        "AVP-INTEROP": {
+          title: "AVP-Micro ⇄ SD-JWT-VC Interop Profile",
+          href: "spec/interop-sd-jwt-vc/",
+          publisher: "Geoknoesis LLC",
+        },
+        "RFC8785": {
+          title: "JSON Canonicalization Scheme (JCS)",
+          href: "https://www.rfc-editor.org/rfc/rfc8785",
+          authors: ["A. Rundgren", "B. Jordan", "S. Erdtman"],
+          date: "June 2020",
+          status: "Informational",
+          publisher: "IETF",
+        },
+        "SD-JWT-VC": {
+          title: "SD-JWT-based Verifiable Credentials (SD-JWT VC)",
+          href: "https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-08.html",
+          publisher: "IETF",
+        },
+        "VC-DATA-INTEGRITY": {
+          title: "Verifiable Credential Data Integrity 1.0",
+          href: "https://www.w3.org/TR/vc-data-integrity/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "VC-DI-EDDSA": {
+          title: "Verifiable Credential Data Integrity EdDSA Cryptosuites v1.0",
+          href: "https://www.w3.org/TR/vc-di-eddsa/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "BITSTRING-STATUS-LIST": {
+          title: "Bitstring Status List v1.0",
+          href: "https://www.w3.org/TR/vc-bitstring-status-list/",
+          status: "REC",
+          publisher: "W3C",
+        },
+        "JSON-LD11": {
+          title: "JSON-LD 1.1",
+          href: "https://www.w3.org/TR/json-ld11/",
+          status: "REC",
+          publisher: "W3C",
+        },
+      },
+    };
+  </script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --navy:   #0f2341;
-      --blue:   #1a5ca8;
-      --sky:    #3b82f6;
-      --teal:   #0d9488;
-      --gold:   #b45309;
-      --purple: #6d28d9;
-      --light:  #f8fafc;
-      --muted:  #64748b;
-      --border: #e2e8f0;
-      --text:   #1e293b;
-      --radius: 10px;
-      --mono: 'SFMono-Regular', 'Consolas', 'Liberation Mono', monospace;
-      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    body { font-family: var(--sans); color: var(--text); background: #fff; line-height: 1.6; }
-    a { color: var(--sky); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    code { font-family: var(--mono); font-size: .88em; background: #f1f5f9; padding: .15em .4em; border-radius: 4px; }
-    pre { font-family: var(--mono); font-size: .85em; background: #0f172a; color: #e2e8f0;
-          padding: 1.25rem 1.5rem; border-radius: var(--radius); overflow-x: auto; line-height: 1.7; }
-    pre code { background: none; padding: 0; color: inherit; font-size: 1em; }
-
-    /* ── layout helpers ── */
-    .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; }
-
-    /* ── header / hero ── */
-    header {
-      background: linear-gradient(135deg, var(--navy) 0%, #1a3a6e 100%);
-      color: #fff; padding: 4rem 0 3rem;
-    }
-    .hero-eyebrow {
-      font-size: .8rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
-      color: #93c5fd; margin-bottom: .75rem;
-    }
-    header h1 { font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 700; letter-spacing: -.02em; }
-    header h1 span { color: #60a5fa; }
-    .hero-sub {
-      font-size: 1.15rem; color: #cbd5e1; max-width: 640px; margin: 1rem 0 2rem;
-    }
-    .badge-row { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 2.5rem; }
-    .badge {
-      font-size: .75rem; font-weight: 600; padding: .3rem .75rem; border-radius: 20px;
-      background: rgba(255,255,255,.1); color: #e0f2fe; border: 1px solid rgba(255,255,255,.15);
-    }
-    .hero-links { display: flex; flex-wrap: wrap; gap: 1rem; }
-    .btn {
-      display: inline-flex; align-items: center; gap: .4rem;
-      padding: .65rem 1.25rem; border-radius: var(--radius); font-weight: 600; font-size: .95rem;
-      transition: opacity .15s;
-    }
-    .btn:hover { opacity: .88; text-decoration: none; }
-    .btn-primary { background: var(--sky); color: #fff; }
-    .btn-outline { background: transparent; color: #e0f2fe; border: 1.5px solid rgba(255,255,255,.3); }
-
-    /* ── section scaffolding ── */
-    section { padding: 4rem 0; }
-    section + section { border-top: 1px solid var(--border); }
-    .section-label {
-      font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-      color: var(--sky); margin-bottom: .5rem;
-    }
-    h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: .6rem; }
-    .section-intro { color: var(--muted); max-width: 680px; margin-bottom: 2.5rem; font-size: 1.05rem; }
-
-    /* ── spec cards ── */
-    .spec-card {
-      border: 1.5px solid var(--border); border-radius: var(--radius);
-      padding: 1.75rem; background: #fff; display: flex; flex-direction: column; gap: 1rem;
-      transition: box-shadow .2s, border-color .2s;
-    }
-    .spec-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,.08); border-color: #c7d2fe; }
-    .spec-icon {
-      width: 42px; height: 42px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem;
-    }
-    .icon-teal   { background: #ccfbf1; }
-    .icon-blue   { background: #dbeafe; }
-    .icon-purple { background: #ede9fe; }
-    .spec-card h3 { font-size: 1.1rem; font-weight: 700; }
-    .spec-card .ns {
-      font-family: var(--mono); font-size: .72rem; color: var(--muted);
-      background: #f1f5f9; padding: .25rem .5rem; border-radius: 4px; display: inline-block;
-    }
-    .spec-card p { color: var(--muted); font-size: .95rem; }
-    .spec-card ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
-    .spec-card ul li { font-size: .9rem; color: #475569; padding-left: 1.1rem; position: relative; }
-    .spec-card ul li::before { content: '→'; position: absolute; left: 0; color: var(--sky); font-size: .85rem; }
-    .spec-card .card-footer { margin-top: auto; padding-top: .75rem; border-top: 1px solid var(--border); }
-    .spec-link { font-weight: 600; font-size: .9rem; color: var(--blue); }
-    .spec-link:hover { color: var(--sky); text-decoration: none; }
-    .spec-dep { font-size: .78rem; color: var(--muted); margin-top: .3rem; }
-
-    /* ── why section ── */
-    .why-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
-    .why-card {
-      padding: 1.5rem; border-radius: var(--radius);
-      background: var(--light); border: 1px solid var(--border);
-    }
-    .why-card .icon { font-size: 1.5rem; margin-bottom: .75rem; }
-    .why-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
-    .why-card p { font-size: .9rem; color: var(--muted); }
-
-    /* ── interop section ── */
-    .interop-table { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 1.5rem; }
-    .interop-table th {
-      text-align: left; padding: .75rem 1rem; background: #f1f5f9;
-      border-bottom: 2px solid var(--border); font-weight: 700; font-size: .82rem;
-      text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
-    }
-    .interop-table td { padding: .65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-    .interop-table tr:last-child td { border-bottom: none; }
-    .interop-table tr:hover td { background: #f8fafc; }
-    .check  { color: #059669; font-weight: 700; }
-    .bridge { color: var(--gold); font-weight: 700; }
-
-    /* ── quickstart ── */
-    .qs-steps { display: flex; flex-direction: column; gap: 1.25rem; }
-    .qs-step { display: flex; gap: 1rem; align-items: flex-start; }
-    .step-num {
-      flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
-      background: var(--sky); color: #fff; font-weight: 700; font-size: .85rem;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .step-body h4 { font-weight: 600; margin-bottom: .4rem; }
-    .step-body p { color: var(--muted); font-size: .9rem; margin-bottom: .75rem; }
-
-    /* ── artifacts table ── */
-    .artifacts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-    .artifact {
-      padding: 1rem 1.25rem; border-radius: var(--radius);
-      border: 1px solid var(--border); background: #fff;
-    }
-    .artifact h4 { font-size: .9rem; font-weight: 700; margin-bottom: .3rem; }
-    .artifact p { font-size: .83rem; color: var(--muted); }
-
-    /* ── footer ── */
-    footer {
-      background: var(--navy); color: #94a3b8; padding: 2.5rem 0;
-      font-size: .875rem;
-    }
-    .footer-inner {
-      display: flex; flex-wrap: wrap; justify-content: space-between;
-      align-items: flex-start; gap: 1.5rem;
-    }
-    footer a { color: #60a5fa; }
-    .footer-links { display: flex; flex-wrap: wrap; gap: 1.25rem; }
-    .footer-links a { color: #94a3b8; font-size: .85rem; }
-    .footer-links a:hover { color: #e2e8f0; }
-
-    @media (max-width: 600px) {
-      header { padding: 2.5rem 0 2rem; }
-      h2 { font-size: 1.4rem; }
-      .grid-2 { grid-template-columns: 1fr; }
-    }
+    .spec-table { width: 100%; border-collapse: collapse; margin: 1.5em 0; }
+    .spec-table th, .spec-table td { padding: .6em .9em; border: 1px solid #ccc; vertical-align: top; }
+    .spec-table th { background: #f0f0f0; font-weight: bold; }
+    .spec-table tr:nth-child(even) td { background: #fafafa; }
+    .dep-arrow { color: #666; font-size: .9em; }
+    .status-unofficial { color: #b00; font-style: italic; }
+    .artifact-list { margin: 0; padding-left: 1.4em; }
+    .artifact-list li { margin: .25em 0; }
+    .namespace { font-family: monospace; font-size: .9em; word-break: break-all; }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
-<header>
-  <div class="container">
-    <div class="hero-eyebrow">Open Specification · Geoknoesis LLC</div>
-    <h1>AVP-<span>Micro</span></h1>
-    <p class="hero-sub">
-      Vendor-neutral trust and authorization for AI agent payments — delegated spending authority proven by verifiable credentials, portable across any payment rail.
-    </p>
-    <div class="badge-row">
-      <span class="badge">W3C VC 2.0</span>
-      <span class="badge">DIDs · did:key</span>
-      <span class="badge">Data Integrity · eddsa-jcs-2022</span>
-      <span class="badge">JSON-LD 1.1</span>
-      <span class="badge">SD-JWT-VC Bridge</span>
-    </div>
-    <div class="hero-links">
-      <a class="btn btn-primary" href="spec/authority/">DSA Spec</a>
-      <a class="btn btn-primary" href="spec/payments/">Payments Spec</a>
-      <a class="btn btn-primary" href="spec/interop-sd-jwt-vc/">SD-JWT-VC Interop</a>
-      <a class="btn btn-outline" href="https://github.com/geoknoesis/avp-micro-spec">GitHub ↗</a>
-    </div>
-  </div>
-</header>
+<h1 id="title">AVP-Micro Specification Suite</h1>
 
-<!-- ═══════════════════════════════ SPECS ══════════════════════════════ -->
-<section id="specs">
-  <div class="container">
-    <div class="section-label">Specifications</div>
-    <h2>Three peer specification bundles</h2>
-    <p class="section-intro">
-      Each bundle ships a W3C ReSpec document, a JSON-LD 1.1 context, JSON Schema, SHACL shapes, an OWL/RDFS ontology, and signed conformance test vectors generated by the shared Python harness.
-    </p>
-
-    <div class="grid-3">
-
-      <!-- DSA -->
-      <div class="spec-card">
-        <div class="spec-icon icon-teal">🔐</div>
-        <div>
-          <h3>Delegated Spending Authority</h3>
-          <span class="ns">spending-authority/v1#</span>
-        </div>
-        <p>The identity and trust layer. Defines the <strong>SpendingAuthorizationCredential</strong> — who may spend, under what caps, with which merchants, and for how long — secured by a W3C Data Integrity proof.</p>
-        <ul>
-          <li>SpendingAuthorizationCredential</li>
-          <li>MerchantCredential</li>
-          <li>PaymentCapabilityCredential</li>
-          <li>did:key (Ed25519 / Multikey)</li>
-          <li>BitstringStatusList revocation</li>
-          <li>Agent service category vocabulary</li>
-        </ul>
-        <div class="card-footer">
-          <a class="spec-link" href="spec/authority/">Read the spec →</a>
-          <p class="spec-dep">No dependencies on other bundles.</p>
-        </div>
-      </div>
-
-      <!-- Payments -->
-      <div class="spec-card">
-        <div class="spec-icon icon-blue">💸</div>
-        <div>
-          <h3>AVP-Micro Payments</h3>
-          <span class="ns">avp-micro/v1#</span>
-        </div>
-        <p>The payment lifecycle layer. Quotes, authorizations, executions, receipts, streaming usage sessions, and a normative pricing-model vocabulary — all building on DSA.</p>
-        <ul>
-          <li>PaymentOffer (flat, per-call, tiered, composite)</li>
-          <li>PaymentQuote · PaymentAuthorization</li>
-          <li>PaymentExecution · PaymentReceipt</li>
-          <li>UsageSession · UsageAccrual</li>
-          <li>SessionBudgetAuthorization</li>
-          <li>Pricing-model evaluator</li>
-        </ul>
-        <div class="card-footer">
-          <a class="spec-link" href="spec/payments/">Read the spec →</a>
-          <p class="spec-dep">Depends on: Delegated Spending Authority.</p>
-        </div>
-      </div>
-
-      <!-- Interop -->
-      <div class="spec-card">
-        <div class="spec-icon icon-purple">🔀</div>
-        <div>
-          <h3>SD-JWT-VC Interop Profile</h3>
-          <span class="ns">avp-micro/interop/sd-jwt-vc/v1#</span>
-        </div>
-        <p>A normative bridge between AVP-Micro and the SD-JWT-VC credentials used by Mastercard/Google <strong>Verifiable Intent</strong> and Google <strong>AP2</strong>. Three bridge modes; no silent trust escalation.</p>
-        <ul>
-          <li>Proof-preserving (default) — embed + verify both</li>
-          <li>Co-issued — native DI proof + parallel ES256</li>
-          <li>Attested — named bridge re-signs</li>
-          <li>L3 key-binding JWT (per-purchase action)</li>
-          <li>importAdvisory for lossless surfacing</li>
-          <li>BitstringStatusList ↔ Token Status List</li>
-        </ul>
-        <div class="card-footer">
-          <a class="spec-link" href="spec/interop-sd-jwt-vc/">Read the spec →</a>
-          <p class="spec-dep">Depends on: DSA + Payments + SD-JWT VC (IETF).</p>
-        </div>
-      </div>
-
-    </div>
-  </div>
+<!-- ═══════════════════ ABSTRACT ═══════════════════ -->
+<section id="abstract">
+  <p>
+    This document provides an overview of the <strong>AVP-Micro specification suite</strong>:
+    a set of open, standards-based specifications for delegated, verifiable spending authority
+    for autonomous AI agents. The suite defines how an <em>issuer</em> grants bounded spending
+    rights to an <em>agent</em>, how a <em>merchant</em> independently verifies those rights at
+    transaction time, and how all objects in the payment lifecycle are cryptographically secured
+    using W3C Verifiable Credentials 2.0, Decentralized Identifiers, and Data Integrity proofs.
+  </p>
+  <p>
+    A third document specifies a normative interoperability bridge to SD-JWT-VC credentials as
+    used by Mastercard/Google Verifiable Intent and Google AP2.
+  </p>
 </section>
 
-<!-- ═══════════════════════════════ WHY ════════════════════════════════ -->
-<section id="why" style="background: var(--light);">
-  <div class="container">
-    <div class="section-label">Positioning</div>
-    <h2>What this layer adds</h2>
-    <p class="section-intro">
-      AVP-Micro is the <em>trust and authorization layer</em>, not a payment network. It standardizes who may spend, under what terms, and how that authority is proven — and leaves value movement to any settlement rail.
-    </p>
-    <div class="why-grid">
-      <div class="why-card">
-        <div class="icon">🏛️</div>
-        <h4>Vendor-neutral trust anchor</h4>
-        <p>Authority is proven by verifying an issuer's credential against a DID — not by trusting one network's ledger, token format, or settlement guarantee.</p>
-      </div>
-      <div class="why-card">
-        <div class="icon">🔌</div>
-        <h4>Portable across rails</h4>
-        <p>One credential grammar spans competing schemes. An agent's spending authority is not locked to a single network's substrate — Lightning, Interledger, card, or stablecoin.</p>
-      </div>
-      <div class="why-card">
-        <div class="icon">📋</div>
-        <h4>Standards-based, not proprietary</h4>
-        <p>Built entirely on ratified W3C specs (<code>eddsa-jcs-2022</code>, <code>BitstringStatusList</code>) with signed test vectors — no dependency on a network operator's SDK.</p>
-      </div>
-      <div class="why-card">
-        <div class="icon">🔁</div>
-        <h4>Bridge to SD-JWT-VC networks</h4>
-        <p>The interop profile maps credentials to and from Mastercard Agent Pay for Machines / Google AP2 without collapsing the two trust stacks.</p>
-      </div>
-    </div>
-  </div>
+<!-- ═══════════════════ SOTD ═══════════════════ -->
+<section id="sotd">
+  <p>
+    This is an unofficial draft produced by
+    <a href="https://geoknoesis.com">Geoknoesis LLC</a>. It has not been reviewed by a W3C
+    Working Group. Feedback and contributions are welcome via the
+    <a href="https://github.com/geoknoesis/avp-micro-spec">GitHub repository</a>.
+  </p>
 </section>
 
-<!-- ═══════════════════════════════ INTEROP COMPARISON ═════════════════ -->
-<section id="interop">
-  <div class="container">
-    <div class="section-label">Interoperability</div>
-    <h2>Relationship to network schemes</h2>
-    <p class="section-intro">
-      Emerging network schemes for agent payments each have a built-in credential stack. AVP-Micro treats them as settlement substrates it can sit above, bridging at the authorization layer.
-    </p>
+<!-- ═══════════════════ INTRODUCTION ═══════════════════ -->
+<section id="introduction">
+  <h2>Introduction</h2>
+  <p>
+    Autonomous AI agents that spend money on behalf of users or organizations require a trust
+    layer that answers three questions with cryptographic proof:
+  </p>
+  <ol>
+    <li><em>Who authorized this agent to spend?</em> — proven by a signed
+      <a href="spec/authority/#dfn-spendingauthorizationcredential">SpendingAuthorizationCredential</a>.</li>
+    <li><em>What are the spending terms?</em> — limits, allowed payees, currency, and expiry
+      encoded in the credential subject and enforced by verifiers.</li>
+    <li><em>Is this specific purchase authorized?</em> — confirmed by a
+      <a href="spec/payments/#dfn-paymentauthorization">PaymentAuthorization</a> signed by the
+      agent and bound to a merchant-issued quote.</li>
+  </ol>
+  <p>
+    AVP-Micro provides the vocabulary, credential formats, cryptographic securing mechanisms,
+    and conformance test harness for this trust layer. It deliberately does <em>not</em> specify
+    payment rails or settlement — those are pluggable substrates. The same credential grammar
+    spans Lightning, Interledger, card, and stablecoin rails alike.
+  </p>
 
-    <table class="interop-table">
+  <section id="design-goals">
+    <h3>Design goals</h3>
+    <dl>
+      <dt>Vendor-neutral trust anchor</dt>
+      <dd>Authority is proven by verifying an issuer's credential against a DID — not by
+        trusting any specific network's ledger, token format, or settlement guarantee.</dd>
+      <dt>Open standards only</dt>
+      <dd>All securing mechanisms are built on ratified W3C specifications:
+        [[VC-DATA-MODEL-2.0]], [[DID-CORE]], [[VC-DATA-INTEGRITY]], [[VC-DI-EDDSA]],
+        [[BITSTRING-STATUS-LIST]], and [[JSON-LD11]].</dd>
+      <dt>Interoperable with SD-JWT-VC networks</dt>
+      <dd>The interop profile ([[AVP-INTEROP]]) provides a normative, bidirectional mapping to
+        SD-JWT-VC credentials without collapsing either trust stack.</dd>
+      <dt>Conformance-testable</dt>
+      <dd>Every normative requirement is exercised by signed test vectors generated by a shared
+        Python harness (<code>generate.py</code>) and verified by <code>verify.py</code> and
+        <code>validate.py</code>.</dd>
+    </dl>
+  </section>
+</section>
+
+<!-- ═══════════════════ SPECIFICATION SUITE ═══════════════════ -->
+<section id="suite">
+  <h2>Specification suite</h2>
+  <p>
+    The suite comprises three peer documents. Each ships a normative ReSpec specification,
+    a JSON-LD 1.1 context, a JSON Schema, SHACL shapes, an OWL/RDFS vocabulary, and signed
+    conformance test vectors.
+  </p>
+
+  <table class="spec-table">
+    <thead>
+      <tr>
+        <th>Specification</th>
+        <th>Namespace</th>
+        <th>Depends on</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="spec/authority/"><strong>Delegated Spending Authority (DSA)</strong></a></td>
+        <td class="namespace">https://w3id.org/spending-authority/v1#</td>
+        <td>—</td>
+        <td class="status-unofficial">Unofficial Draft</td>
+      </tr>
+      <tr>
+        <td><a href="spec/payments/"><strong>AVP-Micro Payments</strong></a></td>
+        <td class="namespace">https://w3id.org/avp-micro/v1#</td>
+        <td><a href="spec/authority/">DSA</a></td>
+        <td class="status-unofficial">Unofficial Draft</td>
+      </tr>
+      <tr>
+        <td><a href="spec/interop-sd-jwt-vc/"><strong>SD-JWT-VC Interop Profile</strong></a></td>
+        <td class="namespace">https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#</td>
+        <td><a href="spec/authority/">DSA</a>, <a href="spec/payments/">Payments</a>, [[SD-JWT-VC]]</td>
+        <td class="status-unofficial">Unofficial Draft</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <section id="dsa-overview">
+    <h3>Delegated Spending Authority</h3>
+    <p>
+      The <a href="spec/authority/">Delegated Spending Authority specification</a> [[DSA]] is
+      the identity and trust foundation. It defines:
+    </p>
+    <ul>
+      <li>The <strong>SpendingAuthorizationCredential</strong> — a W3C VC 2.0 credential whose
+        subject is an agent DID, carrying per-transaction and daily amount limits, an
+        allowed-payees list, currency, and expiry.</li>
+      <li>The <strong>MerchantCredential</strong> and <strong>PaymentCapabilityCredential</strong>
+        for payee and wallet endorsement.</li>
+      <li>The mandatory-to-implement securing mechanism: <code>DataIntegrityProof</code> with
+        cryptosuite <code>eddsa-jcs-2022</code> and DID method <code>did:key</code>
+        (Ed25519 / Multikey).</li>
+      <li>Revocation via [[BITSTRING-STATUS-LIST]].</li>
+      <li>An <strong>Agent Service Category</strong> SKOS vocabulary for scoping spending
+        authority by domain.</li>
+    </ul>
+    <p>Namespace: <code>https://w3id.org/spending-authority/v1#</code></p>
+  </section>
+
+  <section id="payments-overview">
+    <h3>AVP-Micro Payments</h3>
+    <p>
+      The <a href="spec/payments/">AVP-Micro Payments specification</a> [[AVP-PAYMENTS]] defines
+      the full payment lifecycle on top of DSA credentials:
+    </p>
+    <ul>
+      <li><strong>PaymentOffer</strong> — merchant-issued, signed offer with a normative
+        pricing-model vocabulary (flat, per-call, tiered, composite).</li>
+      <li><strong>PaymentQuote</strong> — merchant-computed, signed binding of price to a
+        specific service request.</li>
+      <li><strong>PaymentAuthorization</strong> — agent-signed approval of a quote, committing
+        to economic terms and binding the agent's spending credential.</li>
+      <li><strong>PaymentExecution</strong> and <strong>PaymentReceipt</strong> — wallet and
+        merchant records closing the transaction.</li>
+      <li><strong>UsageSession</strong>, <strong>UsageAccrual</strong>, and
+        <strong>SessionBudgetAuthorization</strong> — streaming/metered payment objects for
+        long-running or usage-billed services.</li>
+    </ul>
+    <p>Namespace: <code>https://w3id.org/avp-micro/v1#</code></p>
+  </section>
+
+  <section id="interop-overview">
+    <h3>SD-JWT-VC Interop Profile</h3>
+    <p>
+      The <a href="spec/interop-sd-jwt-vc/">SD-JWT-VC Interop Profile</a> [[AVP-INTEROP]] is a
+      bridge/binding, not a third protocol pillar. A W3C Data Integrity proof signs
+      JCS-canonical JSON-LD bytes; an SD-JWT signature signs JOSE serialization. Translating
+      credentials from one envelope to the other changes the signed bytes — the original
+      signature can never verify over the translated form. Authority therefore crosses the
+      boundary in one of three <dfn>bridge modes</dfn>:
+    </p>
+    <table class="spec-table">
       <thead>
-        <tr>
-          <th>Property</th>
-          <th>AVP-Micro</th>
-          <th>Mastercard Agent Pay / Verifiable Intent</th>
-          <th>Google AP2</th>
-        </tr>
+        <tr><th>Mode</th><th>Mechanism</th><th>Trust added by bridge</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td><strong>Credential format</strong></td>
-          <td>W3C VC 2.0 / JSON-LD</td>
-          <td>SD-JWT VC (IETF)</td>
-          <td>SD-JWT VC (IETF)</td>
+          <td><code>proof-preserving</code> (default)</td>
+          <td>Embed the original credential + proof; the verifier checks <em>both</em></td>
+          <td>None</td>
         </tr>
         <tr>
-          <td><strong>Proof mechanism</strong></td>
-          <td>Data Integrity <code>eddsa-jcs-2022</code></td>
-          <td>JOSE <code>ES256</code> (KB-SD-JWT)</td>
-          <td>JOSE <code>ES256</code></td>
+          <td><code>co-issued</code></td>
+          <td>Issuer natively signs both forms at creation time</td>
+          <td>None</td>
         </tr>
         <tr>
-          <td><strong>Identifiers</strong></td>
-          <td>DIDs (<code>did:key</code>)</td>
-          <td>URI <code>iss</code>/<code>sub</code>, opaque <code>kid</code></td>
-          <td>URI <code>iss</code>/<code>sub</code></td>
-        </tr>
-        <tr>
-          <td><strong>W3C VCDM 2.0</strong></td>
-          <td><span class="check">✔ normative</span></td>
-          <td>informative reference only</td>
-          <td>informative reference only</td>
-        </tr>
-        <tr>
-          <td><strong>Settlement rail</strong></td>
-          <td>any (pluggable)</td>
-          <td>card / stablecoin (Polygon, Solana, Base)</td>
-          <td>card / x402</td>
-        </tr>
-        <tr>
-          <td><strong>Interop with AVP-Micro</strong></td>
-          <td>—</td>
-          <td><span class="bridge">⇄ bridge required</span> (see interop profile)</td>
-          <td><span class="bridge">⇄ bridge required</span> (see interop profile)</td>
+          <td><code>attested</code></td>
+          <td>A named bridge re-signs in the target format</td>
+          <td>Bridge becomes a trust root; must be explicitly trusted by relying party</td>
         </tr>
       </tbody>
     </table>
-
-    <p style="margin-top:1rem; font-size:.875rem; color:var(--muted);">
-      A W3C Data Integrity proof signs JCS-canonical JSON-LD bytes; an SD-JWT signature signs JOSE serialization.
-      Translating claims changes the signed bytes — the original signature can never verify over the translated form.
-      The interop profile bridges this gap without collapsing either trust stack.
-      <a href="spec/interop-sd-jwt-vc/">Read the interop spec →</a>
-    </p>
-  </div>
+    <p>Namespace: <code>https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#</code></p>
+  </section>
 </section>
 
-<!-- ═══════════════════════════════ QUICKSTART ═════════════════════════ -->
-<section id="quickstart" style="background: var(--light);">
-  <div class="container">
-    <div class="section-label">Conformance harness</div>
-    <h2>Run the harness</h2>
-    <p class="section-intro">
-      A shared Python harness at <code>spec/</code> root generates all signed test vectors and validates every bundle. All checks are offline and deterministic.
-    </p>
-
-    <div class="grid-2">
-      <div class="qs-steps">
-        <div class="qs-step">
-          <div class="step-num">1</div>
-          <div class="step-body">
-            <h4>Install dependencies</h4>
-            <pre><code>python -m venv .venv
-.venv/Scripts/activate   # Windows
-# or: source .venv/bin/activate
-pip install -r requirements.txt</code></pre>
-          </div>
-        </div>
-        <div class="qs-step">
-          <div class="step-num">2</div>
-          <div class="step-body">
-            <h4>Generate signed test vectors</h4>
-            <p>Deterministic key derivation — running this twice produces byte-identical output.</p>
-            <pre><code>python spec/generate.py</code></pre>
-          </div>
-        </div>
-        <div class="qs-step">
-          <div class="step-num">3</div>
-          <div class="step-body">
-            <h4>Verify proofs and bindings</h4>
-            <p>Crypto round-trip, policy checks, interop A↔V round-trip, tamper-detection negatives.</p>
-            <pre><code>python spec/verify.py    # must report PASS</code></pre>
-          </div>
-        </div>
-        <div class="qs-step">
-          <div class="step-num">4</div>
-          <div class="step-body">
-            <h4>Validate artifacts</h4>
-            <p>Turtle parse, offline JSON-LD expansion, JSON Schema, and SHACL for all three bundles.</p>
-            <pre><code>python spec/validate.py  # must report PASS</code></pre>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:1.25rem;">Harness modules</h3>
-        <div style="display:flex;flex-direction:column;gap:.75rem;">
-          <div class="artifact">
-            <h4><code>avp_crypto.py</code></h4>
-            <p>Ed25519 key derivation, JCS canonicalization, <code>eddsa-jcs-2022</code> sign/verify. Mandatory-to-implement cryptosuite.</p>
-          </div>
-          <div class="artifact">
-            <h4><code>sdjwt.py</code></h4>
-            <p>P-256 keys, ES256/JOSE, JWK, SD-JWT compact primitives and key-binding JWT helpers for the interop bundle.</p>
-          </div>
-          <div class="artifact">
-            <h4><code>interop.py</code></h4>
-            <p>AVP-Micro ↔ SD-JWT-VC translator: claim mapping, three bridge modes, cross-stack verification, <code>importAdvisory</code>.</p>
-          </div>
-          <div class="artifact">
-            <h4><code>pricing.py</code></h4>
-            <p>Pricing-model evaluator: flat, per-call, tiered, composite — used by the Payments conformance vectors.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ ARTIFACTS ══════════════════════════ -->
+<!-- ═══════════════════ ARTIFACTS ═══════════════════ -->
 <section id="artifacts">
-  <div class="container">
-    <div class="section-label">Per-bundle artifacts</div>
-    <h2>What each bundle contains</h2>
-    <p class="section-intro">Every bundle is self-contained and follows the same artifact layout.</p>
-    <div class="artifacts">
-      <div class="artifact">
-        <h4>📄 W3C ReSpec document</h4>
-        <p>Normative HTML specification rendered client-side by ReSpec.js. Status: unofficial.</p>
-      </div>
-      <div class="artifact">
-        <h4>🗂️ JSON-LD 1.1 context</h4>
-        <p>Normative context mapping terms to IRIs. <code>@protected: true</code>, version 1.1.</p>
-      </div>
-      <div class="artifact">
-        <h4>✅ JSON Schema</h4>
-        <p>Draft 2020-12 schema with <code>$defs</code> per type. Conformance aid; validates every test vector.</p>
-      </div>
-      <div class="artifact">
-        <h4>🔷 SHACL shapes</h4>
-        <p>RDF shape constraints. Each vector passes SHACL validation in <code>validate.py</code>.</p>
-      </div>
-      <div class="artifact">
-        <h4>🦉 RDFS / OWL ontology</h4>
-        <p>Turtle vocabulary declaring classes and properties in the bundle's namespace.</p>
-      </div>
-      <div class="artifact">
-        <h4>🧪 Signed test vectors</h4>
-        <p>Deterministic JSON fixtures with live cryptographic proofs. Regenerated by <code>generate.py</code>.</p>
-      </div>
-    </div>
-  </div>
+  <h2>Artifacts per bundle</h2>
+  <p>Every bundle ships the following artifacts under its directory:</p>
+  <table class="spec-table">
+    <thead>
+      <tr><th>Artifact</th><th>File</th><th>Role</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ReSpec specification</td>
+        <td><code>index.html</code></td>
+        <td>Normative</td>
+      </tr>
+      <tr>
+        <td>JSON-LD 1.1 context</td>
+        <td><code>context/v1.jsonld</code></td>
+        <td>Normative</td>
+      </tr>
+      <tr>
+        <td>JSON Schema (Draft 2020-12)</td>
+        <td><code>schemas/*.schema.json</code></td>
+        <td>Conformance aid</td>
+      </tr>
+      <tr>
+        <td>SHACL shapes</td>
+        <td><code>shapes/*.ttl</code></td>
+        <td>Conformance aid</td>
+      </tr>
+      <tr>
+        <td>RDFS/OWL vocabulary</td>
+        <td><code>vocab/*.ttl</code></td>
+        <td>Conformance aid</td>
+      </tr>
+      <tr>
+        <td>Signed test vectors</td>
+        <td><code>test-vectors/*.json</code></td>
+        <td>Informative fixtures</td>
+      </tr>
+    </tbody>
+  </table>
 </section>
 
-<!-- ═══════════════════════════════ FOOTER ═════════════════════════════ -->
-<footer>
-  <div class="container">
-    <div class="footer-inner">
-      <div>
-        <strong style="color:#e2e8f0;">AVP-Micro</strong><br>
-        <span>© 2026 Geoknoesis LLC. Specifications published under the
-          <a href="https://www.w3.org/Consortium/Legal/2015/copyright-software-and-document">W3C Software and Document License</a>.</span>
-      </div>
-      <div class="footer-links">
-        <a href="spec/authority/">DSA Spec</a>
-        <a href="spec/payments/">Payments Spec</a>
-        <a href="spec/interop-sd-jwt-vc/">Interop Profile</a>
-        <a href="spec/README.md">Harness README</a>
-        <a href="https://github.com/geoknoesis/avp-micro-spec">GitHub</a>
-      </div>
-    </div>
-  </div>
-</footer>
+<!-- ═══════════════════ CONFORMANCE HARNESS ═══════════════════ -->
+<section id="harness">
+  <h2>Conformance harness</h2>
+  <p>
+    A shared Python harness at the repository root generates all signed test vectors and
+    validates every bundle. Dependencies are installable via <code>pip install -r
+    requirements.txt</code>.
+  </p>
+
+  <section id="harness-commands">
+    <h3>Commands</h3>
+    <pre class="example" title="Regenerate all test vectors">python spec/generate.py</pre>
+    <pre class="example" title="Verify proofs, bindings, policy, and interop round-trip">python spec/verify.py    # must report PASS</pre>
+    <pre class="example" title="Validate Turtle, JSON-LD expansion, JSON Schema, and SHACL">python spec/validate.py  # must report PASS</pre>
+    <p>
+      <code>validate.py</code> is fully offline: the stable external W3C contexts
+      (<code>credentials/v2</code>, <code>data-integrity/v2</code>) are vendored under
+      <code>spec/contexts/</code> and served by a local document loader, so JSON-LD
+      expansion does not depend on network access to w3.org.
+    </p>
+  </section>
+
+  <section id="harness-modules">
+    <h3>Harness modules</h3>
+    <dl>
+      <dt><code>spec/avp_crypto.py</code></dt>
+      <dd>Ed25519 key derivation, JCS canonicalization ([[RFC8785]]),
+        <code>eddsa-jcs-2022</code> sign/verify. The mandatory-to-implement cryptosuite.</dd>
+      <dt><code>spec/sdjwt.py</code></dt>
+      <dd>P-256 key derivation, ES256/JOSE sign/verify, JWK encode/decode, SD-JWT compact
+        serialization, <code>make_disclosure</code>, <code>sd_hash</code>, and key-binding
+        JWT helpers. Used only by the interop bundle.</dd>
+      <dt><code>spec/interop.py</code></dt>
+      <dd>AVP-Micro ↔ SD-JWT-VC translator: claim mapping, three bridge modes, cross-stack
+        verification rules, <code>importAdvisory</code> surfacing, and L3 key-binding JWT.</dd>
+      <dt><code>spec/pricing.py</code></dt>
+      <dd>Normative pricing-model evaluator: flat, per-call, tiered, and composite models.
+        Used by the Payments bundle conformance vectors.</dd>
+    </dl>
+  </section>
+</section>
+
+<!-- ═══════════════════ RELATIONSHIPS ═══════════════════ -->
+<section id="ecosystem">
+  <h2>Relationship to network agent-payment schemes</h2>
+  <p>
+    AVP-Micro is the <em>trust and authorization layer</em>, not a payment network. It
+    standardizes <em>who may spend, under what terms, and how that authority is proven</em>,
+    leaving value movement to any settlement rail.
+  </p>
+  <p>
+    Emerging network schemes for agent payments use a different credential stack:
+    Mastercard <strong>Agent Pay for Machines</strong> / <strong>Verifiable Intent</strong>
+    and Google <strong>AP2</strong> are built on [[SD-JWT-VC]] — three-layer KB-SD-JWT chains
+    signed with <code>ES256</code>, typed by <code>vct</code>, and identified by
+    <code>iss</code>/<code>sub</code> URIs. They deliberately do not conform to the
+    W3C VC Data Model and do not use DIDs. AVP-Micro, by contrast, secures W3C VC 2.0
+    credentials with Data Integrity proofs and identifies parties by DID.
+  </p>
+  <p>
+    The <a href="spec/interop-sd-jwt-vc/">SD-JWT-VC Interop Profile</a> bridges this gap
+    normatively. See the
+    <a href="https://github.com/geoknoesis/avp-micro-spec/blob/master/docs/superpowers/specs/2026-06-11-avp-sdjwt-vc-bridge-design.md">bridge design note</a>
+    for the full analysis of the three bridge modes and identity asymmetry.
+  </p>
+</section>
 
 </body>
 </html>
