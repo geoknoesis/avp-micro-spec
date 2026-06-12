@@ -74,7 +74,7 @@ The `EmbeddedSdJwtVcMandate` (the V→A import form) is a DSA credential extende
 The bundle is wired into the shared `spec/`-root harness (no new third-party
 dependency — the ES256/JOSE/SD-JWT primitives are implemented with `cryptography`,
 already required, in [`../sdjwt.py`](../sdjwt.py), mirroring how
-[`../avp_crypto.py`](../avp_crypto.py) implements `eddsa-jcs-2022`):
+[`../avp_crypto.py`](../avp_crypto.py) implements `ecdsa-jcs-2022`):
 
 ```bash
 python spec/generate.py    # (re)build vectors for all three bundles
@@ -95,12 +95,41 @@ the cross-stack verification rules; `generate.py` emits the `test-vectors/` belo
 | `02-imported-mandate.json` | A→V→A re-import as an `EmbeddedSdJwtVcMandate` |
 | `03-foreign-sdjwtvc.json` | A foreign Verifiable-Intent/AP2-style mandate (ES256, `did:web` issuer) |
 | `04-imported-from-foreign.json` | V→A import of the foreign mandate |
-| `05-coissued-mandate.json` | **Co-issued** mandate: native `eddsa-jcs-2022` proof + parallel ES256 SD-JWT-VC |
+| `05-coissued-mandate.json` | **Co-issued** mandate: native `ecdsa-jcs-2022` proof + parallel ES256 SD-JWT-VC (same P-256 key) |
 | `06-l3-presentation.json` | A→V of a `PaymentAuthorization`: mandate SD-JWT + agent **key-binding JWT (L3)** |
 | `07-imported-payment-authorization.json` | V→A import of the L3 presentation as an `EmbeddedKbJwtAuthorization` |
-| `08-attested-mandate.json` | **Attested** mode: a named bridge re-signs (Ed25519); honored only if the bridge is trusted |
+| `08-attested-mandate.json` | **Attested** mode: a named bridge re-signs (P-256 `did:key`); honored only if the bridge is trusted |
 | `09-imported-interactive-l2.json` | Lossy case — **interactive L2**: import carries an `importAdvisory` |
 | `10-imported-partial-sd.json` | Lossy case — **partial selective disclosure**: a withheld claim, flagged as a subset view |
+| `11-foreign-intent-mandate.json` | A foreign **AP2 `IntentMandate`** (ES256, `did:web` user issuer; item-level intent) |
+| `12-imported-intent-mandate.json` | V→A import of the IntentMandate → `EmbeddedSdJwtVcMandate` + carried intent extras + M2 advisory |
+| `13-foreign-cart-mandate.json` | A foreign **AP2 `CartMandate`** (ES256, `did:web` merchant; itemized cart) |
+| `14-imported-cart-quote.json` | V→A import of the CartMandate → `EmbeddedCartQuote` projection (`serviceRequestHash` binds the canonical cart) |
+| `15-human-present-confirmation.json` | V→A import of a human-present cart approval → `EmbeddedCartUserConfirmation` projection |
+| `16-autonomous-no-confirmation.json` | Autonomous import (no human-present approval) → **no** confirmation, advised via `importAdvisory` |
+
+The native principal-signed `PurchaseConfirmation` (`ecdsa-jcs-2022`) and a `PaymentAuthorization` carrying it are **payments-bundle** objects, so they live under [`../payments/test-vectors/`](../payments/test-vectors/) as `14b-purchase-confirmation.json` and `18-payment-authorization-confirmed.json`.
+
+### AP2 mandate-model bridge
+
+Bridges AP2's two-mandate model (`IntentMandate` + `CartMandate`) and its fresh
+human approval to the AVP-Micro mandate/payment model, in both directions:
+
+- **`IntentMandate` ⇄ DSA `SpendingAuthorizationCredential` (§5):** the enforceable
+  spending envelope (amount/payee/currency/validity) maps losslessly; AP2's
+  natural-language and item/SKU-level intent and refundability are carried in `iop:`
+  extras (`intentDescription`, `itemConstraints`, `refundabilityRequired`,
+  `requiresPurchaseConfirmation`) but **not** machine-enforced — every import flags
+  this granularity loss (**M2**) in `iop:importAdvisory`.
+- **`CartMandate` ⇄ payee-signed `PaymentQuote` (§6):** the merchant attestation
+  projects to an `EmbeddedCartQuote`; a normative `canonicalCart → serviceRequestHash`
+  (**M4**) makes the merchant signature and the AVP quote reference the same bytes.
+- **`PurchaseConfirmation` — one optional core object (§7):** the fresh human approval
+  AP2 carries but AVP-Micro lacked. Its proof MUST be controlled by `confirmedBy` (the
+  principal), never by the agent (`payer`); a confirmation forged by the agent is
+  rejected. Optional and additive — absent ⇒ standing delegation / autonomous, the
+  default; the **autonomous** import is explicitly advised rather than fabricating an
+  approval.
 
 ### Scope of the vectors
 
@@ -112,7 +141,7 @@ All three bridge modes and both layers are now vectorised:
   **`attested`** mode (a named bridge re-signs; the verifier consults a trusted-bridge
   list — a crypto-valid object from an untrusted bridge is policy-rejected).
 - **Per-purchase action layer** (`PaymentAuthorization` ↔ presentation with an agent
-  **key-binding JWT / L3**, EdDSA, `sd_hash`-bound; a KB-JWT re-pointed at a different
+  **key-binding JWT / L3**, ES256, `sd_hash`-bound; a KB-JWT re-pointed at a different
   mandate fails).
 - **Lossy cases surfaced, never dropped**: an **interactive-L2** mandate and a
   **partially-disclosed** mandate each import with an `iop:importAdvisory`; the partial
@@ -128,7 +157,8 @@ HTTP `Link` headers. Refresh those files from the canonical URLs if the contexts
 ## Securing mechanism
 
 Two distinct stacks meet here. AVP-Micro objects use W3C Data Integrity
-`DataIntegrityProof` with `eddsa-jcs-2022` over `did:key` (Ed25519). SD-JWT-VC objects
-use `ES256` (P-256) JOSE signatures with `cnf` holder binding. The profile never
-collapses the two — it carries each in its native form and requires verifiers to check
-the one that bears the authority (see the spec "Cross-stack verification" section).
+`DataIntegrityProof` with `ecdsa-jcs-2022` over `did:key` (P-256). SD-JWT-VC objects
+use `ES256` (P-256) JOSE signatures with `cnf` holder binding. Both now sign over the
+same P-256 curve; the profile still never collapses the two envelopes — it carries each
+in its native form and requires verifiers to check the one that bears the authority
+(see the spec "Cross-stack verification" section).
