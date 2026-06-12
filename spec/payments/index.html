@@ -101,6 +101,12 @@
           status: "REC",
           publisher: "W3C",
         },
+        "VC-DI-ECDSA": {
+          title: "Verifiable Credential Data Integrity ECDSA Cryptosuites v1.0",
+          href: "https://www.w3.org/TR/vc-di-ecdsa/",
+          status: "REC",
+          publisher: "W3C",
+        },
         "VC-DI-EDDSA": {
           title: "Verifiable Credential Data Integrity EdDSA Cryptosuites v1.0",
           href: "https://www.w3.org/TR/vc-di-eddsa/",
@@ -259,7 +265,7 @@
 
     <p>
       Every signed object carries a <code>DataIntegrityProof</code>
-      (<code>eddsa-jcs-2022</code>), making the full chain — offer, quote,
+      (<code>ecdsa-jcs-2022</code>), making the full chain — offer, quote,
       authorization, execution, receipt — independently re-verifiable by an
       auditor long after the transaction.
     </p>
@@ -772,7 +778,7 @@
         A cryptographic method (for example a Data Integrity proof or a JWS) that
         provides integrity and sender authentication for an
         <a>AVP-Micro data object</a>. Securing mechanisms — including the
-        mandatory-to-implement <code>eddsa-jcs-2022</code> cryptosuite,
+        mandatory-to-implement <code>ecdsa-jcs-2022</code> cryptosuite,
         verification-method binding, and DID-state-at-proof-time — are defined by
         [[DSA]] (see [[DSA]] Securing mechanisms). This document adds only the
         payment-specific bindings in <a href="#securing"></a>.
@@ -875,7 +881,7 @@
       <code>"@protected": true</code> and deliberately defines <em>no</em>
       <code>@vocab</code> fallback. Terms that are not defined by an included
       context are dropped during JSON-LD expansion rather than coerced to an
-      ad-hoc IRI. Because the mandatory <code>eddsa-jcs-2022</code> proof signs
+      ad-hoc IRI. Because the mandatory <code>ecdsa-jcs-2022</code> proof signs
       the raw JSON document using JCS, such members can still be part of the
       signed bytes; processors nevertheless <em class="rfc2119">MUST NOT</em>
       make authorization, settlement, or delivery decisions from undefined
@@ -885,7 +891,7 @@
       <aside class="note">
         <p>
           <strong>Why array order is significant.</strong>
-          The <code>eddsa-jcs-2022</code> proof is computed over the
+          The <code>ecdsa-jcs-2022</code> proof is computed over the
           JSON Canonicalization Scheme (JCS) serialisation of the object,
           and JCS preserves JSON array order. Reordering the
           <code>@context</code> entries produces a different canonical form,
@@ -984,7 +990,7 @@
         <a>securing mechanism</a> that provides integrity and authenticates the
         producer. The available securing mechanisms, the
         <strong>mandatory-to-implement</strong> <code>DataIntegrityProof</code>
-        with cryptosuite <code>eddsa-jcs-2022</code> [[VC-DI-EDDSA]], the optional
+        with cryptosuite <code>ecdsa-jcs-2022</code> (P-256) [[VC-DI-ECDSA]], the optional
         cryptosuites and JOSE-based proofs, the HTTP-message-signing recommendation
         ([[RFC9421]] / [[RFC9449]]), and the requirement that a verifier reject an
         object whose only proof uses an unrecognized cryptosuite, are all defined
@@ -1053,7 +1059,8 @@
       <code>@context</code>. Messages that represent commitments
       (<a>PaymentQuote</a>, <a>PaymentAuthorization</a>, <a>PaymentExecution</a>,
       <a>PaymentReceipt</a>, <a>UsageSession</a>, <a>UsageAccrual</a>,
-      <a>SessionBudgetAuthorization</a>, <a>UsageSessionExtension</a>)
+      <a>SessionBudgetAuthorization</a>, <a>UsageSessionExtension</a>) and the
+      <em class="rfc2119">OPTIONAL</em> <a>PurchaseConfirmation</a>
       <em class="rfc2119">MUST</em> be secured
       per <a href="#securing"></a> and the securing mechanisms of [[DSA]].
       Streaming-specific messages are defined in
@@ -1120,7 +1127,7 @@
             <tr><td><code>amount</code>, <code>currency</code></td><td><em class="rfc2119">REQUIRED</em></td><td>decimal · string</td><td>The price. Decimal string per [[DSA]] amount format; strictly positive.</td></tr>
             <tr><td><code>settlementMethod</code>, <code>settlementTarget</code></td><td><em class="rfc2119">REQUIRED</em></td><td>strings</td><td>Together with <code>amount</code> and <code>currency</code> these form the <a>economic terms</a>.</td></tr>
             <tr><td><code>expires</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Quote expiry. Deployments <em class="rfc2119">SHOULD</em> keep this ≤ 300 s.</td></tr>
-            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payee signature (<code>eddsa-jcs-2022</code>). Verifiers <em class="rfc2119">MUST</em> reject an unsigned quote.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payee signature (<code>ecdsa-jcs-2022</code>). Verifiers <em class="rfc2119">MUST</em> reject an unsigned quote.</td></tr>
           </tbody>
         </table>
       </section>
@@ -1154,6 +1161,7 @@
             <tr><td><code>nonce</code></td><td><em class="rfc2119">REQUIRED</em></td><td>string</td><td>Unique within the verifier's retention window (scoped to the payer–verifier pair) for replay protection.</td></tr>
             <tr><td><code>wallet</code></td><td><em class="rfc2119">OPTIONAL</em> (<em class="rfc2119">RECOMMENDED</em>)</td><td>DID</td><td>Wallet service authorised to settle and sign the <a>PaymentExecution</a>. Required in the <a>auditable profile</a>.</td></tr>
             <tr><td><code>vp</code></td><td><em class="rfc2119">REQUIRED</em></td><td>VP</td><td>A verifiable presentation containing at least one <a href="../authority/#spending-authorization-credential">Spending Authorization Credential</a>.</td></tr>
+            <tr><td><code>purchaseConfirmation</code></td><td><em class="rfc2119">OPTIONAL</em></td><td><a>PurchaseConfirmation</a></td><td>An embedded fresh human approval of the exact quote. When present, a verifier <em class="rfc2119">MUST</em> validate it per <a href="#purchase-confirmation"></a>; its absence means the authorisation proceeds under standing delegation alone.</td></tr>
             <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payer signature bound to the <code>payer</code> DID (see <a href="#key-binding">key binding</a>).</td></tr>
           </tbody>
         </table>
@@ -1176,6 +1184,74 @@
             and have the wallet settle to the original quote's settlement target.
             Binding <code>payee</code> in the authorization to the quote's
             <code>payee</code> closes this policy-bypass.
+          </p>
+        </aside>
+      </section>
+
+      <section id="purchase-confirmation">
+        <h4><dfn>PurchaseConfirmation</dfn></h4>
+        <p>
+          An <em class="rfc2119">OPTIONAL</em> object recording a fresh,
+          per-purchase <em>human</em> approval of one exact quoted cart.
+          <code>type</code> <em class="rfc2119">MUST</em> include
+          <code>PurchaseConfirmation</code>. Unlike every other message defined
+          here, it is <em class="rfc2119">NOT</em> an agent action: it
+          <em class="rfc2119">MUST</em> be signed, per <a href="#securing"></a>,
+          by the principal named in <code>confirmedBy</code> — never by the
+          <code>payer</code> (the agent). Its presence makes a payment
+          <em>human-present</em>; its absence is the default and means the payment
+          proceeds under standing delegation alone (see
+          <a href="#daily-limit"></a> and [[DSA]]).
+        </p>
+        <p class="object-summary">
+          A principal-signed approval of one exact quoted cart, distinguished from
+          an agent action by the rule that its <code>proof</code> is controlled by
+          <code>confirmedBy</code> (the human/principal), not by the
+          <code>payer</code> (the agent).
+        </p>
+
+        <table class="simple">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Req.</th><th scope="col">Type</th><th scope="col">Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>quote</code></td><td><em class="rfc2119">REQUIRED</em></td><td>IRI</td><td>IRI of the <a>PaymentQuote</a> being approved.</td></tr>
+            <tr><td><code>quoteDigest</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Content digest of the referenced quote (proof removed). Binds the approval to the exact quote bytes the human observed.</td></tr>
+            <tr><td><code>payer</code>, <code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DIDs</td><td>The agent that will transact and the merchant being paid. <code>payer</code> <em class="rfc2119">MUST</em> equal the quote's <code>payer</code>; <code>payee</code> the quote's <code>payee</code>.</td></tr>
+            <tr><td><code>amount</code>, <code>currency</code></td><td><em class="rfc2119">REQUIRED</em></td><td>decimal · string</td><td>The approved price. Each <em class="rfc2119">MUST</em> be byte-identical to the referenced quote.</td></tr>
+            <tr><td><code>serviceRequestHash</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Fingerprint of the approved cart. <em class="rfc2119">MUST</em> be byte-identical to the quote's <code>serviceRequestHash</code>.</td></tr>
+            <tr><td><code>confirmedBy</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DID</td><td>The principal/human who approves. The <code>proof</code>'s <code>verificationMethod</code> <em class="rfc2119">MUST</em> resolve to this DID, and it <em class="rfc2119">MUST NOT</em> equal <code>payer</code>. It <em class="rfc2119">SHOULD</em> be the issuer of the governing <a href="../authority/#spending-authorization-credential">Spending Authorization Credential</a>, or a confirmer it explicitly permits.</td></tr>
+            <tr><td><code>authorization</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>IRI</td><td>IRI of the Spending Authorization Credential the confirmation operates under.</td></tr>
+            <tr><td><code>timestamp</code>, <code>expires</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Validity window of the human approval.</td></tr>
+            <tr><td><code>nonce</code></td><td><em class="rfc2119">REQUIRED</em></td><td>string</td><td>Unique within the verifier's retention window for replay protection.</td></tr>
+            <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Principal signature whose <code>verificationMethod</code> <em class="rfc2119">MUST</em> resolve to <code>confirmedBy</code>.</td></tr>
+          </tbody>
+        </table>
+        <aside class="note">
+          <p>
+            <strong>The defining rule: signed by the human, not the agent.</strong>
+            What makes a <a>PurchaseConfirmation</a> a <em>fresh human approval</em>
+            rather than just another agent action is that its <code>proof</code>
+            <em class="rfc2119">MUST</em> be controlled by <code>confirmedBy</code>
+            (the principal) and <em class="rfc2119">MUST NOT</em> be controlled by
+            <code>payer</code> (the agent) — a property verifiable from the artifact
+            alone. A verifier <em class="rfc2119">MUST</em> reject a confirmation whose
+            <code>proof</code> is signed by any key other than <code>confirmedBy</code>,
+            including one forged by the agent.
+          </p>
+        </aside>
+        <aside class="note">
+          <p>
+            <strong>Optional and additive.</strong> A <a>PurchaseConfirmation</a> is
+            never required by core AVP-Micro flows; standing delegation remains
+            first-class. A verifier that requires fresh human intent — because local
+            policy demands it, or the governing intent signalled it — <em class="rfc2119">MUST</em>
+            check that a confirmation is present, is signed by <code>confirmedBy</code>,
+            binds the same <code>quoteDigest</code>, <code>serviceRequestHash</code>,
+            <code>amount</code>, and <code>currency</code> as the
+            <a>PaymentAuthorization</a> it accompanies, and is unexpired. When no such
+            object is present, the payment is autonomous; an importer
+            <em class="rfc2119">MUST NOT</em> synthesise one.
           </p>
         </aside>
       </section>
@@ -2073,8 +2149,8 @@
       (quote → spending-authorization credential → authorization → execution →
       receipt) and a full streaming chain (session → budget authorization →
       accrual → execution → session receipt) signed with <code>did:key</code>
-      Ed25519 keys and
-      <code>eddsa-jcs-2022</code> proofs — are published under
+      P-256 keys and
+      <code>ecdsa-jcs-2022</code> proofs — are published under
       <a href="test-vectors/"><code>test-vectors/</code></a>, with JSON Schema in
       <a href="schemas/"><code>schemas/</code></a> and SHACL shapes in
       <a href="shapes/avp-shapes.ttl"><code>shapes/avp-shapes.ttl</code></a>. The
@@ -2118,7 +2194,7 @@
   },
   "proof": {
     "type": "DataIntegrityProof",
-    "cryptosuite": "eddsa-jcs-2022",
+    "cryptosuite": "ecdsa-jcs-2022",
     "proofPurpose": "assertionMethod",
     "verificationMethod": "did:web:example.com:agents:buyer-01#key-1"
   }
@@ -2151,7 +2227,7 @@
   "settlementMode": "deferred",
   "timestamp": "2026-03-25T21:40:00Z",
   "expires": "2026-03-25T22:00:00Z",
-  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "ecdsa-jcs-2022" }
 }
       </pre>
       <pre class="example json" title="SessionBudgetAuthorization (payer-signed; commits to session budget)">
@@ -2183,7 +2259,7 @@
     "type": "VerifiablePresentation",
     "verifiableCredential": [{ }]
   },
-  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "ecdsa-jcs-2022" }
 }
       </pre>
       <pre class="example json" title="UsageAccrual (cumulative meter report)">
@@ -2203,7 +2279,7 @@
   "currency": "USD",
   "sequence": 3,
   "timestamp": "2026-03-25T21:45:00Z",
-  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "ecdsa-jcs-2022" }
 }
       </pre>
       <pre class="example json" title="PaymentReceipt (session settlement)">
@@ -2224,7 +2300,7 @@
   "status": "fulfilled",
   "totalMeterReading": "48",
   "fulfilledAt": "2026-03-25T21:58:00Z",
-  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "ecdsa-jcs-2022" }
 }
       </pre>
     </section>
@@ -2285,13 +2361,13 @@
         <a>PaymentExecution</a> → <a>PaymentReceipt</a>) with the
         mandatory-to-implement securing mechanism. A core implementation
         <em class="rfc2119">MUST</em> produce and verify each object's
-        <code>eddsa-jcs-2022</code> proof and enforce the
+        <code>ecdsa-jcs-2022</code> proof and enforce the
         <a href="#wallet-one-off">one-off wallet-verification</a> checks, but
         <em class="rfc2119">MAY</em> omit streaming
         (<a href="#streaming"></a>) and is not required to populate the optional
         <code>wallet</code> member. As noted in [[DSA]]
         (<a href="#securing">securing mechanisms</a>), a core implementation needs
-        only a JCS canonicalizer, an Ed25519 implementation, and the
+        only a JCS canonicalizer, a P-256 ECDSA implementation, and the
         <a href="schemas/">JSON Schema</a> — <em>not</em> a JSON-LD/RDF toolchain.
       </dd>
       <dt><dfn>auditable profile</dfn></dt>
