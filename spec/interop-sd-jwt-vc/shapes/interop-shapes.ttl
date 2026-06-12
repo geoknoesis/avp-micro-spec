@@ -5,6 +5,7 @@
 # and is checked by the JSON Schema in ../schemas/interop.schema.json, not here.
 @prefix sh:   <http://www.w3.org/ns/shacl#> .
 @prefix iop:  <https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#> .
+@prefix avp:  <https://w3id.org/avp-micro/v1#> .
 @prefix dsa:  <https://w3id.org/spending-authority/v1#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 
@@ -60,3 +61,17 @@ iop:EmbeddedKbJwtAuthorizationShape
     sh:in ( "co-issued" "proof-preserving" "attested" ) ;
     sh:message "An EmbeddedKbJwtAuthorization MUST declare a bridgeMode of co-issued, proof-preserving, or attested." ;
   ] .
+
+# ---- AP2 mandate-model bridge projections ----
+
+iop:EmbeddedCartQuoteShape
+  a sh:NodeShape ;
+  sh:targetClass iop:EmbeddedCartQuote ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path iop:embeddedCartMandate ; sh:nodeKind sh:Literal ; sh:minCount 1 ] .
+
+iop:EmbeddedCartUserConfirmationShape
+  a sh:NodeShape ;
+  sh:targetClass iop:EmbeddedCartUserConfirmation ;
+  sh:property [ sh:path avp:confirmedBy ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path iop:embeddedCartUserAuth ; sh:nodeKind sh:Literal ; sh:minCount 1 ] .
