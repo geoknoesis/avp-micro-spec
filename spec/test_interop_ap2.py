@@ -221,3 +221,21 @@ def test_payment_authorization_accepts_optional_purchase_confirmation():
 def test_payment_authorization_still_valid_without_confirmation():
     authz = _json.loads(_Path("spec/payments/test-vectors/02-payment-authorization.json").read_text(encoding="utf-8"))
     assert list(_pay_validator("PaymentAuthorization").iter_errors(authz)) == []
+
+
+# ---- interop context + ontology for the new iop: terms ----
+
+import rdflib as _rdflib
+
+
+def test_interop_context_defines_new_terms():
+    ctx = _json.loads(_Path("spec/interop-sd-jwt-vc/context/v1.jsonld").read_text(encoding="utf-8"))["@context"]
+    for term in ("embeddedCartMandate", "embeddedCartUserAuth", "intentDescription",
+                 "itemConstraints", "refundabilityRequired", "requiresPurchaseConfirmation",
+                 "EmbeddedCartQuote", "EmbeddedCartUserConfirmation"):
+        assert term in ctx, f"missing context term: {term}"
+
+
+def test_interop_vocab_parses():
+    g = _rdflib.Graph().parse("spec/interop-sd-jwt-vc/vocab/interop.ttl", format="turtle")
+    assert len(g) > 0

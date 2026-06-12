@@ -78,3 +78,28 @@ iop:attestingBridge a owl:ObjectProperty ;
   rdfs:domain iop:EmbeddedSdJwtVcMandate ;
   rdfs:label "attesting bridge"@en ;
   rdfs:comment "In 'attested' bridge mode only, the DID of the bridge that re-signed the outer object. A relying party MUST independently trust this DID; in 'proof-preserving' and 'co-issued' modes this property is absent."@en .
+
+#################################################################
+# AP2 mandate-model bridge (Intent + Cart + human-present confirmation)
+#################################################################
+
+iop:EmbeddedCartQuote a owl:Class ;
+  rdfs:label "Embedded cart quote"@en ;
+  rdfs:comment "A PaymentQuote projection of an AP2 CartMandate; authority is the embedded merchant signature (iop:embeddedCartMandate)."@en .
+iop:EmbeddedCartUserConfirmation a owl:Class ;
+  rdfs:label "Embedded cart user confirmation"@en ;
+  rdfs:comment "A PurchaseConfirmation projection of an AP2 human-present cart approval; authority is the embedded user signature (iop:embeddedCartUserAuth)."@en .
+
+iop:embeddedCartMandate a owl:DatatypeProperty ; rdfs:label "embedded cart mandate"@en ;
+  rdfs:comment "Compact serialization of the original merchant-signed AP2 CartMandate."@en .
+iop:embeddedCartUserAuth a owl:DatatypeProperty ; rdfs:label "embedded cart user auth"@en ;
+  rdfs:comment "Compact serialization of the original user-signed AP2 cart approval."@en .
+iop:embeddedIntentMandate a owl:DatatypeProperty ; rdfs:label "embedded intent mandate"@en ;
+  rdfs:comment "Compact serialization of the original user-signed AP2 IntentMandate."@en .
+iop:intentDescription a owl:DatatypeProperty ; rdfs:label "intent description"@en ;
+  rdfs:comment "Natural-language purchase intent carried from an AP2 IntentMandate; NOT machine-enforced."@en .
+iop:itemConstraints a owl:DatatypeProperty ; rdfs:label "item constraints"@en ;
+  rdfs:comment "Item/SKU-level constraints carried from an AP2 IntentMandate; NOT machine-enforced."@en .
+iop:refundabilityRequired a owl:DatatypeProperty ; rdfs:label "refundability required"@en .
+iop:requiresPurchaseConfirmation a owl:DatatypeProperty ; rdfs:label "requires purchase confirmation"@en ;
+  rdfs:comment "True when the source AP2 intent requires fresh human approval (a PurchaseConfirmation) per purchase."@en .
