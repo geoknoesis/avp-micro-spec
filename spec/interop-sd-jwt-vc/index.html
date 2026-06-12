@@ -669,6 +669,114 @@
     </ul>
   </section>
 
+  <section id="ap2-bridge">
+    <h2>AP2 mandate-model bridge</h2>
+    <p>
+      [[?AP2]] expresses agentic purchases as a two-mandate workflow — a user-signed
+      <dfn>IntentMandate</dfn> (standing authority to shop) and a merchant-signed,
+      optionally user-approved <dfn>CartMandate</dfn> (a priced, itemized commitment)
+      — both carried on the wire as <a>SD-JWT-VC mandates</a>. This section maps that
+      workflow onto the AVP-Micro authorization chain. Each correspondence below
+      imports and exports through the same <a href="#import">import</a>/<a
+      href="#export">export</a> machinery: the produced object keeps its native
+      semantic type and carries the foreign original in its <a>securing
+      descriptor</a>.
+    </p>
+
+    <section id="ap2-intent">
+      <h3>IntentMandate &harr; Spending Authorization Credential</h3>
+      <p>
+        The enforceable spending envelope (price ceiling, allowed merchants,
+        currency, validity window, period caps) maps through the claim mapping of
+        <a href="#claim-mapping"></a>. AP2 intent fields with no machine-checkable
+        [[DSA]] policy slot are <em>carried, never silently enforced or dropped</em>,
+        as top-level semantic claims: <code>iop:intentDescription</code>
+        (natural-language intent), <code>iop:itemConstraints</code> (item/SKU-level
+        constraints), and <code>iop:refundabilityRequired</code>. An importer
+        <em class="rfc2119">MUST</em> record an <code>importAdvisory</code> in the
+        securing descriptor stating that item-level and natural-language intent is
+        not enforced by AVP-Micro spending policy.
+      </p>
+      <p>
+        AP2's <code>requires_user_confirmation</code> maps to
+        <code>iop:requiresPurchaseConfirmation</code>. When <code>true</code>, an
+        AVP-Micro verifier consuming the imported credential
+        <em class="rfc2119">MUST</em> require a valid
+        <a data-cite="AVP-MICRO-PAYMENTS#purchase-confirmation">PurchaseConfirmation</a>
+        for each payment authorized under it (<a href="#ap2-confirmation"></a>).
+      </p>
+      <p>
+        Where both stacks carry a limit, expiry, or replay field, a translator
+        <em class="rfc2119">MUST</em> apply the most restrictive intersection — a
+        translation <em class="rfc2119">MUST NOT</em> widen authority.
+      </p>
+    </section>
+
+    <section id="ap2-cart">
+      <h3>CartMandate &harr; payee-signed PaymentQuote</h3>
+      <p>
+        An AP2 CartMandate fuses a <em>merchant attestation</em> of cart-and-price
+        with an optional <em>user approval</em> of that exact cart. AVP-Micro splits
+        these: the merchant attestation imports as a <code>PaymentQuote</code>
+        projection (payee = the merchant <code>iss</code>; authority = the embedded
+        merchant signature in <code>securing.embedded</code>), and the user approval
+        imports separately per <a href="#ap2-confirmation"></a>.
+      </p>
+      <p>
+        <strong>Canonical cart binding.</strong> So that the merchant signature, the
+        agent's <code>serviceRequestHash</code> binding, and the eventual
+        <code>PaymentReceipt</code> reconcile to the <em>same bytes</em>, this profile
+        defines a normative canonicalization of AP2 <code>CartContents</code>: line
+        items sorted by the key <code>(sku, qty, price)</code>, all monetary values as
+        decimal strings (never floats), the members
+        <code>merchant</code>, <code>currency</code>, <code>items</code>,
+        <code>total</code>, <code>cartExpiry</code>, serialized with JCS [[RFC8785]].
+        Then:
+      </p>
+      <pre>serviceRequestHash = content-digest( JCS( canonicalCart ) )   // "sha-256:&lt;base64url-nopad&gt;"</pre>
+      <p>
+        An importer <em class="rfc2119">MUST</em> compute the projection's
+        <code>serviceRequestHash</code> this way; a verifier
+        <em class="rfc2119">MUST</em> reject a cart-derived quote whose
+        <code>serviceRequestHash</code> does not equal the digest of the canonical
+        form of the embedded cart.
+      </p>
+    </section>
+
+    <section id="ap2-confirmation">
+      <h3>Human-present approval &harr; PurchaseConfirmation</h3>
+      <p>
+        AP2's human-present mode carries a fresh user signature over the exact cart.
+        Its AVP-Micro home is the <em class="rfc2119">OPTIONAL</em>
+        <a data-cite="AVP-MICRO-PAYMENTS#purchase-confirmation">PurchaseConfirmation</a>
+        object. The bridge is bidirectional:
+      </p>
+      <ul>
+        <li><strong>Import (V&rarr;A):</strong> a user-signed AP2 cart approval
+          imports as a <code>PurchaseConfirmation</code> projection whose
+          <code>securing.embedded</code> carries the original user JWT. The
+          projection's authority is verified against the <code>confirmedBy</code>
+          principal's key — resolved locally for a <code>did:key</code> principal, or
+          via the <a>did:web binding convention</a>.</li>
+        <li><strong>Export (A&rarr;V):</strong> a native
+          <code>PurchaseConfirmation</code> projects to an AP2 cart-approval claim
+          set (<code>confirmedBy &rarr; iss</code>, <code>payer &rarr; sub</code>,
+          <code>serviceRequestHash &rarr; cart_hash</code>) signed with the
+          principal's own P-256 key, so the exported approval remains verifiable from
+          the principal's DID with no dependence on the bridge.</li>
+      </ul>
+      <p>
+        Fresh human intent is <em>typed, never inferred</em>: it exists if and only
+        if a <code>PurchaseConfirmation</code> signed by <code>confirmedBy</code>
+        (&ne; the agent <code>payer</code>) is present and binds the exact quote and
+        cart. An AP2 mandate imported without an actual user signature imports as
+        autonomous, and the importer <em class="rfc2119">MUST</em> record an
+        <code>importAdvisory</code> stating that no fresh human approval exists; a
+        bridge <em class="rfc2119">MUST NOT</em> synthesize a confirmation.
+      </p>
+    </section>
+  </section>
+
   <section id="verification">
     <h2>Cross-stack verification</h2>
     <p>A <a>cross-stack verifier</a> presented with a bridged object <em>MUST</em>
