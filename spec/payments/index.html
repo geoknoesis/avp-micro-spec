@@ -138,6 +138,12 @@
       mechanisms, and issuer trust are defined by [[DSA]]; this specification
       composes them with per-transaction economic terms. Value transfer
       (settlement) is intentionally out of scope as a normative rail.
+      The layer is <strong>domain-neutral</strong>: it binds a payment to the
+      authorization that permits it and to an opaque digest of whatever is being
+      paid for, and makes <em>no assumption</em> about the domain in which payments
+      occur — goods, services, data, compute, content, or access — nor about the
+      commercial context (one-off, metered, subscription) or any catalog of what is
+      bought. Those are the concern of <em>sibling</em> profiles, not this one.
     </p>
   </section>
 
@@ -191,12 +197,17 @@
     <h2>Introduction</h2>
 
     <p>
-      Autonomous agents increasingly need to purchase APIs, data, and compute at
-      micro scale. Human-centric account flows, opaque bearer tokens, and
+      Autonomous agents increasingly need to pay for things at micro scale —
+      APIs, data, compute, content, access, or goods, depending entirely on the
+      application. Human-centric account flows, opaque bearer tokens, and
       platform-specific identities poorly match high-frequency, low-value,
       cross-domain machine transactions. Parallel work on HTTP <code>402</code>
       challenges, streaming payments, and account-to-account APIs improves
-      settlement ergonomics but often assumes a fixed trust boundary.
+      settlement ergonomics but often assumes a fixed trust boundary. AVP-Micro
+      takes no position on <em>what</em> is bought or <em>in what domain</em>; it
+      defines the authorization and binding mechanics of the payment itself.
+      Examples in this document (a tool API, a compute session) are illustrative,
+      not constitutive.
     </p>
 
     <p>
@@ -232,16 +243,17 @@
     <h2>How it works</h2>
 
     <p>
-      AVP-Micro Payments defines how a <strong>payer agent</strong> buys a
-      service from a <strong>payee service</strong> in a way that is
-      cryptographically auditable end-to-end. Identity, the spending-authority
-      credential, and trust are defined by [[DSA]]; this specification
-      handles the per-transaction messages.
+      AVP-Micro Payments defines how a <strong>payer agent</strong> pays a
+      <strong>payee</strong> in a way that is cryptographically auditable
+      end-to-end, independent of what is being paid for. Identity, the
+      spending-authority credential, and trust are defined by [[DSA]]; this
+      specification handles the per-transaction messages. ("Service" appears
+      throughout only as a convenient stand-in for whatever the payee provides.)
     </p>
 
     <p>
       For a <strong>one-off payment</strong>: the payee issues a signed
-      <a>PaymentQuote</a> bound to the exact service request; the payer
+      <a>PaymentQuote</a> bound to the exact request being paid for; the payer
       agent constructs a signed <a>PaymentAuthorization</a> that restates
       the economic terms and embeds a verifiable presentation carrying its
       <a href="../authority/#spending-authorization-credential">Spending

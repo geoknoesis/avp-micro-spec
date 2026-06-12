@@ -110,6 +110,9 @@
       credentials. It defines the identity, securing, credential, and trust
       vocabulary that the AVP-Micro payments layer (and other delegated-spend
       systems) build upon. Settlement and payment-message flow are out of scope.
+      DSA is <strong>domain-neutral</strong>: it bounds <em>how much</em>, <em>to
+      whom</em>, and <em>under what policy</em> an agent may spend, and makes no
+      assumption about the domain in which spending occurs or what is purchased.
     </p>
   </section>
 
@@ -160,12 +163,14 @@
     <h2>Introduction</h2>
 
     <p>
-      Autonomous agents increasingly need to purchase APIs, data, and compute at
-      micro scale. Human-centric account flows, opaque bearer tokens, and
+      Autonomous agents increasingly need to pay for things at micro scale —
+      APIs, data, compute, content, access, or goods, depending on the
+      application. Human-centric account flows, opaque bearer tokens, and
       platform-specific identities poorly match high-frequency, low-value,
       cross-domain machine transactions. A portable, transport-agnostic layer for
       <strong>identity</strong> and <strong>delegated spending policy</strong> is
-      needed that is orthogonal to any particular settlement technology.
+      needed that is orthogonal both to any particular settlement technology
+      <em>and to the domain in which spending occurs</em>.
     </p>
 
     <p>
