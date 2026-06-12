@@ -189,7 +189,9 @@ def main() -> int:
     check("A->V->A credentialSubject preserved",
           imported["credentialSubject"] == spendauth["credentialSubject"])
     check("imported(02) is proof-preserving projection (no proof)",
-          imported.get("bridgeMode") == "proof-preserving" and "proof" not in imported)
+          imported["securing"]["mode"] == "proof-preserving" and "proof" not in imported)
+    check("imported(02) semantic type stays pure (no carrier markers)",
+          all("Embedded" not in t for t in imported["type"]))
     check("imported(02) verifies via embedded authority",
           interop.verify_imported(imported, resolver))
 
@@ -199,7 +201,7 @@ def main() -> int:
     check("imported-from-foreign(04) verifies via did:web binding",
           interop.verify_imported(imported_foreign, resolver))
     check("imported(04) is proof-preserving projection (no proof)",
-          imported_foreign.get("bridgeMode") == "proof-preserving" and "proof" not in imported_foreign)
+          imported_foreign["securing"]["mode"] == "proof-preserving" and "proof" not in imported_foreign)
 
     # V->A->V round-trip preserves the mandate claims
     reexport = interop.avp_to_claims(imported_foreign)
@@ -210,9 +212,9 @@ def main() -> int:
 
     # Negatives: tamper the embedded chain, and downgrade attempts
     t = json.loads(json.dumps(imported))
-    seg = sdjwt.sdjwt_jws(t["embeddedSdJwtVc"]).split(".")
+    seg = sdjwt.sdjwt_jws(t["securing"]["embedded"]).split(".")
     seg[1] = ("A" if seg[1][0] != "A" else "B") + seg[1][1:]
-    t["embeddedSdJwtVc"] = ".".join(seg) + "~"
+    t["securing"]["embedded"] = ".".join(seg) + "~"
     check("tampered embedded chain fails import", not interop.verify_imported(t, resolver))
     t2 = json.loads(json.dumps(imported))
     t2["proof"] = {"type": "DataIntegrityProof"}
@@ -241,7 +243,10 @@ def main() -> int:
          "serviceRequestHash", "settlementMethod", "settlementTarget",
          "nonce", "wallet", "timestamp", "expires")))
     check("imported authz is a proof-preserving projection (no proof)",
-          imported_authz.get("bridgeMode") == "proof-preserving" and "proof" not in imported_authz)
+          imported_authz["securing"]["mode"] == "proof-preserving" and "proof" not in imported_authz)
+    check("imported authz carrier is the KB-JWT presentation",
+          imported_authz["securing"]["carrier"] == "sd-jwt-vc+kb-jwt"
+          and imported_authz["securing"]["embedded"] == presentation)
     pp = presentation.split("~")
     kbseg = pp[-1].split(".")
     kbseg[1] = ("A" if kbseg[1][0] != "A" else "B") + kbseg[1][1:]
@@ -256,27 +261,27 @@ def main() -> int:
     check("attested mandate cryptographically verifies (bridge re-signature)",
           interop.verify_imported(attested, resolver))
     check("attested outer proof signed by the attesting bridge",
-          controller(attested) == attested["attestingBridge"])
+          controller(attested) == attested["securing"]["attestingBridge"])
     check("attested honored only when attestingBridge is trusted (policy)",
-          attested["attestingBridge"] in trusted_bridges)
+          attested["securing"]["attestingBridge"] in trusted_bridges)
     # A crypto-valid attested object from an UNTRUSTED bridge must be policy-rejected.
     rogue_key = ac.seed_key("rogue-bridge")
     rogue = json.loads(json.dumps(attested))
     rogue.pop("proof", None)
-    rogue["issuer"] = rogue["attestingBridge"] = ac.did_key(rogue_key.public_key())
+    rogue["issuer"] = rogue["securing"]["attestingBridge"] = ac.did_key(rogue_key.public_key())
     rogue = ac.sign_ecdsa_jcs_2022(rogue, rogue_key, "2026-04-01T00:02:00Z")
     check("rogue attested object verifies cryptographically", interop.verify_imported(rogue, resolver))
     check("...but is rejected by policy (bridge not trusted)",
-          rogue["attestingBridge"] not in trusted_bridges)
+          rogue["securing"]["attestingBridge"] not in trusted_bridges)
 
     il2 = load(INTEROP, "09-imported-interactive-l2.json")
     check("interactive-L2 import carries an advisory (not silently dropped)",
-          any("interactive-l2" in a for a in il2.get("importAdvisory", [])))
+          any("interactive-l2" in a for a in il2["securing"].get("importAdvisory", [])))
     check("interactive-L2 underlying mandate still verifies", interop.verify_imported(il2, resolver))
 
     partial = load(INTEROP, "10-imported-partial-sd.json")
     check("partial-disclosure import flagged as a subset view",
-          any("partial-selective-disclosure" in a for a in partial.get("importAdvisory", [])))
+          any("partial-selective-disclosure" in a for a in partial["securing"].get("importAdvisory", [])))
     check("withheld claim absent from imported subject (currency)",
           "currency" not in partial["credentialSubject"])
     check("partial-disclosure mandate signature still verifies", interop.verify_imported(partial, resolver))
@@ -297,7 +302,7 @@ def main() -> int:
     check("intent import carries non-enforceable item intent",
           imported_intent.get("intentDescription") is not None)
     check("intent import advises M2 granularity loss",
-          any("ap2-intent-granularity" in a for a in imported_intent.get("importAdvisory", [])))
+          any("ap2-intent-granularity" in a for a in imported_intent["securing"].get("importAdvisory", [])))
     check("intent import flags requiresPurchaseConfirmation",
           imported_intent.get("requiresPurchaseConfirmation") is True)
     check("intent import is a proof-preserving projection (no proof)",
@@ -309,7 +314,9 @@ def main() -> int:
           imported_cart["serviceRequestHash"] == interop.cart_service_request_hash(cart_foreign["cart"]))
     check("cart import is a proof-preserving projection (no proof)", "proof" not in imported_cart)
     check("cart import embeds the merchant-signed mandate",
-          imported_cart["embeddedCartMandate"] == cart_foreign["compact"])
+          imported_cart["securing"]["embedded"] == cart_foreign["compact"])
+    check("cart import semantic type stays pure (PaymentQuote only)",
+          imported_cart["type"] == ["PaymentQuote"])
 
     # PurchaseConfirmation: signer==confirmedBy rule (§11.3), forged-by-agent rejected
     check("native PurchaseConfirmation verifies", interop.verify_purchase_confirmation(native_conf))
@@ -345,9 +352,9 @@ def main() -> int:
 
     # autonomous import: NO confirmation, explicitly advised (§10)
     check("autonomous import has no PurchaseConfirmation",
-          "EmbeddedCartUserConfirmation" not in autonomous.get("type", []))
+          "PurchaseConfirmation" not in autonomous.get("type", []))
     check("autonomous import advises absence of fresh human approval",
-          any("autonomous" in a for a in autonomous.get("importAdvisory", [])))
+          any("autonomous" in a for a in autonomous["securing"].get("importAdvisory", [])))
 
     # no-widening intersection (§11.2)
     check("intersect_limits keeps the most restrictive",

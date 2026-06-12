@@ -360,7 +360,7 @@ def main() -> None:
     export_compact = interop.avp_to_sdjwtvc(spendauth, bridge, DID_BRIDGE + "#key-1", embedded=True)
     write(INTEROP, "01-export-sdjwtvc.json", {
         "_note": "A->V export of authority/spending-authorization-credential.json (proof-preserving, vct ...+embedded).",
-        "bridgeMode": "proof-preserving",
+        "securingMode": "proof-preserving",
         "envelopeSigner": DID_BRIDGE + "#key-1",
         "compact": export_compact,
         "payload": sdjwt.jws_payload(sdjwt.sdjwt_jws(export_compact)),
@@ -417,15 +417,14 @@ def main() -> None:
     coissued = {
         "@context": list(interop.INTEROP_CTX),
         "id": "urn:dsa:vc:spendauth:coissued:456",
-        "type": ["VerifiableCredential", "SpendingAuthorizationCredential",
-                 "EmbeddedSdJwtVcMandate"],
+        "type": ["VerifiableCredential", "SpendingAuthorizationCredential"],
         "issuer": DID_ISSUER,
         "validFrom": "2026-03-25T20:00:00Z", "validUntil": "2026-06-25T20:00:00Z",
         "credentialStatus": spendauth["credentialStatus"],
         "credentialSubject": spendauth["credentialSubject"],
-        "bridgeMode": "co-issued", "sourceVct": interop.VCT_PLAIN,
-        "embeddedSdJwtVc": ci_compact, "profileVersion": interop.PROFILE_VERSION,
     }
+    coissued = interop.secure(coissued, mode="co-issued", carrier=interop.CARRIER_SDJWT,
+                              embedded=ci_compact, source_vct=interop.VCT_PLAIN)
     coissued = ac.sign_ecdsa_jcs_2022(coissued, issuer, "2026-03-25T20:00:06Z")
     write(INTEROP, "05-coissued-mandate.json", coissued)
 
@@ -434,7 +433,7 @@ def main() -> None:
     presentation = interop.payment_authorization_to_presentation(authz, export_compact, agent)
     write(INTEROP, "06-l3-presentation.json", {
         "_note": "A->V of payments/02-payment-authorization.json: mandate SD-JWT + agent key-binding JWT (L3).",
-        "bridgeMode": "proof-preserving",
+        "securingMode": "proof-preserving",
         "presentation": presentation,
         "kbJwtPayload": sdjwt.jws_payload(presentation.split("~")[-1]),
     })
@@ -449,7 +448,7 @@ def main() -> None:
     attested = interop.sdjwtvc_to_avp(foreign_compact, "attested")
     attested["id"] = "urn:dsa:vc:spendauth:attested:001"
     attested["issuer"] = DID_ATTESTOR
-    attested["attestingBridge"] = DID_ATTESTOR
+    attested["securing"]["attestingBridge"] = DID_ATTESTOR
     attested = ac.sign_ecdsa_jcs_2022(attested, attestor, "2026-04-01T00:01:00Z")
     write(INTEROP, "08-attested-mandate.json", attested)
 
@@ -565,8 +564,8 @@ def main() -> None:
     autonomous_claims["jti"] = "urn:ap2:intent:auto:001"
     autonomous_compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(intent_header, autonomous_claims, ap2_user))
     imported_auto = interop.sdjwtvc_intent_to_avp(autonomous_compact, "proof-preserving")
-    imported_auto["importAdvisory"] = list(imported_auto.get("importAdvisory", [])) + [
-        "autonomous: no human-present PurchaseConfirmation present; standing delegation only"]
+    imported_auto = interop.add_advisories(imported_auto, [
+        "autonomous: no human-present PurchaseConfirmation present; standing delegation only"])
     write(INTEROP, "16-autonomous-no-confirmation.json", imported_auto)
 
     # 14b (payments bundle): native PurchaseConfirmation (principal-signed, ecdsa-jcs-2022).

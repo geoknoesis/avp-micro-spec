@@ -7,21 +7,20 @@
     "iop": "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
 
-    "EmbeddedSdJwtVcMandate": "iop:EmbeddedSdJwtVcMandate",
-    "EmbeddedKbJwtAuthorization": "iop:EmbeddedKbJwtAuthorization",
-    "EmbeddedCartQuote": "iop:EmbeddedCartQuote",
-    "EmbeddedCartUserConfirmation": "iop:EmbeddedCartUserConfirmation",
+    "securing": {
+      "@id": "iop:securing",
+      "@context": {
+        "@protected": true,
+        "mode": { "@id": "iop:mode" },
+        "carrier": { "@id": "iop:carrier" },
+        "embedded": { "@id": "iop:embedded" },
+        "sourceVct": { "@id": "iop:sourceVct" },
+        "attestingBridge": { "@id": "iop:attestingBridge", "@type": "@id" },
+        "importAdvisory": { "@id": "iop:importAdvisory", "@container": "@set" },
+        "profileVersion": { "@id": "iop:profileVersion" }
+      }
+    },
 
-    "embeddedSdJwtVc": { "@id": "iop:embeddedSdJwtVc" },
-    "embeddedKbJwtPresentation": { "@id": "iop:embeddedKbJwtPresentation" },
-    "importAdvisory": { "@id": "iop:importAdvisory", "@container": "@set" },
-    "bridgeMode": { "@id": "iop:bridgeMode" },
-    "sourceVct": { "@id": "iop:sourceVct" },
-    "attestingBridge": { "@id": "iop:attestingBridge", "@type": "@id" },
-    "profileVersion": { "@id": "iop:profileVersion" },
-    "embeddedCartMandate": { "@id": "iop:embeddedCartMandate" },
-    "embeddedCartUserAuth": { "@id": "iop:embeddedCartUserAuth" },
-    "embeddedIntentMandate": { "@id": "iop:embeddedIntentMandate" },
     "intentDescription": { "@id": "iop:intentDescription" },
     "itemConstraints": { "@id": "iop:itemConstraints", "@container": "@set" },
     "refundabilityRequired": { "@id": "iop:refundabilityRequired" },

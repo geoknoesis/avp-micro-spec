@@ -1,77 +1,52 @@
 # AVP-Micro -- SD-JWT-VC interop profile SHACL shapes.
 #
-# Constrains the AVP-Micro (JSON-LD) side of the bridge: an EmbeddedSdJwtVcMandate
-# carries the source chain and declares its bridge mode. The SD-JWT-VC side is JOSE
-# and is checked by the JSON Schema in ../schemas/interop.schema.json, not here.
+# Orthogonality: a bridged object keeps its native semantic type; the bridge axis is
+# the ONE iop:securing descriptor. SHACL here validates only that axis -- a single
+# SecuringDescriptorShape targeting every value of iop:securing (sh:targetObjectsOf,
+# so the nested node needs no class marker). Authorization semantics are validated by
+# the owning bundle's schema/shapes for native objects, and by the interop JSON Schema
+# for unsigned projections (which intentionally relax proof requirements). The
+# mode/proof interplay (no-downgrade etc.) is enforced once, in the JSON Schema's
+# bridgeSecured mixin.
 @prefix sh:   <http://www.w3.org/ns/shacl#> .
 @prefix iop:  <https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#> .
-@prefix avp:  <https://w3id.org/avp-micro/v1#> .
-@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 
-iop:EmbeddedSdJwtVcMandateShape
+iop:SecuringDescriptorShape
   a sh:NodeShape ;
-  sh:targetClass iop:EmbeddedSdJwtVcMandate ;
+  sh:targetObjectsOf iop:securing ;
   sh:property [
-    sh:path iop:embeddedSdJwtVc ;
-    sh:datatype xsd:string ;
+    sh:path iop:mode ;
+    sh:nodeKind sh:Literal ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "An EmbeddedSdJwtVcMandate MUST carry exactly one iop:embeddedSdJwtVc (the source SD-JWT-VC chain)." ;
+    sh:in ( "proof-preserving" "co-issued" "attested" ) ;
+    sh:message "A securing descriptor MUST declare exactly one mode: proof-preserving, co-issued, or attested." ;
   ] ;
   sh:property [
-    sh:path iop:bridgeMode ;
-    sh:datatype xsd:string ;
-    sh:minCount 1 ;
+    sh:path iop:carrier ;
+    sh:nodeKind sh:Literal ;
     sh:maxCount 1 ;
-    sh:in ( "co-issued" "proof-preserving" "attested" ) ;
-    sh:message "An EmbeddedSdJwtVcMandate MUST declare a bridgeMode of co-issued, proof-preserving, or attested." ;
+    sh:in ( "sd-jwt-vc" "sd-jwt-vc+kb-jwt" ) ;
   ] ;
   sh:property [
-    sh:path iop:attestingBridge ;
+    sh:path iop:embedded ;
+    sh:nodeKind sh:Literal ;
     sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
   ] ;
   sh:property [
     sh:path iop:sourceVct ;
-    sh:datatype xsd:string ;
+    sh:nodeKind sh:Literal ;
+    sh:maxCount 1 ;
+  ] ;
+  sh:property [
+    sh:path iop:attestingBridge ;
+    sh:nodeKind sh:IRI ;
     sh:maxCount 1 ;
   ] ;
   sh:property [
     sh:path iop:profileVersion ;
-    sh:datatype xsd:string ;
-    sh:maxCount 1 ;
-  ] .
-
-iop:EmbeddedKbJwtAuthorizationShape
-  a sh:NodeShape ;
-  sh:targetClass iop:EmbeddedKbJwtAuthorization ;
-  sh:property [
-    sh:path iop:embeddedKbJwtPresentation ;
-    sh:datatype xsd:string ;
+    sh:nodeKind sh:Literal ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "An EmbeddedKbJwtAuthorization MUST carry exactly one iop:embeddedKbJwtPresentation (the mandate + KB-JWT presentation)." ;
-  ] ;
-  sh:property [
-    sh:path iop:bridgeMode ;
-    sh:datatype xsd:string ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:in ( "co-issued" "proof-preserving" "attested" ) ;
-    sh:message "An EmbeddedKbJwtAuthorization MUST declare a bridgeMode of co-issued, proof-preserving, or attested." ;
   ] .
-
-# ---- AP2 mandate-model bridge projections ----
-
-iop:EmbeddedCartQuoteShape
-  a sh:NodeShape ;
-  sh:targetClass iop:EmbeddedCartQuote ;
-  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
-  sh:property [ sh:path iop:embeddedCartMandate ; sh:nodeKind sh:Literal ; sh:minCount 1 ] .
-
-iop:EmbeddedCartUserConfirmationShape
-  a sh:NodeShape ;
-  sh:targetClass iop:EmbeddedCartUserConfirmation ;
-  sh:property [ sh:path avp:confirmedBy ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
-  sh:property [ sh:path iop:embeddedCartUserAuth ; sh:nodeKind sh:Literal ; sh:minCount 1 ] .

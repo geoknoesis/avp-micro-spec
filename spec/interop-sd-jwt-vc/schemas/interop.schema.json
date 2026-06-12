@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/avp-micro/interop/sd-jwt-vc/schemas/interop.schema.json",
   "title": "AVP-Micro -- SD-JWT-VC interop profile data objects",
-  "description": "JSON Schema for the two bridged forms: the decoded SD-JWT-VC mandate payload (A->V export, $def SpendingAuthorityMandateClaims) and the AVP-Micro EmbeddedSdJwtVcMandate (V->A import, $def EmbeddedSdJwtVcMandate). Validate an instance against the relevant $def.",
+  "description": "JSON Schema for the bridged forms. Orthogonality model: a bridged object keeps its native AVP-Micro semantic type and composes with the ONE SecuringDescriptor (the 'securing' member) via the bridgeSecured mixin; carrier/proof choices are never encoded in the type. $defs: the decoded SD-JWT-VC mandate payload (A->V export, SpendingAuthorityMandateClaims) and the bridged profiles of the semantic types (V->A import: SpendingAuthorizationCredential, PaymentQuote, PurchaseConfirmation, PaymentAuthorization). Validate an instance against the relevant $def.",
   "$defs": {
     "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+" },
     "decimal": {
@@ -63,10 +63,65 @@
       }
     },
 
-    "EmbeddedSdJwtVcMandate": {
+    "SecuringDescriptor": {
       "type": "object",
-      "description": "An AVP-Micro SpendingAuthorizationCredential produced by importing an SD-JWT-VC mandate (V->A). The outer claims are a projection; iop:embeddedSdJwtVc carries the authenticated authority.",
-      "required": ["@context", "type", "issuer", "credentialSubject", "embeddedSdJwtVc", "bridgeMode"],
+      "description": "The one securing/bridge axis (iop:securing): HOW a bridged object's authority is secured. Defined once and composed with every semantic type via the bridgeSecured mixin; absence of 'securing' on an object means native.",
+      "required": ["mode", "profileVersion"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["proof-preserving", "co-issued", "attested"] },
+        "carrier": { "type": "string", "enum": ["sd-jwt-vc", "sd-jwt-vc+kb-jwt"] },
+        "embedded": {
+          "description": "Byte-faithful compact serialization of the original foreign signed object.",
+          "oneOf": [
+            { "$ref": "#/$defs/compactSdJwt" },
+            { "$ref": "#/$defs/compactPresentation" }
+          ]
+        },
+        "sourceVct": { "type": "string" },
+        "attestingBridge": { "$ref": "#/$defs/did" },
+        "importAdvisory": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "profileVersion": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "proof-preserving" } } },
+          "then": { "required": ["embedded"] }
+        },
+        {
+          "if": { "properties": { "mode": { "const": "attested" } } },
+          "then": { "required": ["attestingBridge"] }
+        }
+      ]
+    },
+
+    "bridgeSecured": {
+      "type": "object",
+      "description": "Mixin composed (allOf) into every bridged semantic type: requires the securing descriptor and enforces the mode/proof interplay ONCE -- proof-preserving objects are unsigned projections (no-downgrade); co-issued and attested objects carry a native proof.",
+      "required": ["securing"],
+      "properties": {
+        "securing": { "$ref": "#/$defs/SecuringDescriptor" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "securing": { "properties": { "mode": { "const": "proof-preserving" } } } } },
+          "then": { "not": { "required": ["proof"] } }
+        },
+        {
+          "if": { "properties": { "securing": { "properties": { "mode": { "const": "co-issued" } } } } },
+          "then": { "required": ["proof"] }
+        },
+        {
+          "if": { "properties": { "securing": { "properties": { "mode": { "const": "attested" } } } } },
+          "then": { "required": ["proof"] }
+        }
+      ]
+    },
+
+    "SpendingAuthorizationCredential": {
+      "type": "object",
+      "description": "The bridged (V->A imported) profile of a DSA SpendingAuthorizationCredential: native semantic type, plus the securing descriptor. The outer claims are a projection; in proof-preserving mode securing.embedded carries the authenticated authority. AP2 intent extras are carried semantic claims (NOT machine-enforced).",
+      "required": ["@context", "type", "issuer", "credentialSubject"],
+      "allOf": [ { "$ref": "#/$defs/bridgeSecured" } ],
       "properties": {
         "@context": {
           "type": "array",
@@ -84,8 +139,7 @@
           "type": "array",
           "allOf": [
             { "contains": { "const": "VerifiableCredential" } },
-            { "contains": { "const": "SpendingAuthorizationCredential" } },
-            { "contains": { "const": "EmbeddedSdJwtVcMandate" } }
+            { "contains": { "const": "SpendingAuthorizationCredential" } }
           ]
         },
         "issuer": { "oneOf": [ { "$ref": "#/$defs/did" }, { "type": "object", "required": ["id"], "properties": { "id": { "$ref": "#/$defs/did" } } } ] },
@@ -106,17 +160,10 @@
             "allowedServiceTypes": { "type": "array", "items": { "type": "string", "format": "uri" } }
           }
         },
-        "embeddedSdJwtVc": { "$ref": "#/$defs/compactSdJwt" },
-        "bridgeMode": { "type": "string", "enum": ["co-issued", "proof-preserving", "attested"] },
-        "sourceVct": { "type": "string" },
-        "attestingBridge": { "$ref": "#/$defs/did" },
-        "profileVersion": { "type": "string" },
-        "importAdvisory": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
         "intentDescription": { "type": "string" },
         "itemConstraints": { "type": "array", "items": { "type": "string" } },
         "refundabilityRequired": { "type": "boolean" },
         "requiresPurchaseConfirmation": { "type": "boolean" },
-        "embeddedIntentMandate": { "$ref": "#/$defs/compactSdJwt" },
         "proof": {
           "type": "object",
           "description": "Present in co-issued and attested modes; absent in proof-preserving mode (the outer object is then an unsigned projection).",
@@ -130,28 +177,14 @@
             "proofValue": { "type": "string", "pattern": "^z[1-9A-HJ-NP-Za-km-z]+$" }
           }
         }
-      },
-      "allOf": [
-        {
-          "if": { "properties": { "bridgeMode": { "const": "attested" } } },
-          "then": { "required": ["attestingBridge", "proof"] }
-        },
-        {
-          "if": { "properties": { "bridgeMode": { "const": "proof-preserving" } } },
-          "then": { "not": { "required": ["proof"] } }
-        },
-        {
-          "if": { "properties": { "bridgeMode": { "const": "co-issued" } } },
-          "then": { "required": ["proof"] }
-        }
-      ]
+      }
     },
 
-    "EmbeddedKbJwtAuthorization": {
+    "PaymentAuthorization": {
       "type": "object",
-      "description": "An AVP-Micro PaymentAuthorization (per-purchase action, L3) produced by importing an SD-JWT-VC presentation (V->A). The outer claims are a projection; iop:embeddedKbJwtPresentation carries the authenticated authority.",
-      "required": ["@context", "type", "payer", "payee", "amount", "currency",
-                   "embeddedKbJwtPresentation", "bridgeMode"],
+      "description": "The bridged (V->A imported) profile of a PaymentAuthorization (per-purchase action, L3): native semantic type, plus the securing descriptor whose embedded presentation (carrier sd-jwt-vc+kb-jwt) carries the authenticated authority.",
+      "required": ["@context", "type", "payer", "payee", "amount", "currency"],
+      "allOf": [ { "$ref": "#/$defs/bridgeSecured" } ],
       "properties": {
         "@context": {
           "type": "array",
@@ -169,8 +202,7 @@
         "type": {
           "type": "array",
           "allOf": [
-            { "contains": { "const": "PaymentAuthorization" } },
-            { "contains": { "const": "EmbeddedKbJwtAuthorization" } }
+            { "contains": { "const": "PaymentAuthorization" } }
           ]
         },
         "payer": { "$ref": "#/$defs/did" },
@@ -186,27 +218,15 @@
         "expires": { "type": "string", "format": "date-time" },
         "nonce": { "type": "string" },
         "wallet": { "$ref": "#/$defs/did" },
-        "embeddedKbJwtPresentation": { "$ref": "#/$defs/compactPresentation" },
-        "bridgeMode": { "type": "string", "enum": ["co-issued", "proof-preserving", "attested"] },
-        "profileVersion": { "type": "string" },
         "proof": { "type": "object" }
-      },
-      "allOf": [
-        {
-          "if": { "properties": { "bridgeMode": { "const": "proof-preserving" } } },
-          "then": { "not": { "required": ["proof"] } }
-        },
-        {
-          "if": { "properties": { "bridgeMode": { "const": "co-issued" } } },
-          "then": { "required": ["proof"] }
-        }
-      ]
+      }
     },
 
-    "EmbeddedCartQuote": {
+    "PaymentQuote": {
       "type": "object",
-      "description": "A PaymentQuote projection of an AP2 CartMandate (V->A import). Authority is the embedded merchant signature; in proof-preserving mode the outer object carries no proof.",
-      "required": ["@context", "type", "payer", "payee", "amount", "currency", "serviceRequestHash", "embeddedCartMandate", "bridgeMode"],
+      "description": "The bridged (V->A imported) profile of a PaymentQuote, projected from an AP2 CartMandate: native semantic type, plus the securing descriptor whose embedded merchant-signed mandate carries the authenticated authority. serviceRequestHash binds the canonical cart.",
+      "required": ["@context", "type", "payer", "payee", "amount", "currency", "serviceRequestHash"],
+      "allOf": [ { "$ref": "#/$defs/bridgeSecured" } ],
       "properties": {
         "@context": {
           "type": "array",
@@ -223,8 +243,7 @@
         "type": {
           "type": "array",
           "allOf": [
-            { "contains": { "const": "PaymentQuote" } },
-            { "contains": { "const": "EmbeddedCartQuote" } }
+            { "contains": { "const": "PaymentQuote" } }
           ]
         },
         "payer": { "$ref": "#/$defs/did" },
@@ -233,22 +252,15 @@
         "currency": { "type": "string" },
         "serviceRequestHash": { "type": "string" },
         "expires": { "type": "string", "format": "date-time" },
-        "embeddedCartMandate": { "$ref": "#/$defs/compactSdJwt" },
-        "bridgeMode": { "type": "string", "enum": ["co-issued", "proof-preserving", "attested"] },
-        "profileVersion": { "type": "string" },
         "proof": { "type": "object" }
-      },
-      "allOf": [
-        {
-          "if": { "properties": { "bridgeMode": { "const": "proof-preserving" } } },
-          "then": { "not": { "required": ["proof"] } }
-        }
-      ]
+      }
     },
-    "EmbeddedCartUserConfirmation": {
+
+    "PurchaseConfirmation": {
       "type": "object",
-      "description": "A PurchaseConfirmation projection of an AP2 human-present cart approval (V->A import). Authority is the embedded user signature (iop:embeddedCartUserAuth).",
-      "required": ["@context", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "serviceRequestHash", "confirmedBy", "embeddedCartUserAuth", "bridgeMode"],
+      "description": "The bridged (V->A imported) profile of a PurchaseConfirmation, projected from an AP2 human-present cart approval: native semantic type, plus the securing descriptor whose embedded user-signed approval carries the authenticated authority. The proof, when present (co-issued), MUST be controlled by confirmedBy.",
+      "required": ["@context", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "serviceRequestHash", "confirmedBy"],
+      "allOf": [ { "$ref": "#/$defs/bridgeSecured" } ],
       "properties": {
         "@context": {
           "type": "array",
@@ -265,8 +277,7 @@
         "type": {
           "type": "array",
           "allOf": [
-            { "contains": { "const": "PurchaseConfirmation" } },
-            { "contains": { "const": "EmbeddedCartUserConfirmation" } }
+            { "contains": { "const": "PurchaseConfirmation" } }
           ]
         },
         "quote": { "type": "string" },
@@ -277,17 +288,8 @@
         "currency": { "type": "string" },
         "serviceRequestHash": { "type": "string" },
         "confirmedBy": { "$ref": "#/$defs/did" },
-        "embeddedCartUserAuth": { "$ref": "#/$defs/compactSdJwt" },
-        "bridgeMode": { "type": "string", "enum": ["co-issued", "proof-preserving", "attested"] },
-        "profileVersion": { "type": "string" },
         "proof": { "type": "object" }
-      },
-      "allOf": [
-        {
-          "if": { "properties": { "bridgeMode": { "const": "proof-preserving" } } },
-          "then": { "not": { "required": ["proof"] } }
-        }
-      ]
+      }
     }
   }
 }

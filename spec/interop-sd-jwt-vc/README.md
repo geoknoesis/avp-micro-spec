@@ -42,8 +42,8 @@ the translated form. Authority therefore crosses the boundary in one of three
 - Context: `https://w3id.org/avp-micro/interop/sd-jwt-vc/v1` → `context/v1.jsonld`
 - Vocabulary namespace: `https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#` (prefix `iop:`)
 
-The `EmbeddedSdJwtVcMandate` (the V→A import form) is a DSA credential extended with
-`iop:` terms, so it uses the **4-entry** context array:
+An imported (V→A) DSA credential keeps its native semantic type and adds the `iop:`
+securing terms, so it uses the **4-entry** context array:
 
 ```json
 ["https://www.w3.org/ns/credentials/v2",
@@ -51,6 +51,31 @@ The `EmbeddedSdJwtVcMandate` (the V→A import form) is a DSA credential extende
  "https://w3id.org/spending-authority/v1",
  "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"]
 ```
+
+## The model: authorization semantics × one securing descriptor
+
+The profile keeps two axes strictly orthogonal (see the
+[orthogonality design note](../../docs/superpowers/specs/2026-06-12-authorization-mandate-credential-orthogonality.md)):
+
+- **Authorization semantics** — *what* is/was authorized. A bridged object is typed
+  exactly like its native equivalent (`SpendingAuthorizationCredential`,
+  `PaymentQuote`, `PurchaseConfirmation`, `PaymentAuthorization`); the type never
+  encodes a carrier or proof choice. "Mandate" is AP2's word for an explicit signed
+  *representation* of an authorization — it appears only in wire identifiers
+  (`vct: mandate.*`), never as an AVP class.
+- **Securing** — *how* the object's authority is secured across the stack boundary:
+  the single **`iop:securing` descriptor** `{mode, carrier, embedded, sourceVct,
+  attestingBridge?, importAdvisory?, profileVersion}`. `mode` is `proof-preserving`
+  (outer object is an unsigned projection; the byte-faithful foreign original in
+  `embedded` carries authority), `co-issued` (native proof and parallel embedded
+  form), or `attested` (a named, trusted bridge re-signed). An object **without**
+  `securing` is native. New carriers extend the `carrier` value set — not the class
+  taxonomy.
+
+The bridge pipeline is factored the same way:
+`decode(carrier) → canonical claims`, `map(claims) → authorization semantics`,
+`secure(object) → securing descriptor` — `secure()` is the only stage that knows the
+mode.
 
 ## What this profile defines
 
@@ -65,7 +90,8 @@ The `EmbeddedSdJwtVcMandate` (the V→A import form) is a DSA credential extende
 - **Status** — `BitstringStatusListEntry` ⇄ Token Status List; references re-pointed,
   never re-hosted, so the principal keeps revocation control.
 - **Two envelopes** — A→V (an SD-JWT VC with `vct: mandate.spending-authority.avp+embedded`
-  carrying `avp_vc`) and V→A (an `EmbeddedSdJwtVcMandate` carrying `embeddedSdJwtVc`).
+  carrying `avp_vc`) and V→A (the native semantic object + `iop:securing` carrying the
+  foreign original in `securing.embedded`).
 - **Cross-stack verification MUSTs** — no-downgrade, algorithm pinning, explicit bridge
   trust, window intersection, status, holder binding.
 
@@ -92,20 +118,20 @@ the cross-stack verification rules; `generate.py` emits the `test-vectors/` belo
 |------|------------|
 | `keys.json` | Deterministic P-256 test keys + the `did:web` resolver fixture |
 | `01-export-sdjwtvc.json` | A→V export of the DSA credential (proof-preserving, `vct …+embedded`) |
-| `02-imported-mandate.json` | A→V→A re-import as an `EmbeddedSdJwtVcMandate` |
+| `02-imported-mandate.json` | A→V→A re-import: a `SpendingAuthorizationCredential` projection + `iop:securing` |
 | `03-foreign-sdjwtvc.json` | A foreign Verifiable-Intent/AP2-style mandate (ES256, `did:web` issuer) |
 | `04-imported-from-foreign.json` | V→A import of the foreign mandate |
 | `05-coissued-mandate.json` | **Co-issued** mandate: native `ecdsa-jcs-2022` proof + parallel ES256 SD-JWT-VC (same P-256 key) |
 | `06-l3-presentation.json` | A→V of a `PaymentAuthorization`: mandate SD-JWT + agent **key-binding JWT (L3)** |
-| `07-imported-payment-authorization.json` | V→A import of the L3 presentation as an `EmbeddedKbJwtAuthorization` |
+| `07-imported-payment-authorization.json` | V→A import of the L3 presentation: a `PaymentAuthorization` projection + `iop:securing` (carrier `sd-jwt-vc+kb-jwt`) |
 | `08-attested-mandate.json` | **Attested** mode: a named bridge re-signs (P-256 `did:key`); honored only if the bridge is trusted |
 | `09-imported-interactive-l2.json` | Lossy case — **interactive L2**: import carries an `importAdvisory` |
 | `10-imported-partial-sd.json` | Lossy case — **partial selective disclosure**: a withheld claim, flagged as a subset view |
 | `11-foreign-intent-mandate.json` | A foreign **AP2 `IntentMandate`** (ES256, `did:web` user issuer; item-level intent) |
-| `12-imported-intent-mandate.json` | V→A import of the IntentMandate → `EmbeddedSdJwtVcMandate` + carried intent extras + M2 advisory |
+| `12-imported-intent-mandate.json` | V→A import of the IntentMandate → `SpendingAuthorizationCredential` projection + carried intent extras + M2 advisory |
 | `13-foreign-cart-mandate.json` | A foreign **AP2 `CartMandate`** (ES256, `did:web` merchant; itemized cart) |
-| `14-imported-cart-quote.json` | V→A import of the CartMandate → `EmbeddedCartQuote` projection (`serviceRequestHash` binds the canonical cart) |
-| `15-human-present-confirmation.json` | V→A import of a human-present cart approval → `EmbeddedCartUserConfirmation` projection |
+| `14-imported-cart-quote.json` | V→A import of the CartMandate → `PaymentQuote` projection (`serviceRequestHash` binds the canonical cart) |
+| `15-human-present-confirmation.json` | V→A import of a human-present cart approval → `PurchaseConfirmation` projection |
 | `16-autonomous-no-confirmation.json` | Autonomous import (no human-present approval) → **no** confirmation, advised via `importAdvisory` |
 | `17-exported-cart-user-approval.json` | **Export** (A→V): a native `PurchaseConfirmation` projected to an AP2 human-present approval (signed by the principal's own P-256 key), then re-imported — the human-present case round-trips A→V→A |
 
@@ -123,15 +149,17 @@ human approval to the AVP-Micro mandate/payment model, in both directions:
   `requiresPurchaseConfirmation`) but **not** machine-enforced — every import flags
   this granularity loss (**M2**) in `iop:importAdvisory`.
 - **`CartMandate` ⇄ payee-signed `PaymentQuote` (§6):** the merchant attestation
-  projects to an `EmbeddedCartQuote`; a normative `canonicalCart → serviceRequestHash`
-  (**M4**) makes the merchant signature and the AVP quote reference the same bytes.
+  projects to a `PaymentQuote` (+ `iop:securing` embedding the merchant-signed
+  mandate); a normative `canonicalCart → serviceRequestHash` (**M4**) makes the
+  merchant signature and the AVP quote reference the same bytes.
 - **`PurchaseConfirmation` — one optional core object (§7):** the fresh human approval
   AP2 carries but AVP-Micro lacked. Its proof MUST be controlled by `confirmedBy` (the
   principal), never by the agent (`payer`); a confirmation forged by the agent is
   rejected. Optional and additive — absent ⇒ standing delegation / autonomous, the
   default; the **autonomous** import is explicitly advised rather than fabricating an
   approval. The case is **bidirectional**: `import_cart_user_confirmation` brings an AP2
-  human-present approval *in* (as an `EmbeddedCartUserConfirmation` projection), and
+  human-present approval *in* (as a `PurchaseConfirmation` projection whose
+  `securing.embedded` carries the user-signed approval), and
   `export_purchase_confirmation` projects a native confirmation back *out* to an AP2
   approval signed by the principal's own P-256 key — so exported authority roots in the
   principal DID, not the bridge (§11.6). A `did:key` principal is resolved locally; a

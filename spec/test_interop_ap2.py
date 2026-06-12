@@ -78,11 +78,19 @@ def test_intent_import_is_dsa_projection_plus_extras():
     compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(header, claims, user))
     vc = interop.sdjwtvc_intent_to_avp(compact, "proof-preserving")
     assert "SpendingAuthorizationCredential" in vc["type"]
+    # D8: semantic type stays pure -- no carrier/proof markers in type
+    assert all("Embedded" not in t for t in vc["type"])
     assert vc["credentialSubject"]["maxPerTransaction"] == "120.00"
     assert vc["credentialSubject"]["allowedPayees"] == ["did:web:merchant.example"]
-    assert vc["requiresPurchaseConfirmation"] is True
+    assert vc["requiresPurchaseConfirmation"] is True  # intent extras are semantic, top-level
     assert "proof" not in vc  # proof-preserving projection
-    assert any("item-level" in a or "natural-language" in a for a in vc["importAdvisory"])
+    # D9: everything bridge-related lives in the one securing descriptor
+    sec = vc["securing"]
+    assert sec["mode"] == "proof-preserving"
+    assert sec["carrier"] == "sd-jwt-vc"
+    assert sec["embedded"] == compact
+    assert sec["sourceVct"] == interop.INTENT_VCT
+    assert any("item-level" in a or "natural-language" in a for a in sec["importAdvisory"])
 
 
 def test_intent_export_round_trips_policy_and_extras():
@@ -112,12 +120,15 @@ def test_cart_import_projects_quote_and_binds_hash():
         {"alg": "ES256", "typ": "dc+sd-jwt", "kid": "did:web:merchant.example#key-1"},
         claims, merchant))
     proj = interop.cart_mandate_to_quote(compact, cart, mode="proof-preserving")
-    assert "EmbeddedCartQuote" in proj["type"]
+    assert proj["type"] == ["PaymentQuote"]  # semantic type only (D8)
     assert proj["payee"] == "did:web:merchant.example"
     assert proj["amount"] == "24.00"
     assert proj["currency"] == "USD"
     assert proj["serviceRequestHash"] == interop.cart_service_request_hash(cart)
-    assert proj["embeddedCartMandate"] == compact
+    assert proj["securing"]["embedded"] == compact
+    assert proj["securing"]["mode"] == "proof-preserving"
+    assert proj["securing"]["carrier"] == "sd-jwt-vc"
+    assert proj["securing"]["sourceVct"] == interop.CART_VCT
     assert "proof" not in proj  # proof-preserving projection
 
 
@@ -228,12 +239,23 @@ def test_payment_authorization_still_valid_without_confirmation():
 import rdflib as _rdflib
 
 
-def test_interop_context_defines_new_terms():
+def test_interop_context_defines_securing_and_intent_terms():
     ctx = _json.loads(_Path("spec/interop-sd-jwt-vc/context/v1.jsonld").read_text(encoding="utf-8"))["@context"]
-    for term in ("embeddedCartMandate", "embeddedCartUserAuth", "intentDescription",
-                 "itemConstraints", "refundabilityRequired", "requiresPurchaseConfirmation",
-                 "EmbeddedCartQuote", "EmbeddedCartUserConfirmation"):
+    # the one securing descriptor (D9), with its scoped terms
+    assert "securing" in ctx
+    scoped = ctx["securing"]["@context"]
+    for term in ("mode", "carrier", "embedded", "sourceVct", "attestingBridge",
+                 "importAdvisory", "profileVersion"):
+        assert term in scoped, f"missing scoped securing term: {term}"
+    # intent extras are semantic claims, top-level (D11)
+    for term in ("intentDescription", "itemConstraints", "refundabilityRequired",
+                 "requiresPurchaseConfirmation"):
         assert term in ctx, f"missing context term: {term}"
+    # the cross-product types and per-pair carrier fields are gone (D8/D9)
+    for legacy in ("EmbeddedSdJwtVcMandate", "EmbeddedKbJwtAuthorization", "EmbeddedCartQuote",
+                   "EmbeddedCartUserConfirmation", "bridgeMode", "embeddedSdJwtVc",
+                   "embeddedKbJwtPresentation", "embeddedCartMandate", "embeddedCartUserAuth"):
+        assert legacy not in ctx, f"legacy cross-product term still present: {legacy}"
 
 
 def test_interop_vocab_parses():
@@ -253,7 +275,7 @@ def _iop_validator(defname):
               format_checker=_V.FORMAT_CHECKER)
 
 
-def test_embedded_cart_quote_schema():
+def test_cart_quote_projection_schema():
     merchant = sdjwt.seed_p256("merchant-cart")
     cart = _cart()
     compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
@@ -262,10 +284,10 @@ def test_embedded_cart_quote_schema():
          "sub": "did:key:zDnaeAGENT", "exp": interop.iso_to_numericdate("2026-06-12T12:00:00Z"),
          "jti": "urn:ap2:cart:001"}, merchant))
     proj = interop.cart_mandate_to_quote(compact, cart, mode="proof-preserving")
-    assert list(_iop_validator("EmbeddedCartQuote").iter_errors(proj)) == []
+    assert list(_iop_validator("PaymentQuote").iter_errors(proj)) == []
 
 
-def test_embedded_cart_quote_rejects_proof_on_proof_preserving():
+def test_cart_quote_projection_rejects_proof_on_proof_preserving():
     merchant = sdjwt.seed_p256("merchant-cart")
     compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
         {"alg": "ES256", "typ": "dc+sd-jwt", "kid": "did:web:merchant.example#k"},
@@ -274,7 +296,19 @@ def test_embedded_cart_quote_rejects_proof_on_proof_preserving():
          "jti": "urn:ap2:cart:001"}, merchant))
     proj = interop.cart_mandate_to_quote(compact, _cart(), mode="proof-preserving")
     proj["proof"] = {"type": "DataIntegrityProof"}
-    assert list(_iop_validator("EmbeddedCartQuote").iter_errors(proj))  # no-downgrade
+    assert list(_iop_validator("PaymentQuote").iter_errors(proj))  # no-downgrade (once, in bridgeSecured)
+
+
+def test_securing_descriptor_requires_embedded_when_proof_preserving():
+    merchant = sdjwt.seed_p256("merchant-cart")
+    compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
+        {"alg": "ES256", "typ": "dc+sd-jwt", "kid": "did:web:merchant.example#k"},
+        {"vct": "mandate.cart.ap2", "iss": "did:web:merchant.example",
+         "sub": "did:key:zDnaeAGENT", "exp": interop.iso_to_numericdate("2026-06-12T12:00:00Z"),
+         "jti": "urn:ap2:cart:001"}, merchant))
+    proj = interop.cart_mandate_to_quote(compact, _cart(), mode="proof-preserving")
+    del proj["securing"]["embedded"]
+    assert list(_iop_validator("PaymentQuote").iter_errors(proj))  # authority must be carried
 
 
 # ---- §11.2: translation never widens authority ----

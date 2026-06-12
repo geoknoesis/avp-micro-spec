@@ -102,6 +102,12 @@
           status: "REC",
           publisher: "W3C",
         },
+        "VC-DI-ECDSA": {
+          title: "Verifiable Credential Data Integrity ECDSA Cryptosuites v1.0",
+          href: "https://www.w3.org/TR/vc-di-ecdsa/",
+          status: "REC",
+          publisher: "W3C",
+        },
         "VC-DI-EDDSA": {
           title: "Verifiable Credential Data Integrity EdDSA Cryptosuites v1.0",
           href: "https://www.w3.org/TR/vc-di-eddsa/",
@@ -152,8 +158,12 @@
       ecosystems share the concept of a cryptographically verifiable, delegated
       authority chain but agree on no wire format, proof suite, or identifier scheme:
       AVP-Micro secures JSON-LD credentials with W3C Data Integrity
-      (<code>eddsa-jcs-2022</code>) over DIDs, whereas SD-JWT-VC secures JOSE tokens
-      with <code>ES256</code> over <code>iss</code>/<code>sub</code> identifiers. This
+      (<code>ecdsa-jcs-2022</code>) over DIDs, whereas SD-JWT-VC secures JOSE tokens
+      with <code>ES256</code> over <code>iss</code>/<code>sub</code> identifiers. Both
+      now sign over the <strong>same curve</strong> (P-256), so what differs is the
+      <em>envelope</em> &mdash; canonicalization, proof serialization, and identifier
+      scheme &mdash; not the key or signature algorithm; the bridge is a transcoding,
+      not a key migration. This
       profile specifies how spending <em>authority</em> crosses that line
       <strong>without a privileged intermediary becoming the root of trust</strong>:
       a claim mapping, an identity binding, two embedding envelopes, and the
@@ -178,7 +188,7 @@
       [[SD-JWT-VC]]), [[TOKEN-STATUS-LIST]], and [[DID-WEB]] are IETF Internet-Drafts
       or CG drafts at the time of writing, as is [[DID-KEY]]. The AVP-Micro securing
       mechanism this profile bridges <em>from</em> relies only on W3C Recommendations
-      ([[VC-DATA-INTEGRITY]], [[VC-DI-EDDSA]]) and the IETF Informational [[RFC8785]].
+      ([[VC-DATA-INTEGRITY]], [[VC-DI-ECDSA]]) and the IETF Informational [[RFC8785]].
       The behaviour of the target ecosystem ([[?VERIFIABLE-INTENT]], [[?AP2]]) is
       tracked by the <code>iop:profileVersion</code> of artifacts this profile
       produces; implementers <em>MUST</em> track the status of the non-REC
@@ -211,9 +221,13 @@
     <p>
       The two describe the <em>same shape</em> &mdash; an issuer-rooted chain
       delegating bounded spend to an agent, verifiable by any party in the chain
-      without contacting the issuer &mdash; but they share <strong>no encoding, proof
-      suite, or identifier scheme</strong>. This is the long-standing
-      JSON-LD/Data-Integrity versus JOSE/SD-JWT divide, surfacing in agentic commerce.
+      without contacting the issuer &mdash; but they share <strong>no encoding or
+      identifier scheme</strong> and use different proof suites. This is the
+      long-standing JSON-LD/Data-Integrity versus JOSE/SD-JWT divide, surfacing in
+      agentic commerce &mdash; now narrowed to an <em>envelope</em> difference rather
+      than a key incompatibility, because AVP-Micro's mandatory
+      <code>ecdsa-jcs-2022</code> and SD-JWT-VC's <code>ES256</code> sign over the
+      same P-256 curve.
       Because the well-resourced corner of the space has chosen SD-JWT-VC, AVP-Micro
       authority that cannot travel into that ecosystem risks being islanded; and
       conversely, AVP-Micro relying parties benefit from being able to accept mandates
@@ -285,7 +299,8 @@
       A conforming <dfn>exporter</dfn> transforms a [[DSA]]
       <a>Spending Authorization Credential</a> into an <a>SD-JWT-VC mandate</a> per
       <a href="#export"></a>. A conforming <dfn>importer</dfn> transforms an
-      <a>SD-JWT-VC mandate</a> into an <a>EmbeddedSdJwtVcMandate</a> per
+      <a>SD-JWT-VC mandate</a> into a natively-typed AVP-Micro object carrying a
+      <a>securing descriptor</a> per
       <a href="#import"></a>. A conforming <dfn>cross-stack verifier</dfn> applies
       <a href="#verification"></a>. An implementation MAY conform as any subset of
       these classes; see <a href="#conformance-classes"></a>.
@@ -304,15 +319,22 @@
         <code>SD-JWT</code> (<dfn>L1</dfn>) binding the subject identity and holder
         key; optionally a holder-signed purchase-intent layer (<dfn>L2</dfn>); and an
         agent-signed key-binding JWT (<dfn>L3</dfn>) for a specific action.</dd>
-      <dt><dfn>bridge mode</dfn></dt>
-      <dd>One of <code>proof-preserving</code>, <code>co-issued</code>, or
-        <code>attested</code> (<a href="#overview"></a>), recorded as
-        <code>iop:bridgeMode</code>.</dd>
-      <dt><dfn data-lt="EmbeddedSdJwtVcMandate">Embedded SD-JWT-VC Mandate</dfn></dt>
-      <dd>An AVP-Micro <a>Spending Authorization Credential</a> produced by importing
-        an <a>SD-JWT-VC mandate</a>, additionally typed
-        <code>EmbeddedSdJwtVcMandate</code> and carrying the source chain in
-        <code>iop:embeddedSdJwtVc</code> (<a href="#import"></a>).</dd>
+      <dt><dfn data-lt="securing descriptor|SecuringDescriptor">securing descriptor</dfn></dt>
+      <dd>The single object attached as <code>iop:securing</code> that records HOW a
+        bridged object's authority is secured: the <dfn>securing mode</dfn>
+        (<code>proof-preserving</code>, <code>co-issued</code>, or
+        <code>attested</code>, <a href="#overview"></a>), the foreign
+        <code>carrier</code> encoding, the byte-faithful original in
+        <code>embedded</code>, provenance (<code>sourceVct</code>,
+        <code>profileVersion</code>), the attesting bridge (attested mode only), and
+        any import advisories. An object without <code>iop:securing</code> is native.
+        Authorization semantics and securing are orthogonal: a bridged object keeps
+        its native AVP-Micro semantic <code>type</code> — carrier and proof choices
+        are <em class="rfc2119">never</em> encoded in the type. A
+        <em>mandate</em> is an explicit signed representation of an authorization
+        (AP2's framing, retained in wire identifiers such as
+        <code>vct: mandate.*</code>); a <em>credential</em> is the verifiable
+        container that carries one.</dd>
       <dt><dfn>exporter</dfn>, <dfn>importer</dfn>, <dfn>cross-stack verifier</dfn></dt>
       <dd>The conformance classes of <a href="#conformance"></a>.</dd>
     </dl>
@@ -324,9 +346,9 @@
       This profile introduces terms in the namespace
       <code>https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#</code> (prefix
       <code>iop:</code>), mapped by the context published at
-      <code>https://w3id.org/avp-micro/interop/sd-jwt-vc/v1</code>. An
-      <a>EmbeddedSdJwtVcMandate</a> is a DSA credential extended with these terms, so
-      it uses the <strong>4-entry</strong> context array:
+      <code>https://w3id.org/avp-micro/interop/sd-jwt-vc/v1</code>. An imported DSA
+      credential keeps its native semantic type and adds the <a>securing
+      descriptor</a>, so it uses the <strong>4-entry</strong> context array:
     </p>
     <pre class="json">
 ["https://www.w3.org/ns/credentials/v2",
@@ -335,11 +357,16 @@
  "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"]
     </pre>
     <p>
-      The <code>iop:</code> terms (<code>iop:embeddedSdJwtVc</code>,
-      <code>iop:bridgeMode</code>, <code>iop:sourceVct</code>,
-      <code>iop:attestingBridge</code>, <code>iop:profileVersion</code>) and the class
-      <code>iop:EmbeddedSdJwtVcMandate</code> <em>MUST NOT</em> appear in the [[DSA]]
-      or [[AVP-MICRO-PAYMENTS]] namespaces. The SD-JWT-VC side of the bridge is JOSE,
+      The <code>iop:</code> terms — <code>iop:securing</code> with its scoped
+      descriptor terms (<code>mode</code>, <code>carrier</code>,
+      <code>embedded</code>, <code>sourceVct</code>, <code>attestingBridge</code>,
+      <code>importAdvisory</code>, <code>profileVersion</code>) and the carried AP2
+      intent claims (<code>iop:intentDescription</code>,
+      <code>iop:itemConstraints</code>, <code>iop:refundabilityRequired</code>,
+      <code>iop:requiresPurchaseConfirmation</code>) — <em>MUST NOT</em> appear in the
+      [[DSA]] or [[AVP-MICRO-PAYMENTS]] namespaces, and this profile defines
+      <em>no</em> classes that combine a semantic type with a carrier or proof
+      mechanism. The SD-JWT-VC side of the bridge is JOSE,
       not RDF; its claims are specified in prose and JSON Schema and carry no
       JSON-LD context.
     </p>
@@ -367,8 +394,10 @@
         <li>set <code>iss</code> to the credential <code>issuer</code> DID;</li>
         <li>set <code>sub</code> to <code>credentialSubject.id</code> (the agent DID),
           and set <code>cnf.jwk</code> to the agent's public key expressed as a JWK
-          (an OKP/Ed25519 JWK derived from the agent <code>did:key</code> multibase, or
-          the verification method published in the agent's DID document);</li>
+          (an EC P-256 JWK derived from the agent <code>did:key</code> multibase &mdash;
+          multicodec <code>p256-pub</code> &mdash; or the verification method published
+          in the agent's DID document; this is the same key that produces the agent's
+          Data Integrity proofs);</li>
         <li>set <code>kid</code> to the agent verification-method DID URL.</li>
       </ul>
       <p>
@@ -380,10 +409,13 @@
     <section id="identity-import">
       <h3>Import (SD-JWT-VC &rarr; AVP-Micro)</h3>
       <p>
-        This direction is lossy in general: <code>iss</code>/<code>sub</code> are
-        opaque with no mandated key-resolution method, and SD-JWT-VC keys are
-        <code>ES256</code> (P-256), which the AVP-Micro mandatory cryptosuite
-        <code>eddsa-jcs-2022</code> (Ed25519 only) cannot express. To enable
+        This direction is lossy in general for one reason only:
+        <code>iss</code>/<code>sub</code> are opaque URIs with no mandated
+        key-resolution method. The key type is <em>not</em> a barrier &mdash; SD-JWT-VC
+        signs with <code>ES256</code> (P-256) and the AVP-Micro mandatory cryptosuite
+        <code>ecdsa-jcs-2022</code> signs over the same P-256 curve, so the embedded
+        JOSE signing key is directly expressible as a <code>did:key</code> (or
+        DID-document) verification method. To enable
         <strong>proof-preserving</strong> import (<a href="#overview"></a>) this profile
         defines the following <dfn>did:web binding convention</dfn>, which a
         conforming importer operating in <code>proof-preserving</code> or
@@ -494,7 +526,7 @@
       &mdash; has no AVP-Micro analogue, because AVP-Micro's trust model is standing
       delegation: the human's intent is expressed once, ahead of time, by issuing the
       mandate. An importer <em>MUST</em> mark a chain that carries an interactive L2 as
-      imported with an advisory: the resulting <a>EmbeddedSdJwtVcMandate</a> represents
+      imported with an advisory: the resulting imported credential represents
       the delegated envelope, not a per-purchase human action, and a relying party that
       specifically requires fresh human intent cannot obtain that guarantee from the
       imported form. For autonomous-mode mandates (where L2, if present, is itself a
@@ -538,16 +570,16 @@
 {
   "vct": "mandate.spending-authority.avp+embedded",
   "iss": "did:web:principal.example",
-  "sub": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
-  "cnf": { "jwk": { "kty": "OKP", "crv": "Ed25519", "x": "…agent public key…" } },
+  "sub": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "cnf": { "jwk": { "kty": "EC", "crv": "P-256", "x": "yBgJwNucLNY26uAlEAz9uhvLM7jTykh8R17H9VdZtik", "y": "x0wQD599PXCqsFumTtyuQ1SOZXu8RaymdVuKvE3AT6U" } },
   "currency": "USD",
   "limits": { "per_txn": "0.05", "per_day": "5.00" },
-  "allowed_payees": ["did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"],
+  "allowed_payees": ["did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN"],
   "nbf": 1774483200,
   "exp": 1782345600,
   "jti": "urn:dsa:vc:spendauth:456",
   "status": { "status_list": { "idx": 94567, "uri": "https://issuer.example/status/3" } },
-  "avp_vc": "<base64url of the exact JCS-canonical SpendingAuthorizationCredential, including its eddsa-jcs-2022 proof>"
+  "avp_vc": "<base64url of the exact JCS-canonical SpendingAuthorizationCredential, including its ecdsa-jcs-2022 proof>"
 }
     </pre>
     <p>
@@ -570,12 +602,13 @@
 
   <section id="import">
     <h2>Import: SD-JWT-VC &rarr; AVP-Micro</h2>
-    <p class="object-summary">An AVP-Micro Spending Authorization Credential, typed
-      <code>EmbeddedSdJwtVcMandate</code>, carrying the source chain.</p>
+    <p class="object-summary">A natively-typed AVP-Micro Spending Authorization
+      Credential carrying the source chain in its <a>securing descriptor</a>.</p>
     <p>
       An importer produces a DSA credential whose subject carries the mapped claims
-      (<a href="#claim-mapping"></a>) and whose <code>iop:embeddedSdJwtVc</code> carries
-      the original chain in compact serialization:
+      (<a href="#claim-mapping"></a>) — typed exactly as a native credential — and
+      whose <code>iop:securing</code> descriptor carries the original chain
+      byte-faithfully in <code>embedded</code>:
     </p>
     <pre class="json">
 {
@@ -586,39 +619,52 @@
     "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"
   ],
   "id": "urn:dsa:vc:spendauth:imported:456",
-  "type": ["VerifiableCredential", "SpendingAuthorizationCredential", "EmbeddedSdJwtVcMandate"],
+  "type": ["VerifiableCredential", "SpendingAuthorizationCredential"],
   "issuer": "did:web:principal.example",
   "validFrom": "2026-03-25T20:00:00Z",
   "validUntil": "2026-06-25T20:00:00Z",
   "credentialSubject": {
-    "id": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "id": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
     "currency": "USD",
     "maxPerTransaction": "0.05",
     "dailyLimit": "5.00",
-    "allowedPayees": ["did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"]
+    "allowedPayees": ["did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN"]
   },
-  "bridgeMode": "proof-preserving",
-  "sourceVct": "mandate.spending-authority.avp",
-  "embeddedSdJwtVc": "eyJ…issuer-L1….~eyJ…agent-KB-L3…"
+  "securing": {
+    "mode": "proof-preserving",
+    "carrier": "sd-jwt-vc",
+    "embedded": "eyJ…issuer-L1….~eyJ…agent-KB-L3…",
+    "sourceVct": "mandate.spending-authority.avp",
+    "profileVersion": "0.1.0"
+  }
 }
     </pre>
     <p>
-      The mode determines the trust of the outer object:
+      The same pattern applies to every other imported object — a CartMandate imports
+      as a <code>PaymentQuote</code>, a human-present cart approval as a
+      <code>PurchaseConfirmation</code>, an L3 presentation as a
+      <code>PaymentAuthorization</code> (<code>carrier:
+      "sd-jwt-vc+kb-jwt"</code>) — always the native semantic type plus the same
+      descriptor, never a per-carrier class.
+      The <code>securing.mode</code> determines the trust of the outer object:
     </p>
     <ul>
-      <li><strong><code>proof-preserving</code></strong>: there is no Ed25519 proof to
-        be had (the principal signed only JOSE), so the outer object carries
+      <li><strong><code>proof-preserving</code></strong>: there is no native Data
+        Integrity (<code>ecdsa-jcs-2022</code>) proof to be had (the principal signed
+        only JOSE), so the outer object carries
         <em>no</em> <code>proof</code> and is an unsigned <em>projection</em>. Its
-        authority is the <code>embeddedSdJwtVc</code>, verified via the
+        authority is <code>securing.embedded</code>, verified via the
         <a>did:web binding convention</a> (<a href="#identity-import"></a>). An
-        importer <em>MUST</em> set <code>bridgeMode</code> to
+        importer <em>MUST</em> set <code>securing.mode</code> to
         <code>proof-preserving</code> and <em>MUST NOT</em> add a <code>proof</code>.</li>
       <li><strong><code>co-issued</code></strong>: the outer <code>proof</code> is a
-        genuine <code>eddsa-jcs-2022</code> proof by the principal's Ed25519 key over
-        the mapped claims, produced at issuance &mdash; no bridge in the path.</li>
+        genuine <code>ecdsa-jcs-2022</code> proof by the principal's P-256 key over
+        the mapped claims &mdash; the <em>same</em> key it uses to sign the co-issued
+        <code>ES256</code> SD-JWT &mdash; produced at issuance, no bridge in the
+        path.</li>
       <li><strong><code>attested</code></strong>: a named bridge re-signs the outer
         object; the bridge DID <em>MUST</em> appear in
-        <code>iop:attestingBridge</code> and in <code>proof.verificationMethod</code>,
+        <code>securing.attestingBridge</code> and in <code>proof.verificationMethod</code>,
         and relying parties <em>MUST</em> independently trust it.</li>
     </ul>
   </section>
@@ -634,10 +680,15 @@
         issuer signature on export, or the absence of an outer proof on import) as a
         substitute. The outer signature attests only transport, typing, and holder
         binding.</li>
-      <li><strong>Algorithm pinning.</strong> Ed25519 (Data Integrity) and
-        <code>ES256</code> (JOSE) <em>MUST</em> each be verified against the layer that
-        legitimately uses it. A verifier <em>MUST NOT</em> accept one algorithm where
-        the other is expected (algorithm confusion).</li>
+      <li><strong>Suite and layer pinning.</strong> Both layers now sign over the same
+        curve (P-256), so a verifier <em>MUST</em> distinguish them by <em>suite and
+        signing input</em>, not by key type: the embedded authority <em>MUST</em> be
+        verified as an <code>ecdsa-jcs-2022</code> Data Integrity proof over its JCS
+        <code>hashData</code>, and the JOSE envelope <em>MUST</em> be verified as
+        <code>ES256</code> over its JWS signing input. A verifier <em>MUST NOT</em>
+        accept a signature valid under one layer's construction as satisfying the other
+        (cross-serialization confusion), even though one key may legitimately produce
+        both.</li>
       <li><strong>Explicit bridge trust.</strong> A verifier <em>MUST NOT</em> honor an
         <code>attested</code> object unless the <code>iop:attestingBridge</code> DID is
         on an explicit, operator-configured trust list. Authority obtained in
@@ -678,10 +729,12 @@
         <em>MUST NOT</em> be implied. On import of a <em>partially</em> disclosed
         SD-JWT, the resulting mandate is a subset view and <em>MUST</em> be flagged as
         partial.</li>
-      <li><strong>P-256 keys.</strong> Not expressible in <code>eddsa-jcs-2022</code>;
-        proof-preserving import depends on the <a>did:web binding convention</a>
-        (<a href="#identity-import"></a>), failing which the object cannot be imported
-        proof-preservingly.</li>
+      <li><strong>Opaque issuer/subject identifiers.</strong> SD-JWT-VC
+        <code>iss</code>/<code>sub</code> are opaque URIs with no mandated
+        key-resolution method, so proof-preserving import depends on the
+        <a>did:web binding convention</a> (<a href="#identity-import"></a>), failing
+        which the object cannot be imported proof-preservingly. (The signing curve is
+        no longer a barrier &mdash; both stacks use P-256.)</li>
     </ul>
   </section>
 
@@ -748,8 +801,8 @@
     <p>
       This profile defines data interchange between software agents and has no direct
       user interface. Tooling that surfaces bridge provenance (the
-      <code>bridgeMode</code> and any <code>attestingBridge</code>) to operators
-      should follow general accessibility guidance for that tooling.
+      <code>securing.mode</code> and any <code>securing.attestingBridge</code>) to
+      operators should follow general accessibility guidance for that tooling.
     </p>
   </section>
 
@@ -759,8 +812,8 @@
       The <a href="#export"></a> and <a href="#import"></a> sections show the two
       envelopes for the same underlying mandate (the [[DSA]]
       <code>spending-authorization-credential</code> test vector: agent
-      <code>z6Mko688…</code> may spend up to 0.05 USD per transaction, 5.00 per day,
-      only with payee <code>z6MkenPA…</code>). Signed, harness-verified round-trip
+      <code>zDnaew8N…</code> may spend up to 0.05 USD per transaction, 5.00 per day,
+      only with payee <code>zDnaenNX…</code>). Signed, harness-verified round-trip
       vectors are provided under <code>test-vectors/</code>.
     </p>
   </section>
@@ -773,7 +826,7 @@
       <thead><tr><th>Class</th><th>Requirement</th></tr></thead>
       <tbody>
         <tr><td><a>exporter</a></td><td>Produces a conformant <a>SD-JWT-VC mandate</a> per <a href="#export"></a>, with the claim mapping of <a href="#claim-mapping"></a> and, in proof-preserving mode, a byte-exact <code>avp_vc</code>.</td></tr>
-        <tr><td><a>importer</a></td><td>Produces a conformant <a>EmbeddedSdJwtVcMandate</a> per <a href="#import"></a>, sets <code>bridgeMode</code> correctly, and obeys the proof/attestation rules.</td></tr>
+        <tr><td><a>importer</a></td><td>Produces a natively-typed imported object with a conformant <a>securing descriptor</a> per <a href="#import"></a>, sets <code>securing.mode</code> correctly, and obeys the proof/attestation rules.</td></tr>
         <tr><td><a>cross-stack verifier</a></td><td>Applies every rule of <a href="#verification"></a>, including no-downgrade, algorithm pinning, explicit bridge trust, and window intersection.</td></tr>
       </tbody>
     </table>

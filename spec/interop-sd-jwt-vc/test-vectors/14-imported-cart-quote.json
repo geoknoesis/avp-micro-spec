@@ -8,8 +8,7 @@
   ],
   "id": "urn:avp:quote:imported:urn:ap2:cart:001",
   "type": [
-    "PaymentQuote",
-    "EmbeddedCartQuote"
+    "PaymentQuote"
   ],
   "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
   "payee": "did:web:merchant.example",
@@ -17,7 +16,11 @@
   "currency": "USD",
   "serviceRequestHash": "sha-256:Owxtvk4oi8JitvxkR-bmZKYoVCGyVSBhbwwHPkTapS0",
   "expires": "2026-06-12T12:00:00Z",
-  "bridgeMode": "proof-preserving",
-  "embeddedCartMandate": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6bWVyY2hhbnQuZXhhbXBsZSNrZXktMSIsInR5cCI6ImRjK3NkLWp3dCJ9.eyJjYXJ0Ijp7ImNhcnRFeHBpcnkiOiIyMDI2LTA2LTEyVDEyOjAwOjAwWiIsImN1cnJlbmN5IjoiVVNEIiwiaXRlbXMiOlt7InByaWNlIjoiMTEyLjQwIiwicXR5IjoxLCJza3UiOiJTSE9FLVJFRC0xMCJ9XSwibWVyY2hhbnQiOiJkaWQ6d2ViOm1lcmNoYW50LmV4YW1wbGUiLCJ0b3RhbCI6eyJhbW91bnQiOiIxMTIuNDAiLCJjdXJyZW5jeSI6IlVTRCJ9fSwiY2FydF9oYXNoIjoic2hhLTI1NjpPd3h0dms0b2k4Sml0dnhrUi1ibVpLWW9WQ0d5VlNCaGJ3d0hQa1RhcFMwIiwiZXhwIjoxNzgxMjY1NjAwLCJpc3MiOiJkaWQ6d2ViOm1lcmNoYW50LmV4YW1wbGUiLCJqdGkiOiJ1cm46YXAyOmNhcnQ6MDAxIiwic3ViIjoiZGlkOmtleTp6RG5hZXc4TkRVOFZndnhXcFdXeEJlTFdhVmJHTkV1WFl5UkZrMnVMTWpDZGh4a1NVIiwidmN0IjoibWFuZGF0ZS5jYXJ0LmFwMiJ9.lDnc25GCOP0CtBu4lSMgTeabCYh5h4BEaJxS6UOOSMv2Olc_yHfg8OEyelguS04Xs7m2bnY_x0MjmmID0VMF_w~",
-  "profileVersion": "0.1.0"
+  "securing": {
+    "mode": "proof-preserving",
+    "carrier": "sd-jwt-vc",
+    "embedded": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6bWVyY2hhbnQuZXhhbXBsZSNrZXktMSIsInR5cCI6ImRjK3NkLWp3dCJ9.eyJjYXJ0Ijp7ImNhcnRFeHBpcnkiOiIyMDI2LTA2LTEyVDEyOjAwOjAwWiIsImN1cnJlbmN5IjoiVVNEIiwiaXRlbXMiOlt7InByaWNlIjoiMTEyLjQwIiwicXR5IjoxLCJza3UiOiJTSE9FLVJFRC0xMCJ9XSwibWVyY2hhbnQiOiJkaWQ6d2ViOm1lcmNoYW50LmV4YW1wbGUiLCJ0b3RhbCI6eyJhbW91bnQiOiIxMTIuNDAiLCJjdXJyZW5jeSI6IlVTRCJ9fSwiY2FydF9oYXNoIjoic2hhLTI1NjpPd3h0dms0b2k4Sml0dnhrUi1ibVpLWW9WQ0d5VlNCaGJ3d0hQa1RhcFMwIiwiZXhwIjoxNzgxMjY1NjAwLCJpc3MiOiJkaWQ6d2ViOm1lcmNoYW50LmV4YW1wbGUiLCJqdGkiOiJ1cm46YXAyOmNhcnQ6MDAxIiwic3ViIjoiZGlkOmtleTp6RG5hZXc4TkRVOFZndnhXcFdXeEJlTFdhVmJHTkV1WFl5UkZrMnVMTWpDZGh4a1NVIiwidmN0IjoibWFuZGF0ZS5jYXJ0LmFwMiJ9.3w7aoYd4cVSmqVKFmJV0KsTNM7FfqiCHhta_CU30N5HmCrbJc-5pb0nTEsS7sMXzhY4cNRDSyFshmaxRKBJENA~",
+    "sourceVct": "mandate.cart.ap2",
+    "profileVersion": "0.1.0"
+  }
 }

@@ -7,27 +7,29 @@
   ],
   "type": [
     "VerifiableCredential",
-    "SpendingAuthorizationCredential",
-    "EmbeddedSdJwtVcMandate"
+    "SpendingAuthorizationCredential"
   ],
   "issuer": "did:web:issuer.example",
   "credentialSubject": {
-    "id": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
+    "id": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
     "currency": "USD",
     "maxPerTransaction": "0.10",
     "dailyLimit": "10.00",
     "allowedPayees": [
-      "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi"
+      "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN"
     ]
   },
-  "bridgeMode": "proof-preserving",
-  "sourceVct": "mandate.spending-authority.avp",
-  "embeddedSdJwtVc": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6aXNzdWVyLmV4YW1wbGUja2V5LTEiLCJ0eXAiOiJkYytzZC1qd3QifQ.eyJhbGxvd2VkX3BheWVlcyI6WyJkaWQ6a2V5Ono2TWtlblBBMnhjRDVDR0pWbWtnZWpicjRMekJBYTFlM0dWQ1FpSEZyWERnaDVWaSJdLCJjbmYiOnsiandrIjp7ImNydiI6IkVkMjU1MTkiLCJrdHkiOiJPS1AiLCJ4IjoiZ0U4SkR6bU5WSmdlazJTaVlNMmRSRnJHYkxxb0ZRdWRESlhEQVJYaHU0dyJ9fSwiY3VycmVuY3kiOiJVU0QiLCJleHAiOjE3ODI4NjQwMDAsImludGVudF9tb2RlIjoiaW50ZXJhY3RpdmUiLCJpc3MiOiJkaWQ6d2ViOmlzc3Vlci5leGFtcGxlIiwianRpIjoidXJuOnZpOm1hbmRhdGU6aW50ZXJhY3RpdmU6MDAxIiwibGltaXRzIjp7InBlcl9kYXkiOiIxMC4wMCIsInBlcl90eG4iOiIwLjEwIn0sIm5iZiI6MTc3NTAwMTYwMCwic3ViIjoiZGlkOmtleTp6Nk1rbzY4OFZ0MXVaRlFaaDhXdmI4Qm5tZW5FcVRhalp3RTJCdWdXODVuV0E2NVIiLCJ2Y3QiOiJtYW5kYXRlLnNwZW5kaW5nLWF1dGhvcml0eS5hdnAifQ.6FMdlJql23iPzh5PlDa0TPL-B8dfXKHTYHxx3gJHZ-7uy2-3Kjup7MSvOxIb79FOjdyVn7Uh3pFUBkPQLsXi5g~",
-  "profileVersion": "0.1.0",
   "id": "urn:vi:mandate:interactive:001",
   "validFrom": "2026-04-01T00:00:00Z",
   "validUntil": "2026-07-01T00:00:00Z",
-  "importAdvisory": [
-    "interactive-l2: fresh per-purchase human intent has no standing-delegation analogue and is not preserved by this import"
-  ]
+  "securing": {
+    "mode": "proof-preserving",
+    "carrier": "sd-jwt-vc",
+    "embedded": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6aXNzdWVyLmV4YW1wbGUja2V5LTEiLCJ0eXAiOiJkYytzZC1qd3QifQ.eyJhbGxvd2VkX3BheWVlcyI6WyJkaWQ6a2V5OnpEbmFlbk5YUHQ4Sk01WVlocmpwMjNUMlpzZ0dqeUVoVlZTQzdkaEZqYlF3ZHJ4RU4iXSwiY25mIjp7Imp3ayI6eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6InlCZ0p3TnVjTE5ZMjZ1QWxFQXo5dWh2TE03alR5a2g4UjE3SDlWZFp0aWsiLCJ5IjoieDB3UUQ1OTlQWENxc0Z1bVR0eXVRMVNPWlh1OFJheW1kVnVLdkUzQVQ2VSJ9fSwiY3VycmVuY3kiOiJVU0QiLCJleHAiOjE3ODI4NjQwMDAsImludGVudF9tb2RlIjoiaW50ZXJhY3RpdmUiLCJpc3MiOiJkaWQ6d2ViOmlzc3Vlci5leGFtcGxlIiwianRpIjoidXJuOnZpOm1hbmRhdGU6aW50ZXJhY3RpdmU6MDAxIiwibGltaXRzIjp7InBlcl9kYXkiOiIxMC4wMCIsInBlcl90eG4iOiIwLjEwIn0sIm5iZiI6MTc3NTAwMTYwMCwic3ViIjoiZGlkOmtleTp6RG5hZXc4TkRVOFZndnhXcFdXeEJlTFdhVmJHTkV1WFl5UkZrMnVMTWpDZGh4a1NVIiwidmN0IjoibWFuZGF0ZS5zcGVuZGluZy1hdXRob3JpdHkuYXZwIn0.QZz_nI3nTCfH3qwdZjUlq6gt_c-FE4Ny7B4jhPpvIgVPxP_BlvCOZuLd7ovs2k4LcifhYIzyvny3QstBvenz0Q~",
+    "sourceVct": "mandate.spending-authority.avp",
+    "importAdvisory": [
+      "interactive-l2: fresh per-purchase human intent has no standing-delegation analogue and is not preserved by this import"
+    ],
+    "profileVersion": "0.1.0"
+  }
 }

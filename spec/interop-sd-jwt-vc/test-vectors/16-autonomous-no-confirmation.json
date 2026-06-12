@@ -7,8 +7,7 @@
   ],
   "type": [
     "VerifiableCredential",
-    "SpendingAuthorizationCredential",
-    "EmbeddedSdJwtVcMandate"
+    "SpendingAuthorizationCredential"
   ],
   "issuer": "did:web:user.example",
   "credentialSubject": {
@@ -19,22 +18,25 @@
       "did:web:merchant.example"
     ]
   },
-  "bridgeMode": "proof-preserving",
-  "sourceVct": "mandate.intent.ap2",
-  "embeddedSdJwtVc": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6dXNlci5leGFtcGxlI2tleS0xIiwidHlwIjoiZGMrc2Qtand0In0.eyJhbGxvd2VkX3BheWVlcyI6WyJkaWQ6d2ViOm1lcmNoYW50LmV4YW1wbGUiXSwiY25mIjp7Imp3ayI6eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6InlCZ0p3TnVjTE5ZMjZ1QWxFQXo5dWh2TE03alR5a2g4UjE3SDlWZFp0aWsiLCJ5IjoieDB3UUQ1OTlQWENxc0Z1bVR0eXVRMVNPWlh1OFJheW1kVnVLdkUzQVQ2VSJ9fSwiY3VycmVuY3kiOiJVU0QiLCJleHAiOjE3ODI3Nzc2MDAsImludGVudF9kZXNjcmlwdGlvbiI6ImEgcmVkIHNpemUtMTAgcnVubmluZyBzaG9lIHVuZGVyICQxMjAiLCJpc3MiOiJkaWQ6d2ViOnVzZXIuZXhhbXBsZSIsIml0ZW1fY29uc3RyYWludHMiOlsiY29sb3I9cmVkIiwic2l6ZT0xMCJdLCJqdGkiOiJ1cm46YXAyOmludGVudDphdXRvOjAwMSIsImxpbWl0cyI6eyJwZXJfdHhuIjoiMTIwLjAwIn0sIm5iZiI6MTc4MDI3MjAwMCwicmVxdWlyZXNfcmVmdW5kYWJpbGl0eSI6dHJ1ZSwicmVxdWlyZXNfdXNlcl9jb25maXJtYXRpb24iOmZhbHNlLCJzdWIiOiJkaWQ6a2V5OnpEbmFldzhORFU4Vmd2eFdwV1d4QmVMV2FWYkdORXVYWXlSRmsydUxNakNkaHhrU1UiLCJ2Y3QiOiJtYW5kYXRlLmludGVudC5hcDIifQ.g6p71aMHpqh2fxet30oh9o2Crx-AmnFoOFaJ_eSnE7oq8oRw47_fDvZgFFnnfTFbELYbQDrHKmj_VyuipXlfgQ~",
-  "profileVersion": "0.1.0",
   "id": "urn:ap2:intent:auto:001",
   "validFrom": "2026-06-01T00:00:00Z",
   "validUntil": "2026-06-30T00:00:00Z",
+  "securing": {
+    "mode": "proof-preserving",
+    "carrier": "sd-jwt-vc",
+    "embedded": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6dXNlci5leGFtcGxlI2tleS0xIiwidHlwIjoiZGMrc2Qtand0In0.eyJhbGxvd2VkX3BheWVlcyI6WyJkaWQ6d2ViOm1lcmNoYW50LmV4YW1wbGUiXSwiY25mIjp7Imp3ayI6eyJjcnYiOiJQLTI1NiIsImt0eSI6IkVDIiwieCI6InlCZ0p3TnVjTE5ZMjZ1QWxFQXo5dWh2TE03alR5a2g4UjE3SDlWZFp0aWsiLCJ5IjoieDB3UUQ1OTlQWENxc0Z1bVR0eXVRMVNPWlh1OFJheW1kVnVLdkUzQVQ2VSJ9fSwiY3VycmVuY3kiOiJVU0QiLCJleHAiOjE3ODI3Nzc2MDAsImludGVudF9kZXNjcmlwdGlvbiI6ImEgcmVkIHNpemUtMTAgcnVubmluZyBzaG9lIHVuZGVyICQxMjAiLCJpc3MiOiJkaWQ6d2ViOnVzZXIuZXhhbXBsZSIsIml0ZW1fY29uc3RyYWludHMiOlsiY29sb3I9cmVkIiwic2l6ZT0xMCJdLCJqdGkiOiJ1cm46YXAyOmludGVudDphdXRvOjAwMSIsImxpbWl0cyI6eyJwZXJfdHhuIjoiMTIwLjAwIn0sIm5iZiI6MTc4MDI3MjAwMCwicmVxdWlyZXNfcmVmdW5kYWJpbGl0eSI6dHJ1ZSwicmVxdWlyZXNfdXNlcl9jb25maXJtYXRpb24iOmZhbHNlLCJzdWIiOiJkaWQ6a2V5OnpEbmFldzhORFU4Vmd2eFdwV1d4QmVMV2FWYkdORXVYWXlSRmsydUxNakNkaHhrU1UiLCJ2Y3QiOiJtYW5kYXRlLmludGVudC5hcDIifQ.zlJtZqoGHZHObrz08TcmdTgE5IW48U7YRjMO-FKjtaEk8Szf6tnEGELugjzLjQE79W3T-c-5ngi0dtKVapMkkw~",
+    "sourceVct": "mandate.intent.ap2",
+    "profileVersion": "0.1.0",
+    "importAdvisory": [
+      "ap2-intent-granularity: natural-language / item-level intent is carried in iop: extras but is NOT enforced by AVP spending policy (envelope only)",
+      "autonomous: no human-present PurchaseConfirmation present; standing delegation only"
+    ]
+  },
   "intentDescription": "a red size-10 running shoe under $120",
   "itemConstraints": [
     "color=red",
     "size=10"
   ],
   "refundabilityRequired": true,
-  "requiresPurchaseConfirmation": false,
-  "importAdvisory": [
-    "ap2-intent-granularity: natural-language / item-level intent is carried in iop: extras but is NOT enforced by AVP spending policy (envelope only)",
-    "autonomous: no human-present PurchaseConfirmation present; standing delegation only"
-  ]
+  "requiresPurchaseConfirmation": false
 }

@@ -65,6 +65,46 @@ def token_list_to_status(status: dict) -> dict:
     }
 
 
+# ---- securing descriptor: the one securing/bridge axis (D8/D9) ----
+#
+# Semantic ``type`` stays pure (authorization semantics only); HOW an object's
+# authority is secured when it crosses the stack boundary lives in the single
+# ``iop:securing`` descriptor. Absence of ``securing`` means native. The bridge
+# pipeline is factored decode(carrier) -> map(claims) -> secure(object); secure()
+# is the only stage that knows the mode.
+
+CARRIER_SDJWT = "sd-jwt-vc"
+CARRIER_SDJWT_KB = "sd-jwt-vc+kb-jwt"
+
+
+def secure(obj: dict, *, mode: str, embedded: str | None = None, carrier: str | None = None,
+           source_vct: str | None = None, attesting_bridge: str | None = None,
+           advisories: list | None = None) -> dict:
+    """Attach the iop:securing descriptor to a semantically-typed object."""
+    d: dict = {"mode": mode}
+    if carrier:
+        d["carrier"] = carrier
+    if embedded:
+        d["embedded"] = embedded
+    if source_vct:
+        d["sourceVct"] = source_vct
+    if attesting_bridge:
+        d["attestingBridge"] = attesting_bridge
+    if advisories:
+        d["importAdvisory"] = list(advisories)
+    d["profileVersion"] = PROFILE_VERSION
+    out = dict(obj)
+    out["securing"] = d
+    return out
+
+
+def add_advisories(obj: dict, advisories: list) -> dict:
+    """Append import advisories to an already-secured object (bridge provenance, D9)."""
+    sec = obj.setdefault("securing", {})
+    sec["importAdvisory"] = list(sec.get("importAdvisory", [])) + list(advisories)
+    return obj
+
+
 # ---- AP2 cart canonicalization (M4) ----
 
 def canonical_cart(cart: dict) -> bytes:
@@ -167,14 +207,15 @@ def intent_extras(claims: dict) -> tuple[dict, list]:
 
 
 def sdjwtvc_intent_to_avp(compact: str, mode: str = "proof-preserving") -> dict:
-    """Import an AP2 IntentMandate (SD-JWT-VC) as an EmbeddedSdJwtVcMandate plus the
-    carried-but-unenforced intent extras. Reuses the §4 claim mapping for the envelope."""
+    """Import an AP2 IntentMandate (SD-JWT-VC) as a SpendingAuthorizationCredential
+    projection plus the carried-but-unenforced intent extras. The extras are semantic
+    claims and stay top-level (D11); the advisories are bridge provenance (D9)."""
     vc = sdjwtvc_to_avp(compact, mode)
     payload, _ = _effective_claims(compact)
     extras, advisories = intent_extras(payload)
     vc.update(extras)
     if advisories:
-        vc["importAdvisory"] = list(vc.get("importAdvisory", [])) + advisories
+        add_advisories(vc, advisories)
     return vc
 
 
@@ -195,26 +236,24 @@ CART_VCT = "mandate.cart.ap2"
 
 
 def cart_mandate_to_quote(compact: str, cart: dict, *, mode: str = "proof-preserving") -> dict:
-    """Import an AP2 CartMandate (merchant-signed) as an EmbeddedCartQuote projection.
+    """Import an AP2 CartMandate (merchant-signed) as a PaymentQuote projection.
     Authority stays in the embedded merchant signature (proof-preserving); the outer
     object is an unsigned projection whose serviceRequestHash binds the canonical cart."""
-    payload, _ = _effective_claims(compact)
+    payload, _ = _effective_claims(compact)                      # decode
     total = cart.get("total", {})
-    proj: dict = {
+    proj: dict = {                                               # map
         "@context": list(INTEROP_PAY_CTX),
         "id": "urn:avp:quote:imported:" + str(payload.get("jti", "")),
-        "type": ["PaymentQuote", "EmbeddedCartQuote"],
+        "type": ["PaymentQuote"],
         "payer": payload.get("sub"),
         "payee": payload.get("iss"),
         "amount": total.get("amount"),
         "currency": total.get("currency") or cart.get("currency"),
         "serviceRequestHash": cart_service_request_hash(cart),
         "expires": numericdate_to_iso(payload["exp"]) if "exp" in payload else cart.get("cartExpiry"),
-        "bridgeMode": mode,
-        "embeddedCartMandate": compact,
-        "profileVersion": PROFILE_VERSION,
     }
-    return proj
+    return secure(proj, mode=mode, carrier=CARRIER_SDJWT, embedded=compact,   # secure
+                  source_vct=payload.get("vct"))
 
 
 def quote_to_cart_claims(quote: dict) -> dict:
@@ -235,7 +274,7 @@ def verify_purchase_confirmation(conf: dict, did_web_resolver: dict | None = Non
     """Verify a PurchaseConfirmation. The defining rule (§11.3): authority is a fresh
     HUMAN approval, so the proof MUST be controlled by confirmedBy (the principal), never
     by the agent (payer). proof-preserving projections (no native proof) instead carry the
-    original approval in iop:embeddedCartUserAuth, verified against confirmedBy's key --
+    original approval in securing.embedded, verified against confirmedBy's key --
     resolved locally for a did:key principal, or via did:web. Any error => False."""
     try:
         confirmed_by = conf.get("confirmedBy")
@@ -247,7 +286,7 @@ def verify_purchase_confirmation(conf: dict, did_web_resolver: dict | None = Non
                 return False  # signer MUST be confirmedBy
             return ac.verify_ecdsa_jcs_2022(conf)
         # proof-preserving projection: verify the embedded AP2 user approval
-        compact = conf.get("embeddedCartUserAuth")
+        compact = (conf.get("securing") or {}).get("embedded")
         if not compact:
             return False
         jwk = (did_web_resolver or {}).get(confirmed_by)
@@ -266,18 +305,17 @@ def import_cart_user_confirmation(user_auth_compact: str, *, quote_digest: str, 
                                   payee: str, amount: str, currency: str,
                                   service_request_hash: str, confirmed_by: str, quote: str,
                                   mode: str = "proof-preserving") -> dict:
-    """Import an AP2 human-present cart approval as an EmbeddedCartUserConfirmation
-    projection (unsigned; authority is the embedded user JWT)."""
-    return {
+    """Import an AP2 human-present cart approval as a PurchaseConfirmation projection
+    (unsigned; authority is the embedded user JWT in securing.embedded)."""
+    proj = {
         "@context": list(INTEROP_PAY_CTX),
         "id": "urn:avp:confirm:imported:" + quote_digest,
-        "type": ["PurchaseConfirmation", "EmbeddedCartUserConfirmation"],
+        "type": ["PurchaseConfirmation"],
         "quote": quote, "quoteDigest": quote_digest,
         "payer": agent_did, "payee": payee, "amount": amount, "currency": currency,
         "serviceRequestHash": service_request_hash, "confirmedBy": confirmed_by,
-        "bridgeMode": mode, "embeddedCartUserAuth": user_auth_compact,
-        "profileVersion": PROFILE_VERSION,
     }
+    return secure(proj, mode=mode, carrier=CARRIER_SDJWT, embedded=user_auth_compact)
 
 
 def export_purchase_confirmation(conf: dict) -> dict:
@@ -362,17 +400,14 @@ def _effective_claims(compact: str):
 
 
 def sdjwtvc_to_avp(compact: str, mode: str = "proof-preserving") -> dict:
-    payload, n_withheld = _effective_claims(compact)
-    vc: dict = {
+    """V->A import, factored decode -> map -> secure. The result is typed purely by
+    its authorization semantics; all bridge metadata lives in ``securing``."""
+    payload, n_withheld = _effective_claims(compact)            # decode (carrier axis)
+    vc: dict = {                                                 # map (semantic axis)
         "@context": list(INTEROP_CTX),
-        "type": ["VerifiableCredential", "SpendingAuthorizationCredential",
-                 "EmbeddedSdJwtVcMandate"],
+        "type": ["VerifiableCredential", "SpendingAuthorizationCredential"],
         "issuer": payload["iss"],
         "credentialSubject": claims_to_avp_subject(payload),
-        "bridgeMode": mode,
-        "sourceVct": payload.get("vct"),
-        "embeddedSdJwtVc": compact,
-        "profileVersion": PROFILE_VERSION,
     }
     if "jti" in payload:
         vc["id"] = payload["jti"]
@@ -392,10 +427,9 @@ def sdjwtvc_to_avp(compact: str, mode: str = "proof-preserving") -> dict:
         advisories.append(
             "interactive-l2: fresh per-purchase human intent has no standing-delegation "
             "analogue and is not preserved by this import")
-    if advisories:
-        vc["importAdvisory"] = advisories
     # proof-preserving: outer object is an unsigned projection (no proof added)
-    return vc
+    return secure(vc, mode=mode, carrier=CARRIER_SDJWT, embedded=compact,   # secure
+                  source_vct=payload.get("vct"), advisories=advisories)
 
 
 # ---- cross-stack verification (section "Cross-stack verification") ----
@@ -421,8 +455,8 @@ def verify_exported(compact: str, envelope_pub) -> bool:
 
 
 def verify_imported(vc: dict, did_web_resolver: dict) -> bool:
-    """Verify an EmbeddedSdJwtVcMandate per the bridge-mode rules. Any parse/verify
-    error is a verification failure, never an exception."""
+    """Verify an imported (bridged) credential per its securing-descriptor mode. Any
+    parse/verify error is a verification failure, never an exception."""
     try:
         return _verify_imported(vc, did_web_resolver)
     except Exception:
@@ -430,8 +464,9 @@ def verify_imported(vc: dict, did_web_resolver: dict) -> bool:
 
 
 def _verify_imported(vc: dict, did_web_resolver: dict) -> bool:
-    mode = vc.get("bridgeMode")
-    compact = vc.get("embeddedSdJwtVc", "")
+    sec = vc.get("securing") or {}
+    mode = sec.get("mode")
+    compact = sec.get("embedded", "")
     jws = sdjwt.sdjwt_jws(compact)
     payload = sdjwt.jws_payload(jws)
     if mode == "proof-preserving":
@@ -453,7 +488,7 @@ def _verify_imported(vc: dict, did_web_resolver: dict) -> bool:
             return False
         return sdjwt.es256_verify(jws, sdjwt.p256_public_from_jwk(jwk))
     if mode == "attested":
-        if "attestingBridge" not in vc or "proof" not in vc:
+        if "attestingBridge" not in sec or "proof" not in vc:
             return False
         return ac.verify_ecdsa_jcs_2022(vc)
     if mode == "co-issued":
@@ -506,7 +541,7 @@ def presentation_to_payment_authorization(presentation: str, mode: str = "proof-
     authz: dict = {
         "@context": list(INTEROP_PAY_CTX),
         "id": "urn:avp:authz:imported:" + str(kb["nonce"]),
-        "type": ["PaymentAuthorization", "EmbeddedKbJwtAuthorization"],
+        "type": ["PaymentAuthorization"],
         "payer": mp["sub"],
         "payee": txn["payee"],
         "amount": txn["amount"],
@@ -518,15 +553,13 @@ def presentation_to_payment_authorization(presentation: str, mode: str = "proof-
         "expires": numericdate_to_iso(txn["exp"]),
         "nonce": kb["nonce"],
         "wallet": kb.get("aud"),
-        "bridgeMode": mode,
-        "embeddedKbJwtPresentation": presentation,
-        "profileVersion": PROFILE_VERSION,
     }
     if txn.get("quote") is not None:
         authz["quote"] = txn["quote"]
     if txn.get("quote_digest") is not None:
         authz["quoteDigest"] = txn["quote_digest"]
-    return authz
+    return secure(authz, mode=mode, carrier=CARRIER_SDJWT_KB, embedded=presentation,
+                  source_vct=mp.get("vct"))
 
 
 def verify_presentation(presentation: str, did_web_resolver: dict | None = None) -> bool:
