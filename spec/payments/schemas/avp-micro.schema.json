@@ -228,6 +228,7 @@
         "nonce": { "type": "string", "minLength": 1 },
         "vp": { "$ref": "#/$defs/verifiablePresentation" },
         "wallet": { "$ref": "#/$defs/did" },
+        "purchaseConfirmation": { "$ref": "#/$defs/PurchaseConfirmation" },
         "proof": { "$ref": "#/$defs/proof" }
       }
     },

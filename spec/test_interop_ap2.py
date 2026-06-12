@@ -208,3 +208,16 @@ def test_purchase_confirmation_rejected_when_signed_by_someone_else():
     # signer != confirmedBy  (e.g. forged by the agent) MUST be rejected
     forged = _signed_confirmation(principal_label="principal", signer_label="agent-forger")
     assert interop.verify_purchase_confirmation(forged) is False
+
+
+def test_payment_authorization_accepts_optional_purchase_confirmation():
+    # load the existing authz vector, attach a confirmation, must still validate
+    authz = _json.loads(_Path("spec/payments/test-vectors/02-payment-authorization.json").read_text(encoding="utf-8"))
+    authz["purchaseConfirmation"] = _purchase_confirmation()
+    errs = list(_pay_validator("PaymentAuthorization").iter_errors(authz))
+    assert errs == []
+
+
+def test_payment_authorization_still_valid_without_confirmation():
+    authz = _json.loads(_Path("spec/payments/test-vectors/02-payment-authorization.json").read_text(encoding="utf-8"))
+    assert list(_pay_validator("PaymentAuthorization").iter_errors(authz)) == []
