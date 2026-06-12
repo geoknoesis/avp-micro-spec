@@ -189,6 +189,46 @@ def avp_to_intent_claims(vc: dict) -> dict:
     return claims
 
 
+# ---- §6: AP2 CartMandate <-> payee-signed PaymentQuote ----
+
+CART_VCT = "mandate.cart.ap2"
+
+
+def cart_mandate_to_quote(compact: str, cart: dict, *, mode: str = "proof-preserving") -> dict:
+    """Import an AP2 CartMandate (merchant-signed) as an EmbeddedCartQuote projection.
+    Authority stays in the embedded merchant signature (proof-preserving); the outer
+    object is an unsigned projection whose serviceRequestHash binds the canonical cart."""
+    payload, _ = _effective_claims(compact)
+    total = cart.get("total", {})
+    proj: dict = {
+        "@context": list(INTEROP_PAY_CTX),
+        "id": "urn:avp:quote:imported:" + str(payload.get("jti", "")),
+        "type": ["PaymentQuote", "EmbeddedCartQuote"],
+        "payer": payload.get("sub"),
+        "payee": payload.get("iss"),
+        "amount": total.get("amount"),
+        "currency": total.get("currency") or cart.get("currency"),
+        "serviceRequestHash": cart_service_request_hash(cart),
+        "expires": numericdate_to_iso(payload["exp"]) if "exp" in payload else cart.get("cartExpiry"),
+        "bridgeMode": mode,
+        "embeddedCartMandate": compact,
+        "profileVersion": PROFILE_VERSION,
+    }
+    return proj
+
+
+def quote_to_cart_claims(quote: dict) -> dict:
+    """Export a payee-signed PaymentQuote to an AP2 cart claim set (merchant attestation)."""
+    return {
+        "vct": CART_VCT,
+        "iss": quote["payee"],
+        "sub": quote["payer"],
+        "cart_hash": quote["serviceRequestHash"],
+        "total": {"amount": quote["amount"], "currency": quote["currency"]},
+        "exp": iso_to_numericdate(quote["expires"]),
+    }
+
+
 # ---- export: AVP-Micro -> SD-JWT-VC (section "Export") ----
 
 def avp_to_sdjwtvc(vc: dict, sign_priv, kid: str, *, embedded: bool = True) -> str:

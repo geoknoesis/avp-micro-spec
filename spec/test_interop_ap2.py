@@ -95,3 +95,37 @@ def test_intent_export_round_trips_policy_and_extras():
     assert back["limits"]["per_txn"] == "120.00"
     assert back["intent_description"] == "a red size-10 running shoe under $120"
     assert back["requires_user_confirmation"] is True
+
+
+# ---- §6: CartMandate <-> PaymentQuote ----
+
+def test_cart_import_projects_quote_and_binds_hash():
+    merchant = sdjwt.seed_p256("merchant-cart")
+    cart = _cart()
+    claims = {
+        "vct": "mandate.cart.ap2", "iss": "did:web:merchant.example",
+        "sub": "did:key:zDnaeAGENT", "cart": cart,
+        "exp": interop.iso_to_numericdate("2026-06-12T12:00:00Z"),
+        "jti": "urn:ap2:cart:001",
+    }
+    compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
+        {"alg": "ES256", "typ": "dc+sd-jwt", "kid": "did:web:merchant.example#key-1"},
+        claims, merchant))
+    proj = interop.cart_mandate_to_quote(compact, cart, mode="proof-preserving")
+    assert "EmbeddedCartQuote" in proj["type"]
+    assert proj["payee"] == "did:web:merchant.example"
+    assert proj["amount"] == "24.00"
+    assert proj["currency"] == "USD"
+    assert proj["serviceRequestHash"] == interop.cart_service_request_hash(cart)
+    assert proj["embeddedCartMandate"] == compact
+    assert "proof" not in proj  # proof-preserving projection
+
+
+def test_quote_to_cart_claims_uses_same_hash_field():
+    quote = {"payer": "did:key:zDnaeAGENT", "payee": "did:web:merchant.example",
+             "amount": "24.00", "currency": "USD",
+             "serviceRequestHash": "sha-256:abc", "expires": "2026-06-12T12:00:00Z"}
+    c = interop.quote_to_cart_claims(quote)
+    assert c["iss"] == "did:web:merchant.example"
+    assert c["cart_hash"] == "sha-256:abc"
+    assert c["total"] == {"amount": "24.00", "currency": "USD"}
