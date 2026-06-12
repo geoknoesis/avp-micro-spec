@@ -64,6 +64,30 @@ def token_list_to_status(status: dict) -> dict:
     }
 
 
+# ---- AP2 cart canonicalization (M4) ----
+
+def canonical_cart(cart: dict) -> bytes:
+    """Normalize an AP2 CartContents to stable JCS bytes so an AVP serviceRequestHash
+    and the AP2 cart reference the *same* bytes. Items are sorted by ("sku","qty","price")
+    so wire order does not change the digest; amounts stay decimal strings (never floats)."""
+    items = sorted(
+        cart.get("items", []),
+        key=lambda it: (str(it.get("sku", "")), str(it.get("qty", "")), str(it.get("price", ""))),
+    )
+    normalized = {
+        "merchant": cart["merchant"],
+        "currency": cart.get("currency") or cart.get("total", {}).get("currency"),
+        "items": items,
+        "total": cart.get("total"),
+        "cartExpiry": cart.get("cartExpiry"),
+    }
+    return ac.jcs(normalized)
+
+
+def cart_service_request_hash(cart: dict) -> str:
+    return ac.content_digest(canonical_cart(cart))
+
+
 # ---- claim mapping (section "Claim mapping") ----
 
 def avp_to_claims(vc: dict) -> dict:
@@ -93,8 +117,8 @@ def avp_to_claims(vc: dict) -> dict:
         claims["jti"] = vc["id"]
     if "credentialStatus" in vc:
         claims["status"] = status_to_token_list(vc["credentialStatus"])
-    # holder key binding: cnf = agent did:key public key as an OKP JWK
-    claims["cnf"] = {"jwk": sdjwt.ed25519_public_jwk(ac.public_from_did_key(subj["id"]))}
+    # holder key binding: cnf = agent did:key public key as an EC P-256 JWK
+    claims["cnf"] = {"jwk": sdjwt.p256_public_jwk(ac.public_from_did_key(subj["id"]))}
     return claims
 
 
@@ -122,9 +146,9 @@ def avp_to_sdjwtvc(vc: dict, sign_priv, kid: str, *, embedded: bool = True) -> s
     """Produce an SD-JWT-VC compact serialization carrying the AVP-Micro mandate.
 
     ``embedded=True`` (proof-preserving default): authority is carried in the
-    non-disclosable ``avp_vc`` claim (the original Ed25519-secured credential);
-    ``sign_priv`` signs only the envelope. ``embedded=False`` is the attested
-    profile where ``sign_priv`` is the bridge issuer of record.
+    non-disclosable ``avp_vc`` claim (the original ecdsa-jcs-2022 (P-256)-secured
+    credential); ``sign_priv`` signs only the envelope. ``embedded=False`` is the
+    attested profile where ``sign_priv`` is the bridge issuer of record.
     """
     claims = avp_to_claims(vc)
     claims["vct"] = VCT_EMBEDDED if embedded else VCT_PLAIN
@@ -198,8 +222,8 @@ def sdjwtvc_to_avp(compact: str, mode: str = "proof-preserving") -> dict:
 
 def verify_exported(compact: str, envelope_pub) -> bool:
     """Verify an exported SD-JWT-VC: envelope ES256 AND (no-downgrade) the embedded
-    original Ed25519 authority, with holder binding. Any parse/verify error is a
-    verification failure, never an exception."""
+    original ecdsa-jcs-2022 (P-256) authority, with holder binding. Any parse/verify
+    error is a verification failure, never an exception."""
     try:
         jws = sdjwt.sdjwt_jws(compact)
         if not sdjwt.es256_verify(jws, envelope_pub):
@@ -207,7 +231,7 @@ def verify_exported(compact: str, envelope_pub) -> bool:
         payload = sdjwt.jws_payload(jws)
         if "avp_vc" in payload:  # embedded profile: authority is the embedded proof
             secured = json.loads(sdjwt.b64u_decode(payload["avp_vc"]))
-            if not ac.verify_eddsa_jcs_2022(secured):
+            if not ac.verify_ecdsa_jcs_2022(secured):
                 return False
             if secured["credentialSubject"]["id"] != payload["sub"]:  # holder binding
                 return False
@@ -237,9 +261,9 @@ def _verify_imported(vc: dict, did_web_resolver: dict) -> bool:
         if payload["sub"] != vc["credentialSubject"]["id"] or payload["iss"] != vc["issuer"]:
             return False
         if "avp_vc" in payload:
-            # AVP-origin: authority is the embedded Ed25519-secured credential
+            # AVP-origin: authority is the embedded ecdsa-jcs-2022 (P-256)-secured credential
             secured = json.loads(sdjwt.b64u_decode(payload["avp_vc"]))
-            if not ac.verify_eddsa_jcs_2022(secured):
+            if not ac.verify_ecdsa_jcs_2022(secured):
                 return False
             return secured["credentialSubject"]["id"] == vc["credentialSubject"]["id"] \
                 and _issuer_id(secured) == vc["issuer"]
@@ -251,11 +275,12 @@ def _verify_imported(vc: dict, did_web_resolver: dict) -> bool:
     if mode == "attested":
         if "attestingBridge" not in vc or "proof" not in vc:
             return False
-        return ac.verify_eddsa_jcs_2022(vc)
+        return ac.verify_ecdsa_jcs_2022(vc)
     if mode == "co-issued":
         # authority is the native outer Data Integrity proof; the embedded SD-JWT-VC
-        # is a parallel representation the same issuer signed with its P-256 key.
-        if "proof" not in vc or not ac.verify_eddsa_jcs_2022(vc):
+        # is a parallel representation the same issuer signed with the same P-256 key
+        # it uses for the ecdsa-jcs-2022 Data Integrity proof.
+        if "proof" not in vc or not ac.verify_ecdsa_jcs_2022(vc):
             return False
         jwk = did_web_resolver.get(payload.get("iss"))
         if jwk is not None and not sdjwt.es256_verify(jws, sdjwt.p256_public_from_jwk(jwk)):
@@ -288,7 +313,7 @@ def payment_authorization_to_presentation(authz: dict, mandate_compact: str, age
             "exp": iso_to_numericdate(authz["expires"]),
         },
     }
-    kbjwt = sdjwt.eddsa_jws_sign({"alg": "EdDSA", "typ": "kb+jwt"}, kb_payload, agent_priv)
+    kbjwt = sdjwt.es256_sign({"alg": "ES256", "typ": "kb+jwt"}, kb_payload, agent_priv)
     return sd_input + kbjwt
 
 
@@ -334,15 +359,15 @@ def verify_presentation(presentation: str, did_web_resolver: dict | None = None)
         # 1. mandate (L1) authority
         if "avp_vc" in mp:
             secured = json.loads(sdjwt.b64u_decode(mp["avp_vc"]))
-            if not ac.verify_eddsa_jcs_2022(secured):
+            if not ac.verify_ecdsa_jcs_2022(secured):
                 return False
         else:
             jwk = (did_web_resolver or {}).get(mp.get("iss"))
             if jwk is None or not sdjwt.es256_verify(issuer_jws, sdjwt.p256_public_from_jwk(jwk)):
                 return False
         # 2. holder key-binding JWT (L3) signed by the cnf holder key (the agent)
-        holder = sdjwt.ed25519_public_from_jwk(mp["cnf"]["jwk"])
-        if not sdjwt.eddsa_jws_verify(kbjwt, holder):
+        holder = sdjwt.p256_public_from_jwk(mp["cnf"]["jwk"])
+        if not sdjwt.es256_verify(kbjwt, holder):
             return False
         # 3. sd_hash binds the KB-JWT to exactly this mandate
         kb = sdjwt.jws_payload(kbjwt)
