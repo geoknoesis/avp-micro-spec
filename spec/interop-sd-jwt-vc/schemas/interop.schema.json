@@ -58,7 +58,7 @@
         "avp_vc": {
           "type": "string",
           "contentEncoding": "base64url",
-          "description": "base64url of the exact JCS-canonical SpendingAuthorizationCredential bytes, including its eddsa-jcs-2022 proof. Carries the authority in the proof-preserving profile."
+          "description": "base64url of the exact JCS-canonical SpendingAuthorizationCredential bytes, including its ecdsa-jcs-2022 proof. Carries the authority in the proof-preserving profile."
         }
       }
     },
@@ -112,13 +112,18 @@
         "attestingBridge": { "$ref": "#/$defs/did" },
         "profileVersion": { "type": "string" },
         "importAdvisory": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "intentDescription": { "type": "string" },
+        "itemConstraints": { "type": "array", "items": { "type": "string" } },
+        "refundabilityRequired": { "type": "boolean" },
+        "requiresPurchaseConfirmation": { "type": "boolean" },
+        "embeddedIntentMandate": { "$ref": "#/$defs/compactSdJwt" },
         "proof": {
           "type": "object",
           "description": "Present in co-issued and attested modes; absent in proof-preserving mode (the outer object is then an unsigned projection).",
           "required": ["type", "cryptosuite", "created", "verificationMethod", "proofPurpose", "proofValue"],
           "properties": {
             "type": { "const": "DataIntegrityProof" },
-            "cryptosuite": { "const": "eddsa-jcs-2022" },
+            "cryptosuite": { "const": "ecdsa-jcs-2022" },
             "created": { "type": "string", "format": "date-time" },
             "verificationMethod": { "type": "string", "minLength": 1 },
             "proofPurpose": { "const": "assertionMethod" },
@@ -194,6 +199,93 @@
         {
           "if": { "properties": { "bridgeMode": { "const": "co-issued" } } },
           "then": { "required": ["proof"] }
+        }
+      ]
+    },
+
+    "EmbeddedCartQuote": {
+      "type": "object",
+      "description": "A PaymentQuote projection of an AP2 CartMandate (V->A import). Authority is the embedded merchant signature; in proof-preserving mode the outer object carries no proof.",
+      "required": ["@context", "type", "payer", "payee", "amount", "currency", "serviceRequestHash", "embeddedCartMandate", "bridgeMode"],
+      "properties": {
+        "@context": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "https://www.w3.org/ns/credentials/v2" },
+            { "const": "https://w3id.org/security/data-integrity/v2" },
+            { "const": "https://w3id.org/spending-authority/v1" },
+            { "const": "https://w3id.org/avp-micro/v1" },
+            { "const": "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1" }
+          ],
+          "minItems": 5, "maxItems": 5
+        },
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "array",
+          "allOf": [
+            { "contains": { "const": "PaymentQuote" } },
+            { "contains": { "const": "EmbeddedCartQuote" } }
+          ]
+        },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/decimal" },
+        "currency": { "type": "string" },
+        "serviceRequestHash": { "type": "string" },
+        "expires": { "type": "string", "format": "date-time" },
+        "embeddedCartMandate": { "$ref": "#/$defs/compactSdJwt" },
+        "bridgeMode": { "type": "string", "enum": ["co-issued", "proof-preserving", "attested"] },
+        "profileVersion": { "type": "string" },
+        "proof": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "bridgeMode": { "const": "proof-preserving" } } },
+          "then": { "not": { "required": ["proof"] } }
+        }
+      ]
+    },
+    "EmbeddedCartUserConfirmation": {
+      "type": "object",
+      "description": "A PurchaseConfirmation projection of an AP2 human-present cart approval (V->A import). Authority is the embedded user signature (iop:embeddedCartUserAuth).",
+      "required": ["@context", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "serviceRequestHash", "confirmedBy", "embeddedCartUserAuth", "bridgeMode"],
+      "properties": {
+        "@context": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "https://www.w3.org/ns/credentials/v2" },
+            { "const": "https://w3id.org/security/data-integrity/v2" },
+            { "const": "https://w3id.org/spending-authority/v1" },
+            { "const": "https://w3id.org/avp-micro/v1" },
+            { "const": "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1" }
+          ],
+          "minItems": 5, "maxItems": 5
+        },
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "array",
+          "allOf": [
+            { "contains": { "const": "PurchaseConfirmation" } },
+            { "contains": { "const": "EmbeddedCartUserConfirmation" } }
+          ]
+        },
+        "quote": { "type": "string" },
+        "quoteDigest": { "type": "string" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/decimal" },
+        "currency": { "type": "string" },
+        "serviceRequestHash": { "type": "string" },
+        "confirmedBy": { "$ref": "#/$defs/did" },
+        "embeddedCartUserAuth": { "$ref": "#/$defs/compactSdJwt" },
+        "bridgeMode": { "type": "string", "enum": ["co-issued", "proof-preserving", "attested"] },
+        "profileVersion": { "type": "string" },
+        "proof": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "bridgeMode": { "const": "proof-preserving" } } },
+          "then": { "not": { "required": ["proof"] } }
         }
       ]
     }

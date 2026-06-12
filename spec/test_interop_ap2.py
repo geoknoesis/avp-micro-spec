@@ -239,3 +239,39 @@ def test_interop_context_defines_new_terms():
 def test_interop_vocab_parses():
     g = _rdflib.Graph().parse("spec/interop-sd-jwt-vc/vocab/interop.ttl", format="turtle")
     assert len(g) > 0
+
+
+# ---- interop schema: projection $defs + intent extras ----
+
+_IOP_SCHEMA = _Path("spec/interop-sd-jwt-vc/schemas/interop.schema.json")
+
+
+def _iop_validator(defname):
+    bundle = _json.loads(_IOP_SCHEMA.read_text(encoding="utf-8"))
+    reg = _Reg().with_resource(uri=bundle["$id"], resource=_Res(contents=bundle, specification=_D))
+    return _V({"$ref": f'{bundle["$id"]}#/$defs/{defname}'}, registry=reg,
+              format_checker=_V.FORMAT_CHECKER)
+
+
+def test_embedded_cart_quote_schema():
+    merchant = sdjwt.seed_p256("merchant-cart")
+    cart = _cart()
+    compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
+        {"alg": "ES256", "typ": "dc+sd-jwt", "kid": "did:web:merchant.example#k"},
+        {"vct": "mandate.cart.ap2", "iss": "did:web:merchant.example",
+         "sub": "did:key:zDnaeAGENT", "exp": interop.iso_to_numericdate("2026-06-12T12:00:00Z"),
+         "jti": "urn:ap2:cart:001"}, merchant))
+    proj = interop.cart_mandate_to_quote(compact, cart, mode="proof-preserving")
+    assert list(_iop_validator("EmbeddedCartQuote").iter_errors(proj)) == []
+
+
+def test_embedded_cart_quote_rejects_proof_on_proof_preserving():
+    merchant = sdjwt.seed_p256("merchant-cart")
+    compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
+        {"alg": "ES256", "typ": "dc+sd-jwt", "kid": "did:web:merchant.example#k"},
+        {"vct": "mandate.cart.ap2", "iss": "did:web:merchant.example",
+         "sub": "did:key:zDnaeAGENT", "exp": interop.iso_to_numericdate("2026-06-12T12:00:00Z"),
+         "jti": "urn:ap2:cart:001"}, merchant))
+    proj = interop.cart_mandate_to_quote(compact, _cart(), mode="proof-preserving")
+    proj["proof"] = {"type": "DataIntegrityProof"}
+    assert list(_iop_validator("EmbeddedCartQuote").iter_errors(proj))  # no-downgrade
