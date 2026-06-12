@@ -54,7 +54,7 @@ the streaming flow (`05`–`11`), and a bare service-request. Rich-pricing offer
 
 | File | Type |
 |------|------|
-| `service-request.json` | Example service request (input to `serviceRequestHash`) |
+| `service-request.json` | Example request (input to `requestHash`) |
 | `00-payment-offer.json` | `PaymentOffer` (payee advertisement; discovery entrypoint) |
 | `12-payment-offer-compute.json` | `PaymentOffer` (multi-dimensional: requests + GB-second, with allowances) |
 | `13-payment-offer-storage.json` | `PaymentOffer` (tiered graduated GB-month storage) |

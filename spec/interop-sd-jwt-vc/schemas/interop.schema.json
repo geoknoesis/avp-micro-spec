@@ -50,7 +50,7 @@
         "currency": { "type": "string" },
         "limits": { "$ref": "#/$defs/limits" },
         "allowed_payees": { "type": "array", "items": { "type": "string", "format": "uri" } },
-        "allowed_service_types": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "allowed_categories": { "type": "array", "items": { "type": "string", "format": "uri" } },
         "nbf": { "type": "integer" },
         "exp": { "type": "integer" },
         "jti": { "type": "string" },
@@ -157,7 +157,7 @@
             "limitTimezone": { "type": "string" },
             "requiresApprovalAbove": { "$ref": "#/$defs/decimal" },
             "allowedPayees": { "type": "array", "items": { "$ref": "#/$defs/did" } },
-            "allowedServiceTypes": { "type": "array", "items": { "type": "string", "format": "uri" } }
+            "allowedCategories": { "type": "array", "items": { "type": "string", "format": "uri" } }
           }
         },
         "intentDescription": { "type": "string" },
@@ -211,7 +211,7 @@
         "currency": { "type": "string" },
         "quote": { "type": "string" },
         "quoteDigest": { "type": "string" },
-        "serviceRequestHash": { "type": "string" },
+        "requestHash": { "type": "string" },
         "settlementMethod": { "type": "string" },
         "settlementTarget": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
@@ -224,8 +224,8 @@
 
     "PaymentQuote": {
       "type": "object",
-      "description": "The bridged (V->A imported) profile of a PaymentQuote, projected from an AP2 CartMandate: native semantic type, plus the securing descriptor whose embedded merchant-signed mandate carries the authenticated authority. serviceRequestHash binds the canonical cart.",
-      "required": ["@context", "type", "payer", "payee", "amount", "currency", "serviceRequestHash"],
+      "description": "The bridged (V->A imported) profile of a PaymentQuote, projected from an AP2 CartMandate: native semantic type, plus the securing descriptor whose embedded merchant-signed mandate carries the authenticated authority. requestHash binds the canonical cart.",
+      "required": ["@context", "type", "payer", "payee", "amount", "currency", "requestHash"],
       "allOf": [ { "$ref": "#/$defs/bridgeSecured" } ],
       "properties": {
         "@context": {
@@ -250,7 +250,7 @@
         "payee": { "$ref": "#/$defs/did" },
         "amount": { "$ref": "#/$defs/decimal" },
         "currency": { "type": "string" },
-        "serviceRequestHash": { "type": "string" },
+        "requestHash": { "type": "string" },
         "expires": { "type": "string", "format": "date-time" },
         "proof": { "type": "object" }
       }
@@ -259,7 +259,7 @@
     "PurchaseConfirmation": {
       "type": "object",
       "description": "The bridged (V->A imported) profile of a PurchaseConfirmation, projected from an AP2 human-present cart approval: native semantic type, plus the securing descriptor whose embedded user-signed approval carries the authenticated authority. The proof, when present (co-issued), MUST be controlled by confirmedBy.",
-      "required": ["@context", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "serviceRequestHash", "confirmedBy"],
+      "required": ["@context", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "requestHash", "confirmedBy"],
       "allOf": [ { "$ref": "#/$defs/bridgeSecured" } ],
       "properties": {
         "@context": {
@@ -286,7 +286,7 @@
         "payee": { "$ref": "#/$defs/did" },
         "amount": { "$ref": "#/$defs/decimal" },
         "currency": { "type": "string" },
-        "serviceRequestHash": { "type": "string" },
+        "requestHash": { "type": "string" },
         "confirmedBy": { "$ref": "#/$defs/did" },
         "proof": { "type": "object" }
       }

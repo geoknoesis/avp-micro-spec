@@ -108,7 +108,7 @@ def add_advisories(obj: dict, advisories: list) -> dict:
 # ---- AP2 cart canonicalization (M4) ----
 
 def canonical_cart(cart: dict) -> bytes:
-    """Normalize an AP2 CartContents to stable JCS bytes so an AVP serviceRequestHash
+    """Normalize an AP2 CartContents to stable JCS bytes so an AVP requestHash
     and the AP2 cart reference the *same* bytes. Items are sorted by ("sku","qty","price")
     so wire order does not change the digest; amounts stay decimal strings (never floats)."""
     items = sorted(
@@ -125,7 +125,7 @@ def canonical_cart(cart: dict) -> bytes:
     return ac.jcs(normalized)
 
 
-def cart_service_request_hash(cart: dict) -> str:
+def cart_request_hash(cart: dict) -> str:
     return ac.content_digest(canonical_cart(cart))
 
 
@@ -148,8 +148,8 @@ def avp_to_claims(vc: dict) -> dict:
         claims["limits"] = limits
     if "allowedPayees" in subj:
         claims["allowed_payees"] = list(subj["allowedPayees"])
-    if "allowedServiceTypes" in subj:
-        claims["allowed_service_types"] = list(subj["allowedServiceTypes"])
+    if "allowedCategories" in subj:
+        claims["allowed_categories"] = list(subj["allowedCategories"])
     if "validFrom" in vc:
         claims["nbf"] = iso_to_numericdate(vc["validFrom"])
     if "validUntil" in vc:
@@ -176,8 +176,8 @@ def claims_to_avp_subject(payload: dict) -> dict:
             subj[avp_field] = limits[jose_field]
     if "allowed_payees" in payload:
         subj["allowedPayees"] = list(payload["allowed_payees"])
-    if "allowed_service_types" in payload:
-        subj["allowedServiceTypes"] = list(payload["allowed_service_types"])
+    if "allowed_categories" in payload:
+        subj["allowedCategories"] = list(payload["allowed_categories"])
     return subj
 
 
@@ -238,7 +238,7 @@ CART_VCT = "mandate.cart.ap2"
 def cart_mandate_to_quote(compact: str, cart: dict, *, mode: str = "proof-preserving") -> dict:
     """Import an AP2 CartMandate (merchant-signed) as a PaymentQuote projection.
     Authority stays in the embedded merchant signature (proof-preserving); the outer
-    object is an unsigned projection whose serviceRequestHash binds the canonical cart."""
+    object is an unsigned projection whose requestHash binds the canonical cart."""
     payload, _ = _effective_claims(compact)                      # decode
     total = cart.get("total", {})
     proj: dict = {                                               # map
@@ -249,7 +249,7 @@ def cart_mandate_to_quote(compact: str, cart: dict, *, mode: str = "proof-preser
         "payee": payload.get("iss"),
         "amount": total.get("amount"),
         "currency": total.get("currency") or cart.get("currency"),
-        "serviceRequestHash": cart_service_request_hash(cart),
+        "requestHash": cart_request_hash(cart),
         "expires": numericdate_to_iso(payload["exp"]) if "exp" in payload else cart.get("cartExpiry"),
     }
     return secure(proj, mode=mode, carrier=CARRIER_SDJWT, embedded=compact,   # secure
@@ -262,7 +262,7 @@ def quote_to_cart_claims(quote: dict) -> dict:
         "vct": CART_VCT,
         "iss": quote["payee"],
         "sub": quote["payer"],
-        "cart_hash": quote["serviceRequestHash"],
+        "cart_hash": quote["requestHash"],
         "total": {"amount": quote["amount"], "currency": quote["currency"]},
         "exp": iso_to_numericdate(quote["expires"]),
     }
@@ -303,7 +303,7 @@ def verify_purchase_confirmation(conf: dict, did_web_resolver: dict | None = Non
 
 def import_cart_user_confirmation(user_auth_compact: str, *, quote_digest: str, agent_did: str,
                                   payee: str, amount: str, currency: str,
-                                  service_request_hash: str, confirmed_by: str, quote: str,
+                                  request_hash: str, confirmed_by: str, quote: str,
                                   mode: str = "proof-preserving") -> dict:
     """Import an AP2 human-present cart approval as a PurchaseConfirmation projection
     (unsigned; authority is the embedded user JWT in securing.embedded)."""
@@ -313,7 +313,7 @@ def import_cart_user_confirmation(user_auth_compact: str, *, quote_digest: str, 
         "type": ["PurchaseConfirmation"],
         "quote": quote, "quoteDigest": quote_digest,
         "payer": agent_did, "payee": payee, "amount": amount, "currency": currency,
-        "serviceRequestHash": service_request_hash, "confirmedBy": confirmed_by,
+        "requestHash": request_hash, "confirmedBy": confirmed_by,
     }
     return secure(proj, mode=mode, carrier=CARRIER_SDJWT, embedded=user_auth_compact)
 
@@ -321,7 +321,7 @@ def import_cart_user_confirmation(user_auth_compact: str, *, quote_digest: str, 
 def export_purchase_confirmation(conf: dict) -> dict:
     """Export a PurchaseConfirmation (native or projection) to an AP2 human-present
     cart-approval claim set: the principal (confirmedBy) attests, over the exact cart
-    (serviceRequestHash), that the agent (payer) may transact. The inverse of
+    (requestHash), that the agent (payer) may transact. The inverse of
     import_cart_user_confirmation -- together they make the §7 human-present case
     lossless in both directions. The claims are signed by the principal's own key
     (both stacks are P-256), so the exported approval roots in the principal DID, not
@@ -329,7 +329,7 @@ def export_purchase_confirmation(conf: dict) -> dict:
     claims = {
         "iss": conf["confirmedBy"],
         "sub": conf["payer"],
-        "cart_hash": conf["serviceRequestHash"],
+        "cart_hash": conf["requestHash"],
     }
     if "timestamp" in conf:
         claims["iat"] = iso_to_numericdate(conf["timestamp"])
@@ -522,7 +522,7 @@ def payment_authorization_to_presentation(authz: dict, mandate_compact: str, age
             "payee": authz["payee"],
             "amount": authz["amount"],
             "currency": authz["currency"],
-            "service_request_hash": authz.get("serviceRequestHash"),
+            "request_hash": authz.get("requestHash"),
             "settlement_method": authz.get("settlementMethod"),
             "settlement_target": authz.get("settlementTarget"),
             "exp": iso_to_numericdate(authz["expires"]),
@@ -548,7 +548,7 @@ def presentation_to_payment_authorization(presentation: str, mode: str = "proof-
         "currency": txn["currency"],
         "settlementMethod": txn.get("settlement_method"),
         "settlementTarget": txn.get("settlement_target"),
-        "serviceRequestHash": txn.get("service_request_hash"),
+        "requestHash": txn.get("request_hash"),
         "timestamp": numericdate_to_iso(kb["iat"]),
         "expires": numericdate_to_iso(txn["exp"]),
         "nonce": kb["nonce"],

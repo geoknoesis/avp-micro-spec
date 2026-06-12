@@ -48,7 +48,7 @@
     "quoteEndpoint": { "@id": "avp:quoteEndpoint", "@type": "xsd:anyURI" },
     "offerValidity": { "@id": "avp:offerValidity", "@type": "xsd:dateTime" },
 
-    "serviceRequestHash": { "@id": "avp:serviceRequestHash" },
+    "requestHash": { "@id": "avp:requestHash" },
     "quoteDigest": { "@id": "avp:quoteDigest" },
     "sessionDigest": { "@id": "avp:sessionDigest" },
     "amount": { "@id": "avp:amount" },
@@ -67,7 +67,7 @@
     "settlementRef": { "@id": "avp:settlementRef" },
 
     "execution": { "@id": "avp:execution", "@type": "@id" },
-    "serviceOutputHash": { "@id": "avp:serviceOutputHash" },
+    "outputHash": { "@id": "avp:outputHash" },
     "fulfilledAt": { "@id": "avp:fulfilledAt", "@type": "xsd:dateTime" },
 
     "maxAmount": { "@id": "avp:maxAmount" },

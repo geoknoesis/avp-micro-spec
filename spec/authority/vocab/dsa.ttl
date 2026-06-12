@@ -101,7 +101,7 @@ dsa:conformsTo a owl:ObjectProperty ;
 dsa:mustMatch a owl:ObjectProperty ;
   rdfs:domain dsa:AuthorizationInstance ;
   rdfs:label "must match"@en ;
-  rdfs:comment "A normative binding constraint: a field of the instance MUST equal the corresponding field of a referenced commitment (e.g. a quote). In AVP-Micro this is realized by digest binding (quoteDigest, serviceRequestHash). Without it, signatures prove artifact integrity but not chain correctness."@en .
+  rdfs:comment "A normative binding constraint: a field of the instance MUST equal the corresponding field of a referenced commitment (e.g. a quote). In AVP-Micro this is realized by digest binding (quoteDigest, requestHash). Without it, signatures prove artifact integrity but not chain correctness."@en .
 
 #################################################################
 # Object properties (node references / DIDs / IRIs)
@@ -109,7 +109,7 @@ dsa:mustMatch a owl:ObjectProperty ;
 
 dsa:allowedPayees a owl:ObjectProperty ; rdfs:label "allowed payees"@en ;
   rdfs:comment "Payee DIDs an agent may pay."@en .
-dsa:allowedServiceTypes a owl:ObjectProperty ; rdfs:label "allowed service types"@en ;
+dsa:allowedCategories a owl:ObjectProperty ; rdfs:label "allowed categories"@en ;
   rdfs:comment "Service-category IRIs an agent may pay."@en .
 dsa:categories a owl:ObjectProperty ; rdfs:label "categories"@en ;
   rdfs:comment "Self- or third-party-asserted service-category IRIs."@en .

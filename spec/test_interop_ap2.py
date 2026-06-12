@@ -11,7 +11,7 @@ _AGENT = ac.seed_key("agent")
 _AGENT_DID = ac.did_key(_AGENT.public_key())
 
 
-# ---- M4: canonical cart -> serviceRequestHash ----
+# ---- M4: canonical cart -> requestHash ----
 
 def _cart():
     return {
@@ -33,8 +33,8 @@ def test_canonical_cart_is_order_independent():
     assert interop.canonical_cart(a) == interop.canonical_cart(b)
 
 
-def test_cart_service_request_hash_is_content_digest():
-    h = interop.cart_service_request_hash(_cart())
+def test_cart_request_hash_is_content_digest():
+    h = interop.cart_request_hash(_cart())
     assert h.startswith("sha-256:")
     assert h == ac.content_digest(interop.canonical_cart(_cart()))
 
@@ -124,7 +124,7 @@ def test_cart_import_projects_quote_and_binds_hash():
     assert proj["payee"] == "did:web:merchant.example"
     assert proj["amount"] == "24.00"
     assert proj["currency"] == "USD"
-    assert proj["serviceRequestHash"] == interop.cart_service_request_hash(cart)
+    assert proj["requestHash"] == interop.cart_request_hash(cart)
     assert proj["securing"]["embedded"] == compact
     assert proj["securing"]["mode"] == "proof-preserving"
     assert proj["securing"]["carrier"] == "sd-jwt-vc"
@@ -135,7 +135,7 @@ def test_cart_import_projects_quote_and_binds_hash():
 def test_quote_to_cart_claims_uses_same_hash_field():
     quote = {"payer": "did:key:zDnaeAGENT", "payee": "did:web:merchant.example",
              "amount": "24.00", "currency": "USD",
-             "serviceRequestHash": "sha-256:abc", "expires": "2026-06-12T12:00:00Z"}
+             "requestHash": "sha-256:abc", "expires": "2026-06-12T12:00:00Z"}
     c = interop.quote_to_cart_claims(quote)
     assert c["iss"] == "did:web:merchant.example"
     assert c["cart_hash"] == "sha-256:abc"
@@ -169,7 +169,7 @@ def _purchase_confirmation():
         "id": "urn:avp:confirm:1", "type": "PurchaseConfirmation",
         "quote": "urn:avp:quote:789", "quoteDigest": "sha-256:abc",
         "payer": "did:key:zDnaeAGENT", "payee": "did:key:zDnaePAYEE",
-        "amount": "24.00", "currency": "USD", "serviceRequestHash": "sha-256:cart",
+        "amount": "24.00", "currency": "USD", "requestHash": "sha-256:cart",
         "confirmedBy": "did:key:zDnaePRINCIPAL",
         "timestamp": "2026-06-12T11:00:00Z", "expires": "2026-06-12T11:05:00Z",
         "nonce": "c-1",
@@ -204,7 +204,7 @@ def _signed_confirmation(principal_label="principal", signer_label=None):
         "id": "urn:avp:confirm:1", "type": "PurchaseConfirmation",
         "quote": "urn:avp:quote:789", "quoteDigest": "sha-256:abc",
         "payer": "did:key:zDnaeAGENT", "payee": ac.did_key(ac.seed_key("payee").public_key()),
-        "amount": "24.00", "currency": "USD", "serviceRequestHash": "sha-256:cart",
+        "amount": "24.00", "currency": "USD", "requestHash": "sha-256:cart",
         "confirmedBy": ac.did_key(principal.public_key()),
         "timestamp": "2026-06-12T11:00:00Z", "expires": "2026-06-12T11:05:00Z", "nonce": "c-1",
     }
@@ -328,7 +328,7 @@ def test_export_purchase_confirmation_maps_to_ap2_user_approval():
     claims = interop.export_purchase_confirmation(conf)
     assert claims["iss"] == conf["confirmedBy"]   # the human/principal attests...
     assert claims["sub"] == conf["payer"]          # ...on behalf of the agent
-    assert claims["cart_hash"] == conf["serviceRequestHash"]
+    assert claims["cart_hash"] == conf["requestHash"]
     assert claims["iat"] == interop.iso_to_numericdate(conf["timestamp"])
     assert claims["exp"] == interop.iso_to_numericdate(conf["expires"])
 
@@ -344,9 +344,9 @@ def test_purchase_confirmation_round_trips_avp_to_ap2_to_avp():
     proj = interop.import_cart_user_confirmation(
         compact, quote_digest=conf["quoteDigest"], agent_did=conf["payer"],
         payee=conf["payee"], amount=conf["amount"], currency=conf["currency"],
-        service_request_hash=conf["serviceRequestHash"], confirmed_by=conf["confirmedBy"],
+        request_hash=conf["requestHash"], confirmed_by=conf["confirmedBy"],
         quote=conf["quote"], mode="proof-preserving")
-    assert proj["serviceRequestHash"] == conf["serviceRequestHash"]
+    assert proj["requestHash"] == conf["requestHash"]
     assert proj["confirmedBy"] == conf["confirmedBy"]
     # the re-imported projection verifies — a did:key principal resolves locally (no resolver)
     assert interop.verify_purchase_confirmation(proj) is True
@@ -362,7 +362,7 @@ def test_imported_confirmation_verifies_with_didkey_principal():
     proj = interop.import_cart_user_confirmation(
         compact, quote_digest="sha-256:q", agent_did="did:key:zDnaeAGENT",
         payee="did:key:zDnaePAYEE", amount="24.00", currency="USD",
-        service_request_hash="sha-256:cart", confirmed_by=ac.did_key(principal.public_key()),
+        request_hash="sha-256:cart", confirmed_by=ac.did_key(principal.public_key()),
         quote="urn:avp:quote:1")
     assert interop.verify_purchase_confirmation(proj) is True
 

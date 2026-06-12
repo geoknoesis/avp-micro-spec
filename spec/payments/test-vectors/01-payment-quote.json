@@ -7,9 +7,9 @@
   ],
   "id": "urn:avp:quote:789",
   "type": "PaymentQuote",
-  "payer": "did:key:z6Mko688Vt1uZFQZh8Wvb8BnmenEqTajZwE2BugW85nWA65R",
-  "payee": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
-  "serviceRequestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "requestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
   "amount": "0.001",
   "currency": "USD",
   "settlementMethod": "internal-ledger",
@@ -17,10 +17,10 @@
   "expires": "2026-03-25T21:35:00Z",
   "proof": {
     "type": "DataIntegrityProof",
-    "cryptosuite": "eddsa-jcs-2022",
+    "cryptosuite": "ecdsa-jcs-2022",
     "created": "2026-03-25T21:30:00Z",
-    "verificationMethod": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi#z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z2U7iSNbPAHTWSJ2atSdyXhsrQ7oaMEbwnq2rMdAK63gMUyxp84Yv3ut7SodaevnF2NabWtkkSHBRdwFdjg6UuSNF"
+    "proofValue": "z5MbMnuTG3AtHt1ScEfDaKp2ptWL6MZNm949zivVAe6Huji7iwScH1CX4pXd9LYwrKALsktKVUsT8xm7im25VhKmt"
   }
 }

@@ -180,7 +180,7 @@
       and a <a>principal</a> that controls funds issues
       <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">verifiable credentials</a>
       that <strong>constrain how the agent may spend</strong> — currency, per-transaction
-      and daily ceilings, allowed payees, and allowed service categories. A
+      and daily ceilings, allowed payees, and allowed payee categories. A
       relying party verifies those credentials, binds them to the agent's keys,
       and evaluates the issuer against an explicit trust policy before honoring
       the delegated authority. This standing, transaction-independent authority is
@@ -206,7 +206,7 @@
       <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">Verifiable
       Credential</a> that names the agent DID as its subject and carries
       constraints: maximum amount per transaction, a daily cap, a list of
-      approved payees, and acceptable service categories.
+      approved payees, and acceptable payee categories.
     </p>
 
     <p>
@@ -223,7 +223,7 @@
       Trust in <strong>payee services</strong> is established via a
       <a>Merchant Credential</a>, issued by a third-party trust anchor such as
       an industry registry. A relying party can match the payee's attested
-      service categories against the agent's <code>allowedServiceTypes</code>
+      payee categories against the agent's <code>allowedCategories</code>
       to enforce categorical spending policies.
     </p>
 
@@ -422,7 +422,7 @@
         <desc id="fig-trust-desc">
           The Principal issues a SpendingAuthorizationCredential with
           constraint fields (currency, maxPerTransaction, dailyLimit,
-          allowedPayees, allowedServiceTypes). The credential's subject is
+          allowedPayees, allowedCategories). The credential's subject is
           the Payer Agent DID. At the Relying Party, an IssuerScope entry
           may further restrict what the issuer is trusted to authorise;
           the more restrictive of credential and scope applies.
@@ -462,7 +462,7 @@
         <rect x="184" y="130" width="272" height="18" rx="3" fill="#fff" stroke="#aac" stroke-width="1"/>
         <text x="194" y="143" font-family="sans-serif" font-size="10" fill="#333">allowedPayees: ["did:web:provider.com:…"]</text>
         <rect x="184" y="152" width="272" height="18" rx="3" fill="#fff" stroke="#aac" stroke-width="1"/>
-        <text x="194" y="165" font-family="sans-serif" font-size="10" fill="#333">allowedServiceTypes: ["cat:ChatCompletionApi"]</text>
+        <text x="194" y="165" font-family="sans-serif" font-size="10" fill="#333">allowedCategories: ["cat:ChatCompletionApi"]</text>
         <text x="320" y="203" text-anchor="middle"
               font-family="sans-serif" font-size="9" fill="#888">absent = no authority for that dimension</text>
 
@@ -670,7 +670,7 @@
       <h3>Agent service categories (SKOS)</h3>
       <p>
         An optional three-level [[SKOS]] vocabulary for <code>categories</code>
-        and <code>allowedServiceTypes</code> is published at
+        and <code>allowedCategories</code> is published at
         <a href="vocab/agent-service-categories.ttl"><code>vocab/agent-service-categories.ttl</code></a>.
         The concept scheme IRI is
         <code>https://w3id.org/avp-micro/cat/scheme/AgentServiceCategory</code>;
@@ -733,7 +733,7 @@
         the capacity it exercises. An instance also <code>dsa:mustMatch</code> the
         commitment it references, realized by digest binding (<a
         href="../payments/#purchase-confirmation">quoteDigest</a>,
-        <code>serviceRequestHash</code>). These are <strong>semantic</strong>
+        <code>requestHash</code>). These are <strong>semantic</strong>
         authorization relations; they are <em>distinct from</em> provenance relations
         (<code>prov:wasDerivedFrom</code>), which describe artifact transformation and
         belong to the interop/securing layer — the two families
@@ -906,7 +906,7 @@
 
       <p>
         This generic content-digest form is used by credential and trust objects
-        to bind to opaque byte sequences (for example a service request or output
+        to bind to opaque byte sequences (for example a request or output
         digest). Specifications that build on Delegated Spending Authority reuse
         this form to define their own digest members.
       </p>
@@ -1001,7 +1001,7 @@
               <td>Payee DIDs the agent is permitted to pay. Values <em class="rfc2119">MUST</em> be DIDs; pattern matching is out of scope.</td>
             </tr>
             <tr>
-              <td><code>allowedServiceTypes</code></td>
+              <td><code>allowedCategories</code></td>
               <td><em class="rfc2119">OPTIONAL</em></td>
               <td>list of IRIs</td>
               <td>Service-category IRIs (typically <code>cat:</code> concepts) the agent may pay; matching per <a href="#category-matching"></a>.</td>
@@ -1174,7 +1174,7 @@
           <a>Merchant Credential</a> whose issuer is acceptable under its
           <a href="#trust">trust policy</a>; it <em class="rfc2119">MUST NOT</em>
           treat self-asserted payment-offer categories as satisfying an
-          <code>allowedServiceTypes</code> constraint, since a payee could assert
+          <code>allowedCategories</code> constraint, since a payee could assert
           any category. Self-asserted categories <em class="rfc2119">MAY</em> be
           used only for discovery, routing, or presentation.
         </p>
@@ -1182,13 +1182,13 @@
           Where a payee service asserts <code>categories</code> in a
           <a>Merchant Credential</a> and the agent's
           <a>Spending Authorization Credential</a> constrains
-          <code>allowedServiceTypes</code>, a wallet that enforces categorical
+          <code>allowedCategories</code>, a wallet that enforces categorical
           constraints <em class="rfc2119">MUST</em> require that at least one
           attested category IRI is <em>authorized</em> by
-          <code>allowedServiceTypes</code> within the agreed concept scheme — that
+          <code>allowedCategories</code> within the agreed concept scheme — that
           is, the asserted category is identical to a member of
-          <code>allowedServiceTypes</code>, or some member of
-          <code>allowedServiceTypes</code> is a <code>skos:broaderTransitive</code>
+          <code>allowedCategories</code>, or some member of
+          <code>allowedCategories</code> is a <code>skos:broaderTransitive</code>
           ancestor of the asserted category. Equivalently, the asserted category
           <em class="rfc2119">MUST</em> be the same as, or narrower than, an
           allowed type; a payee asserting only a category <em>broader</em> than
@@ -1198,7 +1198,7 @@
           closure of <code>skos:broader</code> (per [[SKOS]] semantics) when
           evaluating this condition.
           Comparison is over absolute IRIs. If the agent constrains
-          <code>allowedServiceTypes</code> but the payee asserts no verifiable
+          <code>allowedCategories</code> but the payee asserts no verifiable
           category, the wallet <em class="rfc2119">MUST</em> reject with
           <code>policyViolation</code>.
         </p>
@@ -1325,7 +1325,7 @@
         <li><code>currency</code> — the only currency the issuer may authorize.</li>
         <li><code>maxPerTransaction</code> — ceiling the issuer may grant per transaction.</li>
         <li><code>maxDailyTotal</code> — ceiling the issuer may grant per day.</li>
-        <li><code>allowedServiceTypes</code> — service-category IRIs the issuer may authorize.</li>
+        <li><code>allowedCategories</code> — service-category IRIs the issuer may authorize.</li>
       </ul>
       <p>
         When honoring a credential, a relying party <em class="rfc2119">MUST</em>
@@ -1470,7 +1470,7 @@
     "dailyLimit": "5.00",
     "limitTimezone": "America/New_York",
     "allowedPayees": ["did:web:provider.com:services:hvac-api"],
-    "allowedServiceTypes": ["cat:IotDeviceControl"]
+    "allowedCategories": ["cat:IotDeviceControl"]
   },
   "proof": { "type": "DataIntegrityProof", "cryptosuite": "ecdsa-jcs-2022" }
 }

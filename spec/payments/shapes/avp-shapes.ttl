@@ -51,7 +51,7 @@ avp:PaymentQuoteShape
   sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path avp:settlementMethod ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path avp:settlementTarget ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
-  sh:property [ sh:path avp:serviceRequestHash ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:requestHash ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
 
@@ -66,7 +66,7 @@ avp:PaymentAuthorizationShape
   sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path avp:settlementMethod ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path avp:settlementTarget ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
-  sh:property [ sh:path avp:serviceRequestHash ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:requestHash ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
   sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:nonce ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
@@ -153,7 +153,7 @@ avp:PurchaseConfirmationShape
   sh:property [ sh:path avp:confirmedBy ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path avp:amount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
-  sh:property [ sh:path avp:serviceRequestHash ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:requestHash ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
   sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:nonce ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;

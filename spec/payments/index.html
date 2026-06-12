@@ -219,7 +219,7 @@
       presents a Spending Authorization Credential (defined by [[DSA]])
       that constrains how it may spend, and signs authorization messages that
       <strong>commit to the exact economic terms</strong> (amount, currency,
-      settlement target) and bind those terms to a specific service request. A
+      settlement target) and bind those terms to a specific request. A
       <a>wallet service</a> enforces those constraints before instructing a
       settlement implementation to move funds. A <a>payee service</a> issues
       <em>signed</em> quotes and, after settlement, can emit a
@@ -518,8 +518,8 @@
         <title id="seq1-title">One-off payment sequence</title>
         <desc id="seq1-desc">
           Four participants: Payer Agent, Payee Service, Wallet Service,
-          Settlement Rail. Steps: 1. Payer Agent sends service request with
-          serviceRequestHash to Payee. 2. Payee returns signed PaymentQuote.
+          Settlement Rail. Steps: 1. Payer Agent sends request with
+          requestHash to Payee. 2. Payee returns signed PaymentQuote.
           3. Payer Agent sends PaymentAuthorization plus verifiable presentation
           to Wallet. 4. Wallet verifies and sends settlement instruction to Rail.
           5. Rail returns settlement reference to Wallet. 6. Wallet sends signed
@@ -562,9 +562,9 @@
         <text x="6" y="343" font-family="sans-serif" font-size="9" fill="#888">7</text>
         <text x="6" y="383" font-family="sans-serif" font-size="9" fill="#888">8</text>
 
-        <!-- 1. Agent → Payee: service request + serviceRequestHash -->
+        <!-- 1. Agent → Payee: request + requestHash -->
         <line x1="82" y1="90" x2="258" y2="90" stroke="#333" stroke-width="1.5" marker-end="url(#s1-arr)"/>
-        <text x="170" y="83" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">service request + serviceRequestHash</text>
+        <text x="170" y="83" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#333">request + requestHash</text>
 
         <!-- 2. Payee → Agent: PaymentQuote (signed) -->
         <line x1="258" y1="130" x2="82" y2="130" stroke="#005a9c" stroke-width="1.5" marker-end="url(#s1-arr-b)"/>
@@ -968,7 +968,7 @@
       <h3>Request binding and content digests</h3>
 
       <p>
-        AVP-Micro binds a payment to (a) the exact service request being paid for
+        AVP-Micro binds a payment to (a) the exact request being paid for
         and (b) the exact quote that priced it, using
         <a>content digest</a> values in the generic content-digest form defined by
         [[DSA]]. Conforming software <em class="rfc2119">MUST</em> support
@@ -978,8 +978,8 @@
 
       <ul>
         <li>
-          <code>serviceRequestHash</code> is the <a>content digest</a> of the
-          canonical byte serialization of the intended service request (for an
+          <code>requestHash</code> is the <a>content digest</a> of the
+          canonical byte serialization of the intended request (for an
           HTTP mapping, the request method, target, and body as agreed in the
           deployment profile). The <a>payee service</a> computes it in the
           <a>PaymentQuote</a>; the <a>payer agent</a> <em class="rfc2119">MUST</em>
@@ -1140,7 +1140,7 @@
         </p>
         <p class="object-summary">
           A time-bound, payee-signed price commitment for one specific service
-          request, identified by <code>serviceRequestHash</code> and binding
+          request, identified by <code>requestHash</code> and binding
           the exact economic terms.
         </p>
 
@@ -1150,7 +1150,7 @@
           </thead>
           <tbody>
             <tr><td><code>payer</code>, <code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DIDs</td><td>Parties to the quote.</td></tr>
-            <tr><td><code>serviceRequestHash</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Binds the quote to the exact service request (see <a href="#request-binding"></a>).</td></tr>
+            <tr><td><code>requestHash</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Binds the quote to the exact request (see <a href="#request-binding"></a>).</td></tr>
             <tr><td><code>amount</code>, <code>currency</code></td><td><em class="rfc2119">REQUIRED</em></td><td>decimal · string</td><td>The price. Decimal string per [[DSA]] amount format; strictly positive.</td></tr>
             <tr><td><code>settlementMethod</code>, <code>settlementTarget</code></td><td><em class="rfc2119">REQUIRED</em></td><td>strings</td><td>Together with <code>amount</code> and <code>currency</code> these form the <a>economic terms</a>.</td></tr>
             <tr><td><code>expires</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Quote expiry. Deployments <em class="rfc2119">SHOULD</em> keep this ≤ 300 s.</td></tr>
@@ -1183,7 +1183,7 @@
             <tr><td><code>quoteDigest</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Content digest of the referenced quote (proof removed). The payer's signature thereby commits to the exact quote bytes it observed, not just the IRI.</td></tr>
             <tr><td><code>payer</code>, <code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DIDs</td><td><code>payer</code> <em class="rfc2119">MUST</em> equal the quote's <code>payer</code>; <code>payee</code> <em class="rfc2119">MUST</em> equal the quote's <code>payee</code>.</td></tr>
             <tr><td><code>amount</code>, <code>currency</code>, <code>settlementMethod</code>, <code>settlementTarget</code></td><td><em class="rfc2119">REQUIRED</em></td><td>(as quote)</td><td>The <a>economic terms</a>. Each <em class="rfc2119">MUST</em> be byte-identical to the corresponding value in the referenced quote.</td></tr>
-            <tr><td><code>serviceRequestHash</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td><em class="rfc2119">MUST</em> be byte-identical to the quote's <code>serviceRequestHash</code>.</td></tr>
+            <tr><td><code>requestHash</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td><em class="rfc2119">MUST</em> be byte-identical to the quote's <code>requestHash</code>.</td></tr>
             <tr><td><code>timestamp</code>, <code>expires</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Validity window. Deployments <em class="rfc2119">SHOULD</em> keep the window ≤ 60 s.</td></tr>
             <tr><td><code>nonce</code></td><td><em class="rfc2119">REQUIRED</em></td><td>string</td><td>Unique within the verifier's retention window (scoped to the payer–verifier pair) for replay protection.</td></tr>
             <tr><td><code>wallet</code></td><td><em class="rfc2119">OPTIONAL</em> (<em class="rfc2119">RECOMMENDED</em>)</td><td>DID</td><td>Wallet service authorised to settle and sign the <a>PaymentExecution</a>. Required in the <a>auditable profile</a>.</td></tr>
@@ -1246,7 +1246,7 @@
             <tr><td><code>quoteDigest</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Content digest of the referenced quote (proof removed). Binds the approval to the exact quote bytes the human observed.</td></tr>
             <tr><td><code>payer</code>, <code>payee</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DIDs</td><td>The agent that will transact and the merchant being paid. <code>payer</code> <em class="rfc2119">MUST</em> equal the quote's <code>payer</code>; <code>payee</code> the quote's <code>payee</code>.</td></tr>
             <tr><td><code>amount</code>, <code>currency</code></td><td><em class="rfc2119">REQUIRED</em></td><td>decimal · string</td><td>The approved price. Each <em class="rfc2119">MUST</em> be byte-identical to the referenced quote.</td></tr>
-            <tr><td><code>serviceRequestHash</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Fingerprint of the approved cart. <em class="rfc2119">MUST</em> be byte-identical to the quote's <code>serviceRequestHash</code>.</td></tr>
+            <tr><td><code>requestHash</code></td><td><em class="rfc2119">REQUIRED</em></td><td>content digest</td><td>Fingerprint of the approved cart. <em class="rfc2119">MUST</em> be byte-identical to the quote's <code>requestHash</code>.</td></tr>
             <tr><td><code>confirmedBy</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DID</td><td>The principal/human who approves. The <code>proof</code>'s <code>verificationMethod</code> <em class="rfc2119">MUST</em> resolve to this DID, and it <em class="rfc2119">MUST NOT</em> equal <code>payer</code>. It <em class="rfc2119">SHOULD</em> be the issuer of the governing <a href="../authority/#spending-authorization-credential">Spending Authorization Credential</a>, or a confirmer it explicitly permits.</td></tr>
             <tr><td><code>authorization</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>IRI</td><td>IRI of the Spending Authorization Credential the confirmation operates under.</td></tr>
             <tr><td><code>timestamp</code>, <code>expires</code></td><td><em class="rfc2119">REQUIRED</em></td><td>RFC 3339</td><td>Validity window of the human approval.</td></tr>
@@ -1274,7 +1274,7 @@
             first-class. A verifier that requires fresh human intent — because local
             policy demands it, or the governing intent signalled it — <em class="rfc2119">MUST</em>
             check that a confirmation is present, is signed by <code>confirmedBy</code>,
-            binds the same <code>quoteDigest</code>, <code>serviceRequestHash</code>,
+            binds the same <code>quoteDigest</code>, <code>requestHash</code>,
             <code>amount</code>, and <code>currency</code> as the
             <a>PaymentAuthorization</a> it accompanies, and is unexpired. When no such
             object is present, the payment is autonomous; an importer
@@ -1393,7 +1393,7 @@
             <tr><td><code>amount</code>, <code>currency</code></td><td><em class="rfc2119">SHOULD</em></td><td>decimal · string</td><td>Amount associated with the outcome. Required when <code>execution</code> is absent.</td></tr>
             <tr><td><code>fulfilledAt</code></td><td><em class="rfc2119">SHOULD</em></td><td>RFC 3339</td><td>Time of delivery.</td></tr>
             <tr><td><code>execution</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>IRI</td><td>IRI of the <a>PaymentExecution</a>.</td></tr>
-            <tr><td><code>serviceOutputHash</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>content digest</td><td>Content digest of the delivered output.</td></tr>
+            <tr><td><code>outputHash</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>content digest</td><td>Content digest of the delivered output.</td></tr>
             <tr><td><code>totalMeterReading</code></td><td><em class="rfc2119">OPTIONAL</em></td><td>string</td><td>Final meter value for a closed session.</td></tr>
             <tr><td><code>proof</code></td><td><em class="rfc2119">REQUIRED</em></td><td>DataIntegrityProof</td><td>Payee signature.</td></tr>
           </tbody>
@@ -1801,7 +1801,7 @@
       <h3>One-off payment</h3>
       <ol>
         <li>The <a>payer agent</a> discovers a <a>PaymentOffer</a> (for example via DID document service endpoints).</li>
-        <li>The agent requests a <a>PaymentQuote</a> bound to a <code>serviceRequestHash</code> of the intended service request; the payee returns a <em>signed</em> quote.</li>
+        <li>The agent requests a <a>PaymentQuote</a> bound to a <code>requestHash</code> of the intended request; the payee returns a <em>signed</em> quote.</li>
         <li>The agent verifies the quote's signature and that its <a>economic terms</a> satisfy the Spending Authorization Credential and local policy.</li>
         <li>The agent constructs a signed <a>PaymentAuthorization</a> that restates the economic terms, includes the <code>quoteDigest</code>, and embeds a <a data-cite="vc-data-model-2.0#dfn-verifiable-presentations">verifiable presentation</a>.</li>
         <li>The <a>wallet service</a> verifies and settles via a <a>settlement rail</a>, emitting a signed <a>PaymentExecution</a>.</li>
@@ -1858,10 +1858,10 @@
         <li>Verify the outer integrity of the <a>PaymentAuthorization</a> per <a href="#securing"></a> and the securing mechanisms of [[DSA]], and confirm the <code>proof</code> is bound to the <code>payer</code> DID per <a href="#key-binding">key binding</a>.</li>
         <li>Obtain the referenced <a>PaymentQuote</a> as described above, verify the payee's signature on it (reject with <code>invalidSignature</code> on failure), and confirm it is not expired (reject with <code>quoteExpired</code> if past its <code>expires</code>) and its <code>payer</code> equals the authorizing agent’s DID.</li>
         <li>Confirm <code>quoteDigest</code> equals the <a>content digest</a> of the resolved quote (proof removed), that the authorization's <code>payee</code> is byte-identical to the quote's <code>payee</code>, and that the authorization's <a>economic terms</a> (<code>amount</code>, <code>currency</code>, <code>settlementMethod</code>, <code>settlementTarget</code>) are each byte-identical to the quote's. Reject with <code>quoteMismatch</code> on any mismatch.</li>
-        <li>Confirm <code>serviceRequestHash</code> in the authorization is byte-identical to the quote's; reject with <code>quoteMismatch</code> otherwise.</li>
+        <li>Confirm <code>requestHash</code> in the authorization is byte-identical to the quote's; reject with <code>quoteMismatch</code> otherwise.</li>
         <li>Verify the <a data-cite="vc-data-model-2.0#dfn-verifiable-presentations">verifiable presentation</a> and each embedded <a data-cite="vc-data-model-2.0#dfn-verifiable-credentials">verifiable credential</a>, including issuer authentication, schema/type, validity window, and revocation/suspension status ([[BITSTRING-STATUS-LIST]]) when present; reject with <code>invalidSignature</code> (proof failure) or <code>credentialRejected</code> (status, schema, or validity failure).</li>
         <li>Confirm a Spending Authorization Credential is present whose <code>credentialSubject.id</code> equals the payer DID, and that its issuer is acceptable under the wallet's trust policy (see [[DSA]] Trust establishment); reject with <code>credentialRejected</code> otherwise.</li>
-        <li>Enforce numeric and categorical constraints against the credential and local policy, applying the more restrictive of the two: <code>amount</code> ≤ <code>maxPerTransaction</code>; day-aggregated spend + <code>amount</code> ≤ <code>dailyLimit</code> (<a href="#daily-limit"></a>); <code>currency</code> matches; payee in <code>allowedPayees</code> and/or category match per [[DSA]] category matching. Reject with <code>policyViolation</code> if any limit or category check fails. The <code>maxPerTransaction</code>, <code>dailyLimit</code>, <code>allowedPayees</code>, and <code>allowedServiceTypes</code> claim semantics are defined by [[DSA]].</li>
+        <li>Enforce numeric and categorical constraints against the credential and local policy, applying the more restrictive of the two: <code>amount</code> ≤ <code>maxPerTransaction</code>; day-aggregated spend + <code>amount</code> ≤ <code>dailyLimit</code> (<a href="#daily-limit"></a>); <code>currency</code> matches; payee in <code>allowedPayees</code> and/or category match per [[DSA]] category matching. Reject with <code>policyViolation</code> if any limit or category check fails. The <code>maxPerTransaction</code>, <code>dailyLimit</code>, <code>allowedPayees</code>, and <code>allowedCategories</code> claim semantics are defined by [[DSA]].</li>
         <li>Reject reused <code>nonce</code> values within the verifier’s retention window, and reject stale <code>timestamp</code>/<code>expires</code> per the clock-skew budget (<a href="#integrity"></a>), with <code>nonceReuse</code> in either case.</li>
         <li>If Payment Capability Credential instances are required by policy, validate them before sending funds: verify the credential proof, confirm the issuer is an accepted wallet provider or financial institution under local trust policy, confirm <code>credentialSubject.id</code> equals the payer DID, confirm any <code>currency</code>, <code>asset</code>, <code>assetScale</code>, and <code>account</code> claims match the authorization's settlement target and economic terms, and reject expired credentials.</li>
       </ol>
@@ -2087,7 +2087,7 @@
       <tbody>
         <tr><td>Credential theft / replay (use a stolen VC)</td><td>Verification-method binding to the subject DID (<a href="#key-binding">key binding</a> and [[DSA]] Securing mechanisms); the thief cannot produce the payer's proof.</td></tr>
         <tr><td>Amount or settlement-target tampering between quote and settlement</td><td>Payee-signed quote, restated economic terms in the signed authorization, and <code>quoteDigest</code> (<a href="#payment-authorization"></a>, <a href="#wallet-one-off"></a>).</td></tr>
-        <tr><td>Request substitution (pay for A, deliver B)</td><td><code>serviceRequestHash</code> bound across quote and authorization (<a href="#request-binding"></a>).</td></tr>
+        <tr><td>Request substitution (pay for A, deliver B)</td><td><code>requestHash</code> bound across quote and authorization (<a href="#request-binding"></a>).</td></tr>
         <tr><td>Authorization replay</td><td><code>nonce</code> + <code>timestamp</code> + <code>expires</code> with bounded clock skew (<a href="#integrity"></a>).</td></tr>
         <tr><td>Over-spending across transactions</td><td><code>maxPerTransaction</code>, <code>dailyLimit</code> with serialized aggregation (<a href="#daily-limit"></a>), and budgeted sessions.</td></tr>
         <tr><td>Inflated or duplicated streaming charges</td><td>Signed accruals, <code>sequence</code> monotonicity, pricing-consistency checks, and the <code>maxAmount</code> cap (<a href="#streaming-integrity"></a>).</td></tr>
@@ -2205,7 +2205,7 @@
   "currency": "USD",
   "settlementMethod": "open-payments",
   "settlementTarget": "https://wallet.example.com/alice-addr",
-  "serviceRequestHash": "sha-256:abc123...redacted",
+  "requestHash": "sha-256:abc123...redacted",
   "timestamp": "2026-03-25T21:30:02Z",
   "expires": "2026-03-25T21:31:02Z",
   "nonce": "n-39102",
@@ -2434,7 +2434,7 @@
       <dd>
         Payer/payee/issuer DIDs, the <a>economic terms</a> of a transaction, the
         constraints in a Spending Authorization Credential, and digests of
-        the service request and output. The purpose is to let a <a>wallet
+        the request and output. The purpose is to let a <a>wallet
         service</a> authorize spending and let a <a>verifier</a> audit it. Objects
         expose only what is needed to evaluate a single transaction; see the next
         answer.

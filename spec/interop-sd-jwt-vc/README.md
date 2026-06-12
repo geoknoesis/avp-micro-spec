@@ -130,7 +130,7 @@ the cross-stack verification rules; `generate.py` emits the `test-vectors/` belo
 | `11-foreign-intent-mandate.json` | A foreign **AP2 `IntentMandate`** (ES256, `did:web` user issuer; item-level intent) |
 | `12-imported-intent-mandate.json` | V→A import of the IntentMandate → `SpendingAuthorizationCredential` projection + carried intent extras + M2 advisory |
 | `13-foreign-cart-mandate.json` | A foreign **AP2 `CartMandate`** (ES256, `did:web` merchant; itemized cart) |
-| `14-imported-cart-quote.json` | V→A import of the CartMandate → `PaymentQuote` projection (`serviceRequestHash` binds the canonical cart) |
+| `14-imported-cart-quote.json` | V→A import of the CartMandate → `PaymentQuote` projection (`requestHash` binds the canonical cart) |
 | `15-human-present-confirmation.json` | V→A import of a human-present cart approval → `PurchaseConfirmation` projection |
 | `16-autonomous-no-confirmation.json` | Autonomous import (no human-present approval) → **no** confirmation, advised via `importAdvisory` |
 | `17-exported-cart-user-approval.json` | **Export** (A→V): a native `PurchaseConfirmation` projected to an AP2 human-present approval (signed by the principal's own P-256 key), then re-imported — the human-present case round-trips A→V→A |
@@ -150,7 +150,7 @@ human approval to the AVP-Micro mandate/payment model, in both directions:
   this granularity loss (**M2**) in `iop:importAdvisory`.
 - **`CartMandate` ⇄ payee-signed `PaymentQuote` (§6):** the merchant attestation
   projects to a `PaymentQuote` (+ `iop:securing` embedding the merchant-signed
-  mandate); a normative `canonicalCart → serviceRequestHash` (**M4**) makes the
+  mandate); a normative `canonicalCart → requestHash` (**M4**) makes the
   merchant signature and the AVP quote reference the same bytes.
 - **`PurchaseConfirmation` — one optional core object (§7):** the fresh human approval
   AP2 carries but AVP-Micro lacked. Its proof MUST be controlled by `confirmedBy` (the

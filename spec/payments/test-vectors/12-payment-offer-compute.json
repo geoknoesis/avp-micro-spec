@@ -7,7 +7,7 @@
   ],
   "id": "urn:avp:offer:compute",
   "type": "PaymentOffer",
-  "payee": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
   "pricingModel": {
     "type": "CompositePricing",
     "currency": "USD",
@@ -37,7 +37,7 @@
     "internal-ledger"
   ],
   "acceptedCredentialIssuers": [
-    "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79"
+    "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv"
   ],
   "categories": [
     "cat:EphemeralRuntimeSessions"
@@ -45,10 +45,10 @@
   "offerValidity": "2026-03-25T23:00:00Z",
   "proof": {
     "type": "DataIntegrityProof",
-    "cryptosuite": "eddsa-jcs-2022",
+    "cryptosuite": "ecdsa-jcs-2022",
     "created": "2026-03-25T21:29:01Z",
-    "verificationMethod": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi#z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z4MJhdE77LyNq4MBCoB43CrKFRaZkQtFspy47ABHXo77ubPxU7ofWt1Gbim17PGJmLSqHVPpjCZXN2ezLoxiqMbbK"
+    "proofValue": "z25xXbyAktDdWxYuF6X4qobA2ULQvfWXVbBKhpEu6ZG3B6udJQRRYt3YVJUiZtdoGQ64A4pwoa8XdtezPT19T7bCp"
   }
 }

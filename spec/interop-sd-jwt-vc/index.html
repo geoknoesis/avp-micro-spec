@@ -468,7 +468,7 @@
         <tr><td>Limit timezone</td><td><code>credentialSubject.limitTimezone</code></td><td><code>limits.tz</code></td></tr>
         <tr><td>Step-up threshold</td><td><code>credentialSubject.requiresApprovalAbove</code></td><td><code>limits.approval_above</code></td></tr>
         <tr><td>Allowed payees</td><td><code>credentialSubject.allowedPayees[]</code> (DIDs)</td><td><code>allowed_payees[]</code></td></tr>
-        <tr><td>Allowed service types</td><td><code>credentialSubject.allowedServiceTypes[]</code> (IRIs)</td><td><code>allowed_service_types[]</code></td></tr>
+        <tr><td>Allowed categories</td><td><code>credentialSubject.allowedCategories[]</code> (IRIs)</td><td><code>allowed_categories[]</code></td></tr>
         <tr><td>Validity start</td><td><code>validFrom</code></td><td><code>nbf</code></td></tr>
         <tr><td>Validity end</td><td><code>validUntil</code></td><td><code>exp</code></td></tr>
         <tr><td>Credential id</td><td><code>id</code></td><td><code>jti</code></td></tr>
@@ -510,7 +510,7 @@
         <tr>
           <td><a>L3</a> &mdash; agent action on a specific purchase</td>
           <td>Agent (holder key)</td>
-          <td>[[AVP-MICRO-PAYMENTS]] <code>PaymentAuthorization</code> proof: the agent DID (= <code>credentialSubject.id</code>) signs over <code>quoteDigest</code>, <code>amount</code>, <code>serviceRequestHash</code>, <code>nonce</code>, <code>expires</code></td>
+          <td>[[AVP-MICRO-PAYMENTS]] <code>PaymentAuthorization</code> proof: the agent DID (= <code>credentialSubject.id</code>) signs over <code>quoteDigest</code>, <code>amount</code>, <code>requestHash</code>, <code>nonce</code>, <code>expires</code></td>
         </tr>
       </tbody>
     </table>
@@ -724,7 +724,7 @@
       </p>
       <p>
         <strong>Canonical cart binding.</strong> So that the merchant signature, the
-        agent's <code>serviceRequestHash</code> binding, and the eventual
+        agent's <code>requestHash</code> binding, and the eventual
         <code>PaymentReceipt</code> reconcile to the <em>same bytes</em>, this profile
         defines a normative canonicalization of AP2 <code>CartContents</code>: line
         items sorted by the key <code>(sku, qty, price)</code>, all monetary values as
@@ -733,12 +733,12 @@
         <code>total</code>, <code>cartExpiry</code>, serialized with JCS [[RFC8785]].
         Then:
       </p>
-      <pre>serviceRequestHash = content-digest( JCS( canonicalCart ) )   // "sha-256:&lt;base64url-nopad&gt;"</pre>
+      <pre>requestHash = content-digest( JCS( canonicalCart ) )   // "sha-256:&lt;base64url-nopad&gt;"</pre>
       <p>
         An importer <em class="rfc2119">MUST</em> compute the projection's
-        <code>serviceRequestHash</code> this way; a verifier
+        <code>requestHash</code> this way; a verifier
         <em class="rfc2119">MUST</em> reject a cart-derived quote whose
-        <code>serviceRequestHash</code> does not equal the digest of the canonical
+        <code>requestHash</code> does not equal the digest of the canonical
         form of the embedded cart.
       </p>
     </section>
@@ -761,7 +761,7 @@
         <li><strong>Export (A&rarr;V):</strong> a native
           <code>PurchaseConfirmation</code> projects to an AP2 cart-approval claim
           set (<code>confirmedBy &rarr; iss</code>, <code>payer &rarr; sub</code>,
-          <code>serviceRequestHash &rarr; cart_hash</code>) signed with the
+          <code>requestHash &rarr; cart_hash</code>) signed with the
           principal's own P-256 key, so the exported approval remains verifiable from
           the principal's DID with no dependence on the bridge.</li>
       </ul>

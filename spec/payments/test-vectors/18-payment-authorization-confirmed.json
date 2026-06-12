@@ -8,14 +8,14 @@
   "id": "urn:avp:authz:confirmed:1",
   "type": "PaymentAuthorization",
   "quote": "urn:avp:quote:789",
-  "quoteDigest": "sha-256:X7gDBi0RsYdB6INIx6okkSK5n4kXCwoWJ8zcju2CPwo",
+  "quoteDigest": "sha-256:EuScAr2qixUd_K3KSPlSR0HAlToOR7tuPZODlQZMbFg",
   "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
   "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
   "amount": "0.001",
   "currency": "USD",
   "settlementMethod": "internal-ledger",
   "settlementTarget": "https://wallet.example.com/tool-api-addr",
-  "serviceRequestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
+  "requestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
   "timestamp": "2026-03-25T21:30:02Z",
   "expires": "2026-03-25T21:31:02Z",
   "nonce": "n-39102",
@@ -80,12 +80,12 @@
     "id": "urn:avp:confirm:native:1",
     "type": "PurchaseConfirmation",
     "quote": "urn:avp:quote:789",
-    "quoteDigest": "sha-256:X7gDBi0RsYdB6INIx6okkSK5n4kXCwoWJ8zcju2CPwo",
+    "quoteDigest": "sha-256:EuScAr2qixUd_K3KSPlSR0HAlToOR7tuPZODlQZMbFg",
     "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
     "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
     "amount": "0.001",
     "currency": "USD",
-    "serviceRequestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
+    "requestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
     "confirmedBy": "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv",
     "timestamp": "2026-03-25T21:29:50Z",
     "expires": "2026-03-25T21:35:00Z",
@@ -96,7 +96,7 @@
       "created": "2026-03-25T21:29:50Z",
       "verificationMethod": "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv#zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z2JEbfCbsUkfDu5jfZ7Q1M951WDv6RvoALDRBitBZDmNsFXfaqHTiTie94S8ztpf4gKGFfzqDRyQY9mJguWrDD4fq"
+      "proofValue": "z2YfKW7wAeGrr9CTaDEN637V4q71ECEzrtnrpZ4VHxMCHegquvjiivZ3PuGu7rxEdKQTLnsqmJJDAumJJg7EuHt9A"
     }
   },
   "proof": {
@@ -105,6 +105,6 @@
     "created": "2026-03-25T21:30:02Z",
     "verificationMethod": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU#zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
     "proofPurpose": "assertionMethod",
-    "proofValue": "za3jWJCzG6U2efnGee5zHatQfkinrrGuZ4ispXD7D6LeXomSkESVEsY5e9v2LDgkhJTWQRebou6xFWU5mHLE19ei"
+    "proofValue": "z2fPU7DPuw18CXQsxWTTbQsfiqFSvN2sqbM7MMJABUjqJsNEiCUYAgczbHwjMDYnEBEmy58zXJ67sPMo5rPpMDAsT"
   }
 }

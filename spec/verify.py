@@ -76,7 +76,7 @@ def main() -> int:
     check("quoteDigest matches resolved quote", authz["quoteDigest"] == ac.jcs_digest(quote))
     for term in ("amount", "currency", "settlementMethod", "settlementTarget"):
         check(f"authz.{term} == quote.{term}", authz[term] == quote[term])
-    check("serviceRequestHash byte-equal", authz["serviceRequestHash"] == quote["serviceRequestHash"])
+    check("requestHash byte-equal", authz["requestHash"] == quote["requestHash"])
 
     print("Credential / policy:")
     subj = spendauth["credentialSubject"]
@@ -240,7 +240,7 @@ def main() -> int:
     check("L3 V->A reconstructs PaymentAuthorization economic terms", all(
         imported_authz.get(k) == authz.get(k) for k in
         ("payer", "payee", "amount", "currency", "quote", "quoteDigest",
-         "serviceRequestHash", "settlementMethod", "settlementTarget",
+         "requestHash", "settlementMethod", "settlementTarget",
          "nonce", "wallet", "timestamp", "expires")))
     check("imported authz is a proof-preserving projection (no proof)",
           imported_authz["securing"]["mode"] == "proof-preserving" and "proof" not in imported_authz)
@@ -310,8 +310,8 @@ def main() -> int:
 
     # CartMandate import: payee==merchant, hash binds canonical cart (M4)
     check("cart import payee == merchant issuer", imported_cart["payee"] == cart_foreign["payload"]["iss"])
-    check("cart import serviceRequestHash binds canonical cart",
-          imported_cart["serviceRequestHash"] == interop.cart_service_request_hash(cart_foreign["cart"]))
+    check("cart import requestHash binds canonical cart",
+          imported_cart["requestHash"] == interop.cart_request_hash(cart_foreign["cart"]))
     check("cart import is a proof-preserving projection (no proof)", "proof" not in imported_cart)
     check("cart import embeds the merchant-signed mandate",
           imported_cart["securing"]["embedded"] == cart_foreign["compact"])
@@ -332,8 +332,8 @@ def main() -> int:
     check("confirmed authz carries a PurchaseConfirmation", "purchaseConfirmation" in authz_confirmed)
     pc = authz_confirmed["purchaseConfirmation"]
     check("authz purchaseConfirmation binds same quoteDigest", pc["quoteDigest"] == authz_confirmed["quoteDigest"])
-    check("authz purchaseConfirmation binds same serviceRequestHash",
-          pc["serviceRequestHash"] == authz_confirmed["serviceRequestHash"])
+    check("authz purchaseConfirmation binds same requestHash",
+          pc["requestHash"] == authz_confirmed["requestHash"])
     check("confirmed authz still verifies (agent proof)", ac.verify_ecdsa_jcs_2022(authz_confirmed))
 
     # EXPORT direction (§7): native confirmation -> AP2 approval -> re-import, all P-256
@@ -341,11 +341,11 @@ def main() -> int:
     back = interop.export_purchase_confirmation(native_conf)
     check("export maps confirmedBy -> AP2 iss (principal attests)", back["iss"] == native_conf["confirmedBy"])
     check("export maps payer -> AP2 sub (on behalf of the agent)", back["sub"] == native_conf["payer"])
-    check("export maps serviceRequestHash -> AP2 cart_hash",
-          back["cart_hash"] == native_conf["serviceRequestHash"])
+    check("export maps requestHash -> AP2 cart_hash",
+          back["cart_hash"] == native_conf["requestHash"])
     reimported = exported["reimportedProjection"]
-    check("export round-trip preserves serviceRequestHash",
-          reimported["serviceRequestHash"] == native_conf["serviceRequestHash"])
+    check("export round-trip preserves requestHash",
+          reimported["requestHash"] == native_conf["requestHash"])
     check("export round-trip preserves confirmedBy", reimported["confirmedBy"] == native_conf["confirmedBy"])
     check("re-imported approval verifies (did:key principal resolves locally)",
           interop.verify_purchase_confirmation(reimported))

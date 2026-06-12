@@ -21,7 +21,7 @@
       "required": ["type", "cryptosuite", "created", "verificationMethod", "proofPurpose", "proofValue"],
       "properties": {
         "type": { "const": "DataIntegrityProof" },
-        "cryptosuite": { "const": "eddsa-jcs-2022" },
+        "cryptosuite": { "const": "ecdsa-jcs-2022" },
         "created": { "$ref": "#/$defs/dateTime" },
         "verificationMethod": { "type": "string", "minLength": 1 },
         "proofPurpose": { "const": "assertionMethod" },
@@ -46,7 +46,7 @@
         "currency": { "type": "string" },
         "maxPerTransaction": { "$ref": "#/$defs/decimal" },
         "maxDailyTotal": { "$ref": "#/$defs/decimal" },
-        "allowedServiceTypes": { "$ref": "#/$defs/categoryList" }
+        "allowedCategories": { "$ref": "#/$defs/categoryList" }
       }
     },
     "TrustedIssuer": {
@@ -83,7 +83,7 @@
             "limitTimezone": { "type": "string" },
             "requiresApprovalAbove": { "$ref": "#/$defs/decimal" },
             "allowedPayees": { "$ref": "#/$defs/didList" },
-            "allowedServiceTypes": { "$ref": "#/$defs/categoryList" }
+            "allowedCategories": { "$ref": "#/$defs/categoryList" }
           }
         },
         "proof": { "$ref": "#/$defs/proof" }

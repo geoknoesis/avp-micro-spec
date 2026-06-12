@@ -8,16 +8,16 @@
   "id": "urn:avp:session-ext:e1",
   "type": "UsageSessionExtension",
   "usageSession": "urn:avp:session:001",
-  "sessionDigest": "sha-256:uNAAGEcymA6FMn-ytSzH3TH1ti1fyReXH-CenvPoFQw",
+  "sessionDigest": "sha-256:frG47hnnCV0fQ7M-yBxFz-r9AsewjR9M7Jghk2dUZk0",
   "newMaxAmount": "1.00",
   "newExpires": "2026-03-25T22:30:00Z",
   "timestamp": "2026-03-25T21:59:00Z",
   "proof": {
     "type": "DataIntegrityProof",
-    "cryptosuite": "eddsa-jcs-2022",
+    "cryptosuite": "ecdsa-jcs-2022",
     "created": "2026-03-25T21:59:00Z",
-    "verificationMethod": "did:key:z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi#z6MkenPA2xcD5CGJVmkgejbr4LzBAa1e3GVCQiHFrXDgh5Vi",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z5woRJuv5ZnUfoxqUk1hu4SqDwCp3DkacxYNKdMxZFcyhrLDJAriabccmXBQR5kMWQ6Q2waVEQneQNAtDXbas77Tc"
+    "proofValue": "z66xY7CJbAAqEYaKCriay8JKYoZx6mFj7dPgBusu2S9kfqF5KdRzXnMPEtDZWKt6ogTKMefo9Bd2XPXSEE6kPny54"
   }
 }

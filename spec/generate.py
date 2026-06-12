@@ -103,7 +103,7 @@ def main() -> None:
             {"issuer": DID_ISSUER,
              "issuerScope": {"currency": "USD", "maxPerTransaction": "0.05",
                              "maxDailyTotal": "5.00",
-                             "allowedServiceTypes": ["cat:ChatCompletionApi"]}}
+                             "allowedCategories": ["cat:ChatCompletionApi"]}}
         ],
     })
 
@@ -203,7 +203,7 @@ def main() -> None:
 
     quote = {
         "@context": PAY_CTX, "id": "urn:avp:quote:789", "type": "PaymentQuote",
-        "payer": DID_AGENT, "payee": DID_PAYEE, "serviceRequestHash": srh,
+        "payer": DID_AGENT, "payee": DID_PAYEE, "requestHash": srh,
         "amount": amount, "currency": currency, "settlementMethod": settlement_method,
         "settlementTarget": settlement_target, "expires": "2026-03-25T21:35:00Z",
     }
@@ -217,7 +217,7 @@ def main() -> None:
         "quote": "urn:avp:quote:789", "quoteDigest": ac.jcs_digest(quote),
         "payer": DID_AGENT, "payee": DID_PAYEE, "amount": amount, "currency": currency,
         "settlementMethod": settlement_method, "settlementTarget": settlement_target,
-        "serviceRequestHash": srh, "timestamp": "2026-03-25T21:30:02Z",
+        "requestHash": srh, "timestamp": "2026-03-25T21:30:02Z",
         "expires": "2026-03-25T21:31:02Z", "nonce": "n-39102",
         "wallet": DID_WALLET, "vp": vp,
     }
@@ -239,7 +239,7 @@ def main() -> None:
         "quote": "urn:avp:quote:789", "execution": "urn:avp:exec:555",
         "payer": DID_AGENT, "payee": DID_PAYEE, "amount": amount, "currency": currency,
         "status": "fulfilled",
-        "serviceOutputHash": ac.content_digest(ac.jcs(service_output)),
+        "outputHash": ac.content_digest(ac.jcs(service_output)),
         "fulfilledAt": "2026-03-25T21:30:05Z",
     }
     receipt = ac.sign_ecdsa_jcs_2022(receipt, payee, "2026-03-25T21:30:05Z")
@@ -529,7 +529,7 @@ def main() -> None:
             "total": {"amount": "112.40", "currency": "USD"},
             "cartExpiry": "2026-06-12T12:00:00Z"}
     cart_claims = {"vct": interop.CART_VCT, "iss": DID_AP2_MERCHANT, "sub": DID_AGENT,
-                   "cart": cart, "cart_hash": interop.cart_service_request_hash(cart),
+                   "cart": cart, "cart_hash": interop.cart_request_hash(cart),
                    "exp": interop.iso_to_numericdate("2026-06-12T12:00:00Z"),
                    "jti": "urn:ap2:cart:001"}
     cart_header = {"alg": "ES256", "typ": "dc+sd-jwt", "kid": DID_AP2_MERCHANT + "#key-1"}
@@ -543,7 +543,7 @@ def main() -> None:
     write(INTEROP, "14-imported-cart-quote.json", imported_cart)
 
     # 15: human-present approval imported -> EmbeddedCartUserConfirmation projection
-    crh = interop.cart_service_request_hash(cart)
+    crh = interop.cart_request_hash(cart)
     user_auth_claims = {"iss": DID_AP2_USER, "sub": DID_AGENT, "cart_hash": crh,
                         "iat": interop.iso_to_numericdate("2026-06-12T11:00:00Z"),
                         "exp": interop.iso_to_numericdate("2026-06-12T11:05:00Z")}
@@ -553,7 +553,7 @@ def main() -> None:
     confirmation = interop.import_cart_user_confirmation(
         user_auth_compact, quote_digest="sha-256:imported", agent_did=DID_AGENT,
         payee=DID_AP2_MERCHANT, amount="112.40", currency="USD",
-        service_request_hash=crh, confirmed_by=DID_AP2_USER,
+        request_hash=crh, confirmed_by=DID_AP2_USER,
         quote="urn:avp:quote:imported:urn:ap2:cart:001", mode="proof-preserving")
     write(INTEROP, "15-human-present-confirmation.json", confirmation)
 
@@ -575,7 +575,7 @@ def main() -> None:
         "@context": PAY_CTX, "id": "urn:avp:confirm:native:1", "type": "PurchaseConfirmation",
         "quote": "urn:avp:quote:789", "quoteDigest": ac.jcs_digest(quote),
         "payer": DID_AGENT, "payee": DID_PAYEE, "amount": amount, "currency": currency,
-        "serviceRequestHash": srh, "confirmedBy": DID_ISSUER,
+        "requestHash": srh, "confirmedBy": DID_ISSUER,
         "timestamp": "2026-03-25T21:29:50Z", "expires": "2026-03-25T21:35:00Z", "nonce": "conf-1",
     }
     native_conf = ac.sign_ecdsa_jcs_2022(native_conf, issuer, "2026-03-25T21:29:50Z")
@@ -598,7 +598,7 @@ def main() -> None:
     reimported = interop.import_cart_user_confirmation(
         exported_compact, quote_digest=native_conf["quoteDigest"], agent_did=native_conf["payer"],
         payee=native_conf["payee"], amount=native_conf["amount"], currency=native_conf["currency"],
-        service_request_hash=native_conf["serviceRequestHash"],
+        request_hash=native_conf["requestHash"],
         confirmed_by=native_conf["confirmedBy"], quote=native_conf["quote"], mode="proof-preserving")
     write(INTEROP, "17-exported-cart-user-approval.json", {
         "_note": "EXPORT (A->V): a native PurchaseConfirmation projected to an AP2 human-present "

@@ -2,12 +2,12 @@
   "_note": "Example wallet trust configuration; not a signed message.",
   "trustedIssuers": [
     {
-      "issuer": "did:key:z6MkjN138S5tcGrgnqKd7uncXbznAHFod2AbR1YK1nPBaf79",
+      "issuer": "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv",
       "issuerScope": {
         "currency": "USD",
         "maxPerTransaction": "0.05",
         "maxDailyTotal": "5.00",
-        "allowedServiceTypes": [
+        "allowedCategories": [
           "cat:ChatCompletionApi"
         ]
       }

@@ -180,7 +180,7 @@
 
     "PaymentQuote": {
       "type": "object",
-      "required": ["@context", "id", "type", "payer", "payee", "serviceRequestHash", "amount", "currency", "settlementMethod", "settlementTarget", "expires", "proof"],
+      "required": ["@context", "id", "type", "payer", "payee", "requestHash", "amount", "currency", "settlementMethod", "settlementTarget", "expires", "proof"],
       "properties": {
         "@context": { "$ref": "#/$defs/signedContext" },
         "id": { "$ref": "#/$defs/idValue" },
@@ -192,7 +192,7 @@
         },
         "payer": { "$ref": "#/$defs/did" },
         "payee": { "$ref": "#/$defs/did" },
-        "serviceRequestHash": { "$ref": "#/$defs/contentDigest" },
+        "requestHash": { "$ref": "#/$defs/contentDigest" },
         "amount": { "$ref": "#/$defs/positiveDecimal" },
         "currency": { "type": "string" },
         "settlementMethod": { "type": "string" },
@@ -204,7 +204,7 @@
 
     "PaymentAuthorization": {
       "type": "object",
-      "required": ["@context", "id", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "settlementMethod", "settlementTarget", "serviceRequestHash", "timestamp", "expires", "nonce", "vp", "proof"],
+      "required": ["@context", "id", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "settlementMethod", "settlementTarget", "requestHash", "timestamp", "expires", "nonce", "vp", "proof"],
       "properties": {
         "@context": { "$ref": "#/$defs/signedContext" },
         "id": { "$ref": "#/$defs/idValue" },
@@ -222,7 +222,7 @@
         "currency": { "type": "string" },
         "settlementMethod": { "type": "string" },
         "settlementTarget": { "type": "string", "minLength": 1 },
-        "serviceRequestHash": { "$ref": "#/$defs/contentDigest" },
+        "requestHash": { "$ref": "#/$defs/contentDigest" },
         "timestamp": { "$ref": "#/$defs/dateTime" },
         "expires": { "$ref": "#/$defs/dateTime" },
         "nonce": { "type": "string", "minLength": 1 },
@@ -292,7 +292,7 @@
         "amount": { "$ref": "#/$defs/positiveDecimal" },
         "currency": { "type": "string" },
         "status": { "enum": ["fulfilled", "partial", "failed", "reversed"] },
-        "serviceOutputHash": { "$ref": "#/$defs/contentDigest" },
+        "outputHash": { "$ref": "#/$defs/contentDigest" },
         "totalMeterReading": { "type": "string" },
         "fulfilledAt": { "$ref": "#/$defs/dateTime" },
         "proof": { "$ref": "#/$defs/proof" }
@@ -301,7 +301,7 @@
 
     "PurchaseConfirmation": {
       "type": "object",
-      "required": ["@context", "id", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "serviceRequestHash", "confirmedBy", "timestamp", "expires", "nonce", "proof"],
+      "required": ["@context", "id", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "requestHash", "confirmedBy", "timestamp", "expires", "nonce", "proof"],
       "properties": {
         "@context": { "$ref": "#/$defs/signedContext" },
         "id": { "$ref": "#/$defs/idValue" },
@@ -317,7 +317,7 @@
         "payee": { "$ref": "#/$defs/did" },
         "amount": { "$ref": "#/$defs/positiveDecimal" },
         "currency": { "type": "string" },
-        "serviceRequestHash": { "$ref": "#/$defs/contentDigest" },
+        "requestHash": { "$ref": "#/$defs/contentDigest" },
         "confirmedBy": { "$ref": "#/$defs/did" },
         "authorization": { "$ref": "#/$defs/idValue" },
         "timestamp": { "$ref": "#/$defs/dateTime" },

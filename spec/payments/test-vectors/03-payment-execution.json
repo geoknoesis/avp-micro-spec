@@ -15,10 +15,10 @@
   "timestamp": "2026-03-25T21:30:03Z",
   "proof": {
     "type": "DataIntegrityProof",
-    "cryptosuite": "eddsa-jcs-2022",
+    "cryptosuite": "ecdsa-jcs-2022",
     "created": "2026-03-25T21:30:03Z",
-    "verificationMethod": "did:key:z6Mkjfc8nQkYueatDJivrXYwTJJXW6QiFn7MyKPQ3q45XRJS#z6Mkjfc8nQkYueatDJivrXYwTJJXW6QiFn7MyKPQ3q45XRJS",
+    "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z54XWNnpWUAEKcLEoTwrLGJSeSXjtbKNe58Z3m7BK4o8qEJMiGCPc1HV4FmHQDTkAS4ZXNZpKtKMyzqK4CwrYwCRH"
+    "proofValue": "z3iejaVcejnHCDyA3sxNSbhyivtGFZRub1fXJyAR34St4hQmvHFPumU2XN3FWRBPDBduY15eLPYGkEWFh8Mh1iDoE"
   }
 }

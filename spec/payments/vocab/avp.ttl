@@ -113,8 +113,8 @@ avp:settlementTarget a owl:DatatypeProperty ; rdfs:label "settlement target"@en 
 avp:settlementMode a owl:DatatypeProperty ; rdfs:label "settlement mode"@en ; rdfs:range xsd:string .
 avp:settlementRef a owl:DatatypeProperty ; rdfs:label "settlement reference"@en ; rdfs:range xsd:string .
 avp:status a owl:DatatypeProperty ; rdfs:label "status"@en ; rdfs:range xsd:string .
-avp:serviceRequestHash a owl:DatatypeProperty ; rdfs:label "service request hash"@en ; rdfs:range xsd:string .
-avp:serviceOutputHash a owl:DatatypeProperty ; rdfs:label "service output hash"@en ; rdfs:range xsd:string .
+avp:requestHash a owl:DatatypeProperty ; rdfs:label "request hash"@en ; rdfs:range xsd:string .
+avp:outputHash a owl:DatatypeProperty ; rdfs:label "output hash"@en ; rdfs:range xsd:string .
 avp:quoteDigest a owl:DatatypeProperty ; rdfs:label "quote digest"@en ; rdfs:range xsd:string .
 avp:sessionDigest a owl:DatatypeProperty ; rdfs:label "session digest"@en ; rdfs:range xsd:string .
 avp:timestamp a owl:DatatypeProperty ; rdfs:label "timestamp"@en ; rdfs:range xsd:dateTime .
