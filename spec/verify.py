@@ -46,14 +46,14 @@ def main() -> int:
     execution = load(PAY, "03-payment-execution.json")
     receipt = load(PAY, "04-payment-receipt.json")
 
-    print("Proof verification (eddsa-jcs-2022):")
+    print("Proof verification (ecdsa-jcs-2022):")
     for label, obj in [("spending-authorization credential", spendauth),
                        ("merchant credential", merchant),
                        ("payment-capability credential", capability),
                        ("offer", offer),
                        ("quote", quote), ("authorization", authz),
                        ("execution", execution), ("receipt", receipt)]:
-        check(f"{label} proof", ac.verify_eddsa_jcs_2022(obj))
+        check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
 
     print("Discovery & revocation coverage:")
     check("offer signed by payee", controller(offer) == payee)
@@ -106,7 +106,7 @@ def main() -> int:
     for label, obj in [("session", session), ("session-budget", session_budget),
                        ("accrual", accrual), ("session execution", session_exec),
                        ("session receipt", session_receipt)]:
-        check(f"{label} proof", ac.verify_eddsa_jcs_2022(obj))
+        check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
     check("session signed by payee", controller(session) == payee)
     check("session-budget signed by payer", controller(session_budget) == agent)
     check("accrual signed by payee", controller(accrual) == payee)
@@ -142,8 +142,8 @@ def main() -> int:
     print("Session extension & re-authorization:")
     extension = load(PAY, "10-usage-session-extension.json")
     session_budget2 = load(PAY, "11-session-budget-authorization-2.json")
-    check("extension proof", ac.verify_eddsa_jcs_2022(extension))
-    check("re-auth budget proof", ac.verify_eddsa_jcs_2022(session_budget2))
+    check("extension proof", ac.verify_ecdsa_jcs_2022(extension))
+    check("re-auth budget proof", ac.verify_ecdsa_jcs_2022(session_budget2))
     check("extension signed by payee", controller(extension) == payee)
     check("re-auth budget signed by payer", controller(session_budget2) == agent)
     check("extension references session", extension["usageSession"] == session["id"])
@@ -177,7 +177,7 @@ def main() -> int:
     bridge_pub = sdjwt.p256_public_from_jwk(keys["bridgeExporter"]["jwk"])
     vi_pub = sdjwt.p256_public_from_jwk(keys["viIssuer"]["jwk"])
 
-    # A->V export: envelope ES256 + embedded Ed25519 authority + holder binding
+    # A->V export: envelope ES256 + embedded ecdsa-jcs-2022 (P-256) authority + holder binding
     check("export verifies (envelope + embedded authority)",
           interop.verify_exported(export["compact"], bridge_pub))
     mapped = interop.avp_to_claims(spendauth)
@@ -227,7 +227,7 @@ def main() -> int:
     check("co-issued mandate verifies (native proof + parallel ES256)",
           interop.verify_imported(coissued, resolver))
     check("co-issued carries a native Data Integrity proof",
-          "proof" in coissued and ac.verify_eddsa_jcs_2022(coissued))
+          "proof" in coissued and ac.verify_ecdsa_jcs_2022(coissued))
     check("co-issued is also a valid bare DSA credential (issuer-signed)",
           controller(coissued) == issuer)
 
@@ -264,7 +264,7 @@ def main() -> int:
     rogue = json.loads(json.dumps(attested))
     rogue.pop("proof", None)
     rogue["issuer"] = rogue["attestingBridge"] = ac.did_key(rogue_key.public_key())
-    rogue = ac.sign_eddsa_jcs_2022(rogue, rogue_key, "2026-04-01T00:02:00Z")
+    rogue = ac.sign_ecdsa_jcs_2022(rogue, rogue_key, "2026-04-01T00:02:00Z")
     check("rogue attested object verifies cryptographically", interop.verify_imported(rogue, resolver))
     check("...but is rejected by policy (bridge not trusted)",
           rogue["attestingBridge"] not in trusted_bridges)
@@ -281,10 +281,68 @@ def main() -> int:
           "currency" not in partial["credentialSubject"])
     check("partial-disclosure mandate signature still verifies", interop.verify_imported(partial, resolver))
 
+    print("AP2 mandate-model bridge:")
+    intent_foreign = load(INTEROP, "11-foreign-intent-mandate.json")
+    imported_intent = load(INTEROP, "12-imported-intent-mandate.json")
+    cart_foreign = load(INTEROP, "13-foreign-cart-mandate.json")
+    imported_cart = load(INTEROP, "14-imported-cart-quote.json")
+    confirmation = load(INTEROP, "15-human-present-confirmation.json")
+    autonomous = load(INTEROP, "16-autonomous-no-confirmation.json")
+    native_conf = load(PAY, "14b-purchase-confirmation.json")
+    authz_confirmed = load(PAY, "18-payment-authorization-confirmed.json")
+
+    # IntentMandate import: policy envelope mapped, item-level intent carried + advised (M2)
+    check("intent import keeps maxPerTransaction",
+          imported_intent["credentialSubject"]["maxPerTransaction"] == "120.00")
+    check("intent import carries non-enforceable item intent",
+          imported_intent.get("intentDescription") is not None)
+    check("intent import advises M2 granularity loss",
+          any("ap2-intent-granularity" in a for a in imported_intent.get("importAdvisory", [])))
+    check("intent import flags requiresPurchaseConfirmation",
+          imported_intent.get("requiresPurchaseConfirmation") is True)
+    check("intent import is a proof-preserving projection (no proof)",
+          "proof" not in imported_intent)
+
+    # CartMandate import: payee==merchant, hash binds canonical cart (M4)
+    check("cart import payee == merchant issuer", imported_cart["payee"] == cart_foreign["payload"]["iss"])
+    check("cart import serviceRequestHash binds canonical cart",
+          imported_cart["serviceRequestHash"] == interop.cart_service_request_hash(cart_foreign["cart"]))
+    check("cart import is a proof-preserving projection (no proof)", "proof" not in imported_cart)
+    check("cart import embeds the merchant-signed mandate",
+          imported_cart["embeddedCartMandate"] == cart_foreign["compact"])
+
+    # PurchaseConfirmation: signer==confirmedBy rule (§11.3), forged-by-agent rejected
+    check("native PurchaseConfirmation verifies", interop.verify_purchase_confirmation(native_conf))
+    check("native confirmation signed by confirmedBy (the principal, not the agent)",
+          controller(native_conf) == native_conf["confirmedBy"] != native_conf["payer"])
+    check("imported human-present confirmation verifies via did:web",
+          interop.verify_purchase_confirmation(confirmation, resolver))
+    forged = json.loads(json.dumps(native_conf))
+    forged["confirmedBy"] = forged["payer"]  # claim the agent confirmed
+    check("confirmation with confirmedBy==payer is rejected", not interop.verify_purchase_confirmation(forged))
+
+    # human-present binding equality with the authorization it rides on
+    check("confirmed authz carries a PurchaseConfirmation", "purchaseConfirmation" in authz_confirmed)
+    pc = authz_confirmed["purchaseConfirmation"]
+    check("authz purchaseConfirmation binds same quoteDigest", pc["quoteDigest"] == authz_confirmed["quoteDigest"])
+    check("authz purchaseConfirmation binds same serviceRequestHash",
+          pc["serviceRequestHash"] == authz_confirmed["serviceRequestHash"])
+    check("confirmed authz still verifies (agent proof)", ac.verify_ecdsa_jcs_2022(authz_confirmed))
+
+    # autonomous import: NO confirmation, explicitly advised (§10)
+    check("autonomous import has no PurchaseConfirmation",
+          "EmbeddedCartUserConfirmation" not in autonomous.get("type", []))
+    check("autonomous import advises absence of fresh human approval",
+          any("autonomous" in a for a in autonomous.get("importAdvisory", [])))
+
+    # no-widening intersection (§11.2)
+    check("intersect_limits keeps the most restrictive",
+          interop.intersect_limits({"per_txn": "120.00"}, {"per_txn": "100.00"})["per_txn"] == "100.00")
+
     print("Negative control (tamper detection):")
     tampered = json.loads(json.dumps(authz))
     tampered["amount"] = "0.05"
-    check("tampered amount breaks the payer signature", not ac.verify_eddsa_jcs_2022(tampered))
+    check("tampered amount breaks the payer signature", not ac.verify_ecdsa_jcs_2022(tampered))
 
     print()
     if _failed:
