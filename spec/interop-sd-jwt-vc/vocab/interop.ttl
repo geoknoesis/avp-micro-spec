@@ -21,6 +21,7 @@
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 @prefix dct:  <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
 
 <https://w3id.org/avp-micro/interop/sd-jwt-vc/v1> a owl:Ontology ;
   dct:title "AVP-Micro -- SD-JWT-VC interop profile vocabulary"@en ;
@@ -32,8 +33,9 @@
 #################################################################
 
 iop:SecuringDescriptor a owl:Class ;
+  rdfs:subClassOf prov:Derivation ;
   rdfs:label "Securing descriptor"@en ;
-  rdfs:comment "Describes HOW a bridged object's authority is secured: the mode (proof-preserving / co-issued / attested), the embedded foreign carrier, provenance, and any import advisories. Attached via iop:securing; never part of the object's semantic type. An object without iop:securing is native."@en .
+  rdfs:comment "Describes HOW a bridged object's authority is secured: the mode (proof-preserving / co-issued / attested), the embedded foreign carrier, provenance, and any import advisories. Attached via iop:securing; never part of the object's semantic type. An object without iop:securing is native. This is a PROVENANCE record (artifact transformation), strictly distinct from the SEMANTIC authorization-chain relations of dsa: -- a bridged object prov:wasDerivedFrom its embedded source; it is never dsa:exercises/conformsTo it by virtue of the bridge."@en .
 
 iop:securing a owl:ObjectProperty ;
   rdfs:range iop:SecuringDescriptor ;
@@ -55,8 +57,11 @@ iop:carrier a owl:DatatypeProperty ;
 iop:embedded a owl:DatatypeProperty ;
   rdfs:domain iop:SecuringDescriptor ;
   rdfs:range xsd:string ;
+  rdfs:subPropertyOf prov:value ;
   rdfs:label "embedded carrier"@en ;
-  rdfs:comment "The byte-faithful compact serialization of the original foreign signed object. In proof-preserving mode this carries the authenticated authority."@en .
+  rdfs:comment "The byte-faithful compact serialization of the original foreign signed object -- the provenance source the bridged object prov:wasDerivedFrom. In proof-preserving mode this carries the authenticated authority."@en .
+
+iop:attestingBridge rdfs:subPropertyOf prov:wasAttributedTo .
 
 iop:sourceVct a owl:DatatypeProperty ;
   rdfs:domain iop:SecuringDescriptor ;
@@ -85,8 +90,15 @@ iop:profileVersion a owl:DatatypeProperty ;
 # Carried AP2 intent claims (semantic, top-level; NOT machine-enforced)
 #################################################################
 
-iop:intentDescription a owl:DatatypeProperty ; rdfs:label "intent description"@en ;
-  rdfs:comment "Natural-language purchase intent carried from an AP2 IntentMandate; NOT machine-enforced."@en .
+iop:NaturalLanguageIntent a owl:Class ;
+  rdfs:label "Natural-language intent"@en ;
+  rdfs:comment "A user's descriptive desired outcome (e.g. 'a red size-10 shoe under $120'). DESCRIPTIVE and NON-ENFORCED -- distinct from the normative SpendingAuthorization extracted from the signed AP2 IntentMandate. The word 'intent' covers both; this names the descriptive half. AVP-Micro carries it and advises, but never enforces it as spending policy."@en .
+
+iop:intentDescription a owl:DatatypeProperty ;
+  rdfs:range xsd:string ;
+  rdfs:seeAlso iop:NaturalLanguageIntent ;
+  rdfs:label "intent description"@en ;
+  rdfs:comment "Natural-language purchase intent carried from an AP2 IntentMandate; expresses a NaturalLanguageIntent and is NOT machine-enforced (descriptive, distinct from the normative SpendingAuthorization)."@en .
 iop:itemConstraints a owl:DatatypeProperty ; rdfs:label "item constraints"@en ;
   rdfs:comment "Item/SKU-level constraints carried from an AP2 IntentMandate; NOT machine-enforced."@en .
 iop:refundabilityRequired a owl:DatatypeProperty ; rdfs:label "refundability required"@en .

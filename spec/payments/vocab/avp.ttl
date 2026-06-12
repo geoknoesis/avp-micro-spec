@@ -8,6 +8,7 @@
 #
 # Namespace: https://w3id.org/avp-micro/v1#  (prefix avp:)
 @prefix avp:  <https://w3id.org/avp-micro/v1#> .
+@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
@@ -23,46 +24,55 @@
 #################################################################
 # Classes
 #################################################################
+#
+# Authorization axis (design 2026-06-12-authorization-capacity-instance-axis):
+# the payer/principal-signed authorizations are consumable dsa:AuthorizationInstances;
+# the payee-signed quote/offer/receipt are COMMITMENTS and the wallet-signed execution
+# is a settlement FACT -- neither is an authorization, so neither is placed in the
+# dsa:Authorization hierarchy.
 
 avp:PaymentOffer a owl:Class ;
   rdfs:label "Payment offer"@en ;
-  rdfs:comment "A payee advertisement of commercial terms and a quote endpoint."@en .
+  rdfs:comment "A payee advertisement of commercial terms and a quote endpoint. A commitment (counterparty-signed), not an authorization."@en .
 
 avp:PaymentQuote a owl:Class ;
   rdfs:label "Payment quote"@en ;
-  rdfs:comment "A time-bound, payee-signed commercial offer for a specific request."@en .
+  rdfs:comment "A time-bound, payee-signed commercial offer for a specific request. A commitment (counterparty-signed), not an authorization; an AuthorizationInstance binds to it via dsa:mustMatch."@en .
 
 avp:PaymentAuthorization a owl:Class ;
+  rdfs:subClassOf dsa:AuthorizationInstance ;
   rdfs:label "Payment authorization"@en ;
-  rdfs:comment "A payer-signed commitment that restates the economic terms and binds them to a quote and request."@en .
+  rdfs:comment "A payer-signed commitment that restates the economic terms and binds them to a quote and request. A consumable AuthorizationInstance: it exercises the SpendingAuthorizationCredential it embeds and mustMatch the quote it accepts."@en .
 
 avp:PaymentExecution a owl:Class ;
   rdfs:label "Payment execution"@en ;
-  rdfs:comment "A wallet-signed record of a settlement attempt."@en .
+  rdfs:comment "A wallet-signed record of a settlement attempt. A settlement fact, not an authorization."@en .
 
 avp:PaymentReceipt a owl:Class ;
   rdfs:label "Payment receipt"@en ;
-  rdfs:comment "A payee-signed acknowledgement binding delivery to the agreed terms."@en .
+  rdfs:comment "A payee-signed acknowledgement binding delivery to the agreed terms. A commitment (counterparty-signed), not an authorization."@en .
 
 avp:UsageSession a owl:Class ;
   rdfs:label "Usage session"@en ;
-  rdfs:comment "A budgeted metering context for streaming/session payments."@en .
+  rdfs:comment "A budgeted metering context for streaming/session payments. A payee-signed commitment, not an authorization."@en .
 
 avp:UsageAccrual a owl:Class ;
   rdfs:label "Usage accrual"@en ;
-  rdfs:comment "A payee-signed incremental or cumulative meter report within a session."@en .
+  rdfs:comment "A payee-signed incremental or cumulative meter report within a session. A settlement fact, not an authorization."@en .
 
 avp:SessionBudgetAuthorization a owl:Class ;
+  rdfs:subClassOf dsa:AuthorizationInstance ;
   rdfs:label "Session budget authorization"@en ;
-  rdfs:comment "A payer-signed commitment to honor charges up to a session budget."@en .
+  rdfs:comment "A payer-signed commitment to honor charges up to a session budget. A consumable AuthorizationInstance bounding streaming settlement."@en .
 
 avp:UsageSessionExtension a owl:Class ;
   rdfs:label "Usage session extension"@en ;
-  rdfs:comment "A payee-signed object that raises the cap and/or extends the expiry of an existing session."@en .
+  rdfs:comment "A payee-signed object that raises the cap and/or extends the expiry of an existing session. A commitment, not an authorization."@en .
 
 avp:PurchaseConfirmation a owl:Class ;
+  rdfs:subClassOf dsa:AuthorizationInstance ;
   rdfs:label "Purchase confirmation"@en ;
-  rdfs:comment "An OPTIONAL principal-signed approval of a specific quoted cart, signed by the human/principal (confirmedBy) rather than the agent. The native home for AP2 human-present cart approval."@en .
+  rdfs:comment "An OPTIONAL principal-signed approval of a specific quoted cart, signed by the human/principal (confirmedBy) rather than the agent. A consumable AuthorizationInstance and the native home for AP2 human-present cart approval."@en .
 
 #################################################################
 # Object properties (node references / DIDs / IRIs)

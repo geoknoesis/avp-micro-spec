@@ -61,6 +61,12 @@
           status: "REC",
           publisher: "W3C",
         },
+        "VC-DI-ECDSA": {
+          title: "Verifiable Credential Data Integrity ECDSA Cryptosuites v1.0",
+          href: "https://www.w3.org/TR/vc-di-ecdsa/",
+          status: "REC",
+          publisher: "W3C",
+        },
         "VC-DI-EDDSA": {
           title: "Verifiable Credential Data Integrity EdDSA Cryptosuites v1.0",
           href: "https://www.w3.org/TR/vc-di-eddsa/",
@@ -219,7 +225,7 @@
     <p>
       Signed commitments are secured with cryptographic proofs. The baseline
       mandatory-to-implement mechanism is the W3C Data Integrity
-      <code>eddsa-jcs-2022</code> cryptosuite with Ed25519 keys exposed through
+      <code>ecdsa-jcs-2022</code> cryptosuite with P-256 keys exposed through
       <code>did:key</code> for interoperability testing; deployments can use
       additional DID methods and cryptosuites when all relying parties support
       them. See the <a href="#fig-arch">architecture diagram</a> for the role relationships
@@ -626,7 +632,7 @@
         <code>"@protected": true</code> and deliberately defines <em>no</em>
         <code>@vocab</code> fallback. Terms that are not defined by an included
         context are dropped during JSON-LD expansion rather than coerced to an
-        ad-hoc IRI. Because the mandatory <code>eddsa-jcs-2022</code> proof signs
+        ad-hoc IRI. Because the mandatory <code>ecdsa-jcs-2022</code> proof signs
         the raw JSON document using JCS, such members can still be part of the
         signed bytes; processors nevertheless <em class="rfc2119">MUST NOT</em>
         make authorization decisions from undefined terms. Extensions therefore
@@ -689,6 +695,49 @@
       an extension specification.
     </p>
 
+    <section id="authorization-model" class="informative">
+      <h3>Authorization model: capacity vs instance</h3>
+      <p>
+        An <dfn>authorization</dfn> is the semantic concept of granted permission.
+        It comes in exactly two kinds, distinguished by whether the artifact may
+        legitimately be presented more than once:
+      </p>
+      <ul>
+        <li>An <dfn>authorization capacity</dfn> (<code>dsa:AuthorizationCapacity</code>)
+          is <em>standing</em> authority — who may authorize and within what bounds.
+          It is re-presentable, revocable, and delegable; revocation and delegation
+          are properties of capacity. A <a>Spending Authorization Credential</a> is a
+          capacity.</li>
+        <li>An <dfn>authorization instance</dfn> (<code>dsa:AuthorizationInstance</code>)
+          is a single <em>consumable</em> act — what was authorized, here and now. It
+          is nonce-bound, single-use, merchant-bound, and liability-bearing; replay
+          protection, liability, and audit attach to instances. In
+          [[AVP-MICRO-PAYMENTS]] a <code>PaymentAuthorization</code>,
+          <code>PurchaseConfirmation</code>, and <code>SessionBudgetAuthorization</code>
+          are instances.</li>
+      </ul>
+      <p>
+        A payee-signed quote, offer, or receipt is a <em>commitment</em>, and a
+        wallet-signed execution is a settlement <em>fact</em>; neither is an
+        authorization, and neither is a <code>dsa:Authorization</code>.
+      </p>
+      <p>
+        An instance <code>dsa:exercises</code> the capacity it acts under and
+        <em class="rfc2119">MUST</em> <code>dsa:conformsTo</code> its bounds; a
+        verifier <em class="rfc2119">MUST</em> reject an instance whose terms exceed
+        the capacity it exercises. An instance also <code>dsa:mustMatch</code> the
+        commitment it references, realized by digest binding (<a
+        href="../payments/#purchase-confirmation">quoteDigest</a>,
+        <code>serviceRequestHash</code>). These are <strong>semantic</strong>
+        authorization relations; they are <em>distinct from</em> provenance relations
+        (<code>prov:wasDerivedFrom</code>), which describe artifact transformation and
+        belong to the interop/securing layer — the two families
+        <em class="rfc2119">MUST NOT</em> be conflated. A "mandate" is the role an
+        authorization artifact plays when used as binding evidence; it is carried by a
+        credential, and is not itself one.
+      </p>
+    </section>
+
     <section id="did-requirements">
       <h3>DID documents and service endpoints</h3>
 
@@ -697,7 +746,8 @@
         payee, or wallet endpoint <em class="rfc2119">MUST</em> be identified
         with a conforming DID as defined in [[[did-core]]]. For interoperability
         testing, conforming software <em class="rfc2119">MUST</em> support the
-        <code>did:key</code> method [[DID-KEY]] with Ed25519 keys as the
+        <code>did:key</code> method [[DID-KEY]] with P-256
+        (<code>secp256r1</code>) keys as the
         mandatory-to-implement interoperability method and
         <em class="rfc2119">SHOULD</em> support <code>did:web</code>. A deployment
         <em class="rfc2119">MAY</em> require additional DID methods by profile.
@@ -708,7 +758,8 @@
         at least one verification method suitable for proof verification, which
         <em class="rfc2119">MUST</em> be of the
         <code>Multikey</code> verification method type [[VC-DATA-INTEGRITY]]
-        (an Ed25519 key encoded as <code>publicKeyMultibase</code>). A DID
+        (a P-256 key encoded as <code>publicKeyMultibase</code>, multicodec
+        <code>p256-pub</code>). A DID
         document <em class="rfc2119">MAY</em> advertise HTTP or other service
         endpoints for quotes, wallet APIs, credential status, or receipts using
         <code>service</code> entries. Specific <code>serviceEndpoint</code>
@@ -733,32 +784,51 @@
           <a data-cite="vc-data-model-2.0#securing-mechanisms">Data Integrity</a>
           proofs [[VC-DATA-INTEGRITY]] of <code>type</code>
           <code>DataIntegrityProof</code> with cryptosuite
-          <code>eddsa-jcs-2022</code> [[VC-DI-EDDSA]] as the
+          <code>ecdsa-jcs-2022</code> [[VC-DI-ECDSA]] over the P-256
+          (<code>secp256r1</code>) curve as the
           <strong>mandatory-to-implement</strong> object proof;
         </li>
         <li>
           <em class="rfc2119">MAY</em> additionally support
-          <code>eddsa-rdfc-2022</code> [[VC-DI-EDDSA]] or JOSE-based proofs
-          (<code>JsonWebSignature2020</code> / detached JWS [[RFC7515]]).
+          <code>ecdsa-rdfc-2019</code> [[VC-DI-ECDSA]]; the EdDSA cryptosuites
+          <code>eddsa-jcs-2022</code> / <code>eddsa-rdfc-2022</code>
+          [[VC-DI-EDDSA]] for pure-W3C deployments where every relying party
+          supports them; or JOSE-based proofs (<code>JsonWebSignature2020</code> /
+          detached JWS [[RFC7515]]).
         </li>
       </ul>
 
       <p>
-        The <code>eddsa-jcs-2022</code> cryptosuite is mandated as the baseline
-        because it relies on JSON Canonicalization Scheme [[RFC8785]] rather than
-        RDF dataset canonicalization, which makes deterministic signing and
-        verification straightforward for the flat objects defined here. A
-        conforming verifier <em class="rfc2119">MUST</em> reject an object whose
-        only proof uses a cryptosuite it does not recognize.
+        The <code>ecdsa-jcs-2022</code> cryptosuite over P-256 is mandated as the
+        baseline for two reasons. First, like the EdDSA JCS suite it relies on the
+        JSON Canonicalization Scheme [[RFC8785]] rather than RDF dataset
+        canonicalization, which keeps signing and verification straightforward for
+        the flat objects defined here. Second, P-256 is the curve that hardware key
+        custody and the surrounding agent-payment ecosystem already speak: secure
+        enclaves, TPMs, and FIDO/WebAuthn authenticators natively hold P-256 keys
+        (Ed25519 is widely unavailable in that hardware), and the JOSE
+        <code>ES256</code> credentials of Mastercard/Google Verifiable Intent and
+        Google AP2 (see the <a href="../interop-sd-jwt-vc/">interop profile</a>)
+        use the same curve — so a single key can both produce the Data Integrity
+        proof here and a co-issued <code>ES256</code> form there.
+      </p>
+      <p>
+        To retain the misuse resistance that EdDSA provides for free, a conforming
+        producer <em class="rfc2119">MUST</em> derive ECDSA nonces deterministically
+        per [[RFC6979]] and emit signatures in canonical low-<code>s</code> form
+        (IEEE&nbsp;P1363 raw <code>R</code>/<code>S</code>); a verifier
+        <em class="rfc2119">MUST</em> reject the malleable high-<code>s</code>
+        variant. A conforming verifier <em class="rfc2119">MUST</em> also reject an
+        object whose only proof uses a cryptosuite it does not recognize.
       </p>
 
       <aside class="note">
         <p>
           <strong>A JSON-LD or RDF toolchain is not required to produce or verify
-          the mandatory proof.</strong> Because <code>eddsa-jcs-2022</code>
+          the mandatory proof.</strong> Because <code>ecdsa-jcs-2022</code>
           canonicalizes with [[RFC8785]] (JCS) over the JSON document itself —
           not over an RDF dataset — a conforming producer or verifier needs only a
-          JCS canonicalizer and an Ed25519 implementation, both of which are
+          JCS canonicalizer and a P-256 ECDSA implementation, both of which are
           widely available. The accompanying <a href="schemas/">JSON Schema</a>
           validates the same plain JSON. A JSON-LD processor is needed only to
           consume these objects <em>as RDF</em> — for semantic integration,
@@ -1360,8 +1430,8 @@
       <a>Spending Authorization Credential</a>, a <a>Merchant Credential</a>, a
       <a>Payment Capability Credential</a>, and a trust-configuration example —
       signed with <code>did:key</code>
-      Ed25519 keys and
-      <code>eddsa-jcs-2022</code> proofs — are published under
+      P-256 keys and
+      <code>ecdsa-jcs-2022</code> proofs — are published under
       <a href="test-vectors/"><code>test-vectors/</code></a>, with JSON Schema in
       <a href="schemas/"><code>schemas/</code></a> and SHACL shapes in
       <a href="shapes/dsa-shapes.ttl"><code>shapes/dsa-shapes.ttl</code></a>.
@@ -1389,7 +1459,7 @@
     "statusListCredential": "https://example.com/status/3"
   },
   "credentialSubject": {
-    "id": "did:key:z6MkmaintenanceBot01...",
+    "id": "did:key:zDnamaintenanceBot01...",
     "currency": "USD",
     "maxPerTransaction": "0.05",
     "dailyLimit": "5.00",
@@ -1397,7 +1467,7 @@
     "allowedPayees": ["did:web:provider.com:services:hvac-api"],
     "allowedServiceTypes": ["cat:IotDeviceControl"]
   },
-  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "ecdsa-jcs-2022" }
 }
       </pre>
     </section>
@@ -1419,7 +1489,7 @@
     "merchantName": "Tool API Inc.",
     "categories": ["cat:ChatCompletionApi"]
   },
-  "proof": { "type": "DataIntegrityProof", "cryptosuite": "eddsa-jcs-2022" }
+  "proof": { "type": "DataIntegrityProof", "cryptosuite": "ecdsa-jcs-2022" }
 }
       </pre>
     </section>

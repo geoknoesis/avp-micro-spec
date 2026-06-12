@@ -20,12 +20,38 @@
   owl:versionInfo "0.1.0" .
 
 #################################################################
+# Authorization axis (capacity vs instance) -- the central distinction
+#################################################################
+#
+# An authorization is one of exactly two kinds, distinguished by reuse: a CAPACITY
+# can be presented repeatedly (standing power -- revocable, delegable, policy-like),
+# whereas an INSTANCE is consumed once (a concrete act -- nonce-bound, single-use,
+# liability-bearing). Commitments (a payee-signed quote/receipt/offer) and settlement
+# facts (an execution) are NOT authorizations and are intentionally outside this
+# hierarchy. See design note 2026-06-12-authorization-capacity-instance-axis.
+
+dsa:Authorization a owl:Class ;
+  rdfs:label "Authorization"@en ;
+  rdfs:comment "The semantic concept of granted permission: what authority or approval exists. Specialized as a standing AuthorizationCapacity or a consumable AuthorizationInstance."@en .
+
+dsa:AuthorizationCapacity a owl:Class ;
+  rdfs:subClassOf dsa:Authorization ;
+  rdfs:label "Authorization capacity"@en ;
+  rdfs:comment "Standing authority: who may authorize and within what bounds. Re-presentable, revocable, and delegable; the home of revocation and delegation semantics. e.g. a spend envelope."@en .
+
+dsa:AuthorizationInstance a owl:Class ;
+  rdfs:subClassOf dsa:Authorization ;
+  rdfs:label "Authorization instance"@en ;
+  rdfs:comment "A single consumable authorization act: what was authorized, here and now. Nonce-bound, single-use, merchant-bound, and liability-bearing; the home of replay protection, liability, and audit. e.g. a cart approval or a payment authorization."@en .
+
+#################################################################
 # Classes
 #################################################################
 
 dsa:SpendingAuthorizationCredential a owl:Class ;
+  rdfs:subClassOf dsa:AuthorizationCapacity ;
   rdfs:label "Spending authorization credential"@en ;
-  rdfs:comment "A verifiable credential issued by a principal that constrains how a payer agent may spend."@en .
+  rdfs:comment "A verifiable credential issued by a principal that constrains how a payer agent may spend. A standing AuthorizationCapacity: presented repeatedly, revocable via status, and delegable."@en .
 
 dsa:PaymentCapabilityCredential a owl:Class ;
   rdfs:label "Payment capability credential"@en ;
@@ -42,6 +68,40 @@ dsa:TrustedIssuer a owl:Class ;
 dsa:IssuerScope a owl:Class ;
   rdfs:label "Issuer scope"@en ;
   rdfs:comment "Bounds on what a trusted issuer may authorize."@en .
+
+#################################################################
+# Authorization-chain relations (SEMANTIC -- never provenance)
+#################################################################
+#
+# These relate authorizations by normative dependence. They MUST NOT be conflated
+# with provenance relations (prov:wasDerivedFrom / prov:used / prov:wasAttributedTo),
+# which describe artifact transformation and belong to the securing/bridge layer.
+# A PaymentAuthorization exercises/conformsTo a SpendingAuthorizationCredential; it is
+# NOT prov:wasDerivedFrom it.
+
+dsa:enables a owl:ObjectProperty ;
+  rdfs:domain dsa:AuthorizationCapacity ;
+  rdfs:range dsa:AuthorizationInstance ;
+  rdfs:label "enables"@en ;
+  rdfs:comment "The standing capacity makes a consumable instance possible. Inverse of dsa:exercises."@en ;
+  owl:inverseOf dsa:exercises .
+
+dsa:exercises a owl:ObjectProperty ;
+  rdfs:domain dsa:AuthorizationInstance ;
+  rdfs:range dsa:AuthorizationCapacity ;
+  rdfs:label "exercises"@en ;
+  rdfs:comment "The instance draws on (consumes) the standing capacity it acts under. In AVP-Micro a PaymentAuthorization exercises the SpendingAuthorizationCredential it embeds in its verifiable presentation."@en .
+
+dsa:conformsTo a owl:ObjectProperty ;
+  rdfs:domain dsa:AuthorizationInstance ;
+  rdfs:range dsa:AuthorizationCapacity ;
+  rdfs:label "conforms to"@en ;
+  rdfs:comment "Normative: the instance's terms (amount, payee, time) fall within the capacity's bounds. A verifier MUST reject an instance that does not conform to the capacity it exercises."@en .
+
+dsa:mustMatch a owl:ObjectProperty ;
+  rdfs:domain dsa:AuthorizationInstance ;
+  rdfs:label "must match"@en ;
+  rdfs:comment "A normative binding constraint: a field of the instance MUST equal the corresponding field of a referenced commitment (e.g. a quote). In AVP-Micro this is realized by digest binding (quoteDigest, serviceRequestHash). Without it, signatures prove artifact integrity but not chain correctness."@en .
 
 #################################################################
 # Object properties (node references / DIDs / IRIs)

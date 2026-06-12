@@ -937,6 +937,21 @@
 
     </p>
 
+    <p class="note" title="Authorization roles">
+      The payer/principal-signed objects here — <a>PaymentAuthorization</a>,
+      <a>PurchaseConfirmation</a>, <a>SessionBudgetAuthorization</a> — are consumable
+      <a href="../authority/#authorization-model">authorization instances</a>: each
+      <code>dsa:exercises</code> the <a href="../authority/#spending-authorization-credential">Spending
+      Authorization Credential</a> it presents and <code>dsa:mustMatch</code> the
+      quote it accepts. The payee-signed <a>PaymentQuote</a>, <a>PaymentOffer</a>, and
+      <a>PaymentReceipt</a> are <em>commitments</em>, and a wallet-signed
+      <a>PaymentExecution</a> is a settlement <em>fact</em>; none is an authorization.
+      AVP-Micro deliberately defines only payment-adjacent authorization semantics: the
+      cart/commerce model, credential packaging, bridge provenance, and runtime
+      lifecycle are <strong>sibling</strong> profiles this specification references
+      rather than absorbs.
+    </p>
+
     <section id="request-binding">
       <h3>Request binding and content digests</h3>
 
