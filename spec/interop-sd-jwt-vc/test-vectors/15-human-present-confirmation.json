@@ -1,0 +1,25 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"
+  ],
+  "id": "urn:avp:confirm:imported:sha-256:imported",
+  "type": [
+    "PurchaseConfirmation",
+    "EmbeddedCartUserConfirmation"
+  ],
+  "quote": "urn:avp:quote:imported:urn:ap2:cart:001",
+  "quoteDigest": "sha-256:imported",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:web:merchant.example",
+  "amount": "112.40",
+  "currency": "USD",
+  "serviceRequestHash": "sha-256:Owxtvk4oi8JitvxkR-bmZKYoVCGyVSBhbwwHPkTapS0",
+  "confirmedBy": "did:web:user.example",
+  "bridgeMode": "proof-preserving",
+  "embeddedCartUserAuth": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6dXNlci5leGFtcGxlI2tleS0xIiwidHlwIjoiZGMrc2Qtand0In0.eyJjYXJ0X2hhc2giOiJzaGEtMjU2Ok93eHR2azRvaThKaXR2eGtSLWJtWktZb1ZDR3lWU0JoYnd3SFBrVGFwUzAiLCJleHAiOjE3ODEyNjIzMDAsImlhdCI6MTc4MTI2MjAwMCwiaXNzIjoiZGlkOndlYjp1c2VyLmV4YW1wbGUiLCJzdWIiOiJkaWQ6a2V5OnpEbmFldzhORFU4Vmd2eFdwV1d4QmVMV2FWYkdORXVYWXlSRmsydUxNakNkaHhrU1UifQ.NGkeNeCu-aXS7irCnzw9529thTcbfx-2OdiTWYl61FWTi4c2g8-hkP_pObLAe4iHds9o7nx1spMgstyRJItLJQ~",
+  "profileVersion": "0.1.0"
+}

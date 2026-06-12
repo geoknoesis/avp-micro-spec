@@ -1,0 +1,29 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1"
+  ],
+  "id": "urn:avp:confirm:native:1",
+  "type": "PurchaseConfirmation",
+  "quote": "urn:avp:quote:789",
+  "quoteDigest": "sha-256:X7gDBi0RsYdB6INIx6okkSK5n4kXCwoWJ8zcju2CPwo",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "amount": "0.001",
+  "currency": "USD",
+  "serviceRequestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
+  "confirmedBy": "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv",
+  "timestamp": "2026-03-25T21:29:50Z",
+  "expires": "2026-03-25T21:35:00Z",
+  "nonce": "conf-1",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:29:50Z",
+    "verificationMethod": "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv#zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2JEbfCbsUkfDu5jfZ7Q1M951WDv6RvoALDRBitBZDmNsFXfaqHTiTie94S8ztpf4gKGFfzqDRyQY9mJguWrDD4fq"
+  }
+}

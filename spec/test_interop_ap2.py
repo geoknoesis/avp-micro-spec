@@ -285,3 +285,16 @@ def test_intersect_limits_takes_most_restrictive():
     out = interop.intersect_limits(a, b)
     assert out["per_txn"] == "100.00"   # stricter wins
     assert out["per_day"] == "500.00"   # only side that has it
+
+
+# ---- generated vectors exist ----
+
+def test_new_vectors_exist():
+    base = _Path("spec/interop-sd-jwt-vc/test-vectors")
+    for name in ("11-foreign-intent-mandate.json", "12-imported-intent-mandate.json",
+                 "13-foreign-cart-mandate.json", "14-imported-cart-quote.json",
+                 "15-human-present-confirmation.json", "16-autonomous-no-confirmation.json"):
+        assert (base / name).exists(), f"missing vector: {name}"
+    pay = _Path("spec/payments/test-vectors")
+    assert (pay / "14b-purchase-confirmation.json").exists()
+    assert (pay / "18-payment-authorization-confirmed.json").exists()

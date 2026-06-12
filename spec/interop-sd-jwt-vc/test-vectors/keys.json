@@ -26,13 +26,13 @@
     "jwk": {
       "kty": "EC",
       "crv": "P-256",
-      "x": "T82lZqkY6RV3DhN35FIbUmhY6JwTaL6pJouXLJAhHhE",
-      "y": "coSZMdOAz3zuy1LTpE2dKsJ9lty62n9LCB8yxaeDpSY"
+      "x": "JoNIuledQLNIQd2R7A-GDpWmYjulClOTwuvJAEnDCD8",
+      "y": "d8vYdLzDwtjA4iWs8-q-01UvTqK8Exaj6az-jsoegJU"
     },
-    "note": "Same principal as the did:key DSA issuer; this is its P-256 verification method."
+    "note": "Same P-256 key as the did:key DSA issuer's verification method (one principal, two DID forms); the co-issued ES256 SD-JWT is signed with that same key."
   },
   "attestingBridge": {
-    "did": "did:key:z6Mkpsqx4hQbhACJf9ygK9FNy51oXwFxYVKqZhn3XJuNNzRf"
+    "did": "did:key:zDnaezHkF8whx2trA4t2G4AqFfBC7nZu1H7mr3CixndH8pbeh"
   },
   "didWebResolver": {
     "did:web:bridge.example": {
@@ -50,11 +50,23 @@
     "did:web:acme.example": {
       "kty": "EC",
       "crv": "P-256",
-      "x": "T82lZqkY6RV3DhN35FIbUmhY6JwTaL6pJouXLJAhHhE",
-      "y": "coSZMdOAz3zuy1LTpE2dKsJ9lty62n9LCB8yxaeDpSY"
+      "x": "JoNIuledQLNIQd2R7A-GDpWmYjulClOTwuvJAEnDCD8",
+      "y": "d8vYdLzDwtjA4iWs8-q-01UvTqK8Exaj6az-jsoegJU"
+    },
+    "did:web:user.example": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "PW5YZ8vMcEWiOTIDWYt3TQwsZmZgGcoIvHmKN2stAkM",
+      "y": "VluYq9SDXpM921T7FTxz8vokb5dSmmZhjh7Zbr57HtY"
+    },
+    "did:web:merchant.example": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "Db2plK0EvqB9DAJJUuHlHYFq2y8ZkzexpGESNEu_grw",
+      "y": "e4MOPyVk0um9emUHke663LHPayL0JFa_n7N0qYkJTiQ"
     }
   },
   "trustedBridges": [
-    "did:key:z6Mkpsqx4hQbhACJf9ygK9FNy51oXwFxYVKqZhn3XJuNNzRf"
+    "did:key:zDnaezHkF8whx2trA4t2G4AqFfBC7nZu1H7mr3CixndH8pbeh"
   ]
 }
