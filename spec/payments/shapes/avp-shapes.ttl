@@ -143,6 +143,22 @@ avp:UsageSessionExtensionShape
     [ sh:property [ sh:path avp:newExpires ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ]
   ) .
 
+avp:PurchaseConfirmationShape
+  a sh:NodeShape ;
+  sh:targetClass avp:PurchaseConfirmation ;
+  sh:property [ sh:path avp:quote ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:quoteDigest ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:confirmedBy ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:amount ; sh:node avp:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:serviceRequestHash ; sh:node avp:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:nonce ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
 avp:DimensionValue
   a sh:NodeShape ;
   sh:nodeKind sh:IRI ;

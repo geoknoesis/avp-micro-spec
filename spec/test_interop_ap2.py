@@ -129,3 +129,52 @@ def test_quote_to_cart_claims_uses_same_hash_field():
     assert c["iss"] == "did:web:merchant.example"
     assert c["cart_hash"] == "sha-256:abc"
     assert c["total"] == {"amount": "24.00", "currency": "USD"}
+
+
+# ---- §7: PurchaseConfirmation native object ----
+
+import json as _json
+from pathlib import Path as _Path
+from jsonschema import Draft202012Validator as _V
+from referencing import Registry as _Reg, Resource as _Res
+from referencing.jsonschema import DRAFT202012 as _D
+
+_PAY_SCHEMA = _Path("spec/payments/schemas/avp-micro.schema.json")
+
+
+def _pay_validator(defname):
+    bundle = _json.loads(_PAY_SCHEMA.read_text(encoding="utf-8"))
+    reg = _Reg().with_resource(uri=bundle["$id"], resource=_Res(contents=bundle, specification=_D))
+    return _V({"$ref": f'{bundle["$id"]}#/$defs/{defname}'}, registry=reg,
+              format_checker=_V.FORMAT_CHECKER)
+
+
+def _purchase_confirmation():
+    return {
+        "@context": ["https://www.w3.org/ns/credentials/v2",
+                     "https://w3id.org/security/data-integrity/v2",
+                     "https://w3id.org/spending-authority/v1",
+                     "https://w3id.org/avp-micro/v1"],
+        "id": "urn:avp:confirm:1", "type": "PurchaseConfirmation",
+        "quote": "urn:avp:quote:789", "quoteDigest": "sha-256:abc",
+        "payer": "did:key:zDnaeAGENT", "payee": "did:key:zDnaePAYEE",
+        "amount": "24.00", "currency": "USD", "serviceRequestHash": "sha-256:cart",
+        "confirmedBy": "did:key:zDnaePRINCIPAL",
+        "timestamp": "2026-06-12T11:00:00Z", "expires": "2026-06-12T11:05:00Z",
+        "nonce": "c-1",
+        "proof": {"type": "DataIntegrityProof", "cryptosuite": "ecdsa-jcs-2022",
+                  "created": "2026-06-12T11:00:00Z",
+                  "verificationMethod": "did:key:zDnaePRINCIPAL#zDnaePRINCIPAL",
+                  "proofPurpose": "assertionMethod", "proofValue": "zABC"},
+    }
+
+
+def test_purchase_confirmation_matches_schema():
+    errs = list(_pay_validator("PurchaseConfirmation").iter_errors(_purchase_confirmation()))
+    assert errs == []
+
+
+def test_purchase_confirmation_requires_confirmedBy():
+    bad = _purchase_confirmation()
+    del bad["confirmedBy"]
+    assert list(_pay_validator("PurchaseConfirmation").iter_errors(bad))

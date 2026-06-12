@@ -20,6 +20,7 @@
     "UsageAccrual": "avp:UsageAccrual",
     "SessionBudgetAuthorization": "avp:SessionBudgetAuthorization",
     "UsageSessionExtension": "avp:UsageSessionExtension",
+    "PurchaseConfirmation": "avp:PurchaseConfirmation",
     "CompositePricing": "avp:CompositePricing",
     "PerCall": "avp:PerCall",
     "PerUnit": "avp:PerUnit",
@@ -57,6 +58,8 @@
     "quote": { "@id": "avp:quote", "@type": "@id" },
     "timestamp": { "@id": "avp:timestamp", "@type": "xsd:dateTime" },
     "vp": { "@id": "avp:vp" },
+    "confirmedBy": { "@id": "avp:confirmedBy", "@type": "@id" },
+    "purchaseConfirmation": { "@id": "avp:purchaseConfirmation" },
 
     "authorization": { "@id": "avp:authorization", "@type": "@id" },
     "sessionBudgetAuthorization": { "@id": "avp:sessionBudgetAuthorization", "@type": "@id" },

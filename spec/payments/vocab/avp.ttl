@@ -60,6 +60,10 @@ avp:UsageSessionExtension a owl:Class ;
   rdfs:label "Usage session extension"@en ;
   rdfs:comment "A payee-signed object that raises the cap and/or extends the expiry of an existing session."@en .
 
+avp:PurchaseConfirmation a owl:Class ;
+  rdfs:label "Purchase confirmation"@en ;
+  rdfs:comment "An OPTIONAL principal-signed approval of a specific quoted cart, signed by the human/principal (confirmedBy) rather than the agent. The native home for AP2 human-present cart approval."@en .
+
 #################################################################
 # Object properties (node references / DIDs / IRIs)
 #################################################################
@@ -83,6 +87,10 @@ avp:session a owl:ObjectProperty ; rdfs:label "session"@en ;
 avp:usageSession a owl:ObjectProperty ; rdfs:label "usage session"@en ;
   rdfs:comment "IRI of the referenced UsageSession."@en .
 avp:acceptedCredentialIssuers a owl:ObjectProperty ; rdfs:label "accepted credential issuers"@en .
+avp:confirmedBy a owl:ObjectProperty ; rdfs:label "confirmed by"@en ;
+  rdfs:comment "DID of the principal/human who signed the PurchaseConfirmation (MUST control its proof)."@en .
+avp:purchaseConfirmation a rdf:Property ; rdfs:label "purchase confirmation"@en ;
+  rdfs:comment "An OPTIONAL embedded or referenced PurchaseConfirmation carried by a PaymentAuthorization."@en .
 
 #################################################################
 # Datatype properties

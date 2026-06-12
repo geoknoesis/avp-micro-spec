@@ -120,7 +120,7 @@
       "required": ["type", "cryptosuite", "created", "verificationMethod", "proofPurpose", "proofValue"],
       "properties": {
         "type": { "const": "DataIntegrityProof" },
-        "cryptosuite": { "const": "eddsa-jcs-2022" },
+        "cryptosuite": { "const": "ecdsa-jcs-2022" },
         "created": { "$ref": "#/$defs/dateTime" },
         "verificationMethod": { "type": "string", "minLength": 1 },
         "proofPurpose": { "const": "assertionMethod" },
@@ -294,6 +294,34 @@
         "serviceOutputHash": { "$ref": "#/$defs/contentDigest" },
         "totalMeterReading": { "type": "string" },
         "fulfilledAt": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "PurchaseConfirmation": {
+      "type": "object",
+      "required": ["@context", "id", "type", "quote", "quoteDigest", "payer", "payee", "amount", "currency", "serviceRequestHash", "confirmedBy", "timestamp", "expires", "nonce", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": {
+          "oneOf": [
+            { "const": "PurchaseConfirmation" },
+            { "type": "array", "contains": { "const": "PurchaseConfirmation" } }
+          ]
+        },
+        "quote": { "$ref": "#/$defs/idValue" },
+        "quoteDigest": { "$ref": "#/$defs/contentDigest" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "serviceRequestHash": { "$ref": "#/$defs/contentDigest" },
+        "confirmedBy": { "$ref": "#/$defs/did" },
+        "authorization": { "$ref": "#/$defs/idValue" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "expires": { "$ref": "#/$defs/dateTime" },
+        "nonce": { "type": "string", "minLength": 1 },
         "proof": { "$ref": "#/$defs/proof" }
       }
     },
