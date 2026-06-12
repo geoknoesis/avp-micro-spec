@@ -51,6 +51,8 @@ PAY_VECTORS = {
     "09-payment-receipt-session.json": "PaymentReceipt",
     "10-usage-session-extension.json": "UsageSessionExtension",
     "11-session-budget-authorization-2.json": "SessionBudgetAuthorization",
+    "14b-purchase-confirmation.json": "PurchaseConfirmation",
+    "18-payment-authorization-confirmed.json": "PaymentAuthorization",
 }
 INTEROP_VECTORS = {
     "02-imported-mandate.json": "EmbeddedSdJwtVcMandate",
@@ -60,6 +62,10 @@ INTEROP_VECTORS = {
     "08-attested-mandate.json": "EmbeddedSdJwtVcMandate",
     "09-imported-interactive-l2.json": "EmbeddedSdJwtVcMandate",
     "10-imported-partial-sd.json": "EmbeddedSdJwtVcMandate",
+    "12-imported-intent-mandate.json": "EmbeddedSdJwtVcMandate",
+    "14-imported-cart-quote.json": "EmbeddedCartQuote",
+    "15-human-present-confirmation.json": "EmbeddedCartUserConfirmation",
+    "16-autonomous-no-confirmation.json": "EmbeddedSdJwtVcMandate",
 }
 
 failures = []
@@ -213,6 +219,10 @@ def main():
                                      (SEC_PROOF, "proof")],
         "09-imported-interactive-l2.json": [(IOP_NS + "importAdvisory", "iop:importAdvisory")],
         "10-imported-partial-sd.json": [(IOP_NS + "importAdvisory", "iop:importAdvisory")],
+        "12-imported-intent-mandate.json": [(IOP_NS + "intentDescription", "iop:intentDescription"),
+                                            (IOP_NS + "importAdvisory", "iop:importAdvisory")],
+        "14-imported-cart-quote.json": [(IOP_NS + "embeddedCartMandate", "iop:embeddedCartMandate")],
+        "15-human-present-confirmation.json": [(IOP_NS + "embeddedCartUserAuth", "iop:embeddedCartUserAuth")],
     }, require_proof=False)  # proof-preserving objects are unsigned projections
 
     section("JSON Schema validation")
@@ -238,6 +248,8 @@ def main():
          lambda obj: (obj["pricingModel"].pop("tiers", None), obj)[1]),
         ("offer composite empty components", "12-payment-offer-compute.json", "PaymentOffer",
          lambda obj: (obj["pricingModel"].__setitem__("components", []), obj)[1]),
+        ("PurchaseConfirmation missing confirmedBy", "14b-purchase-confirmation.json", "PurchaseConfirmation",
+         lambda obj: (obj.pop("confirmedBy", None), obj)[1]),
     ])
     negative_schema_check(INTEROP, "interop.schema.json", [
         ("proof on a proof-preserving object", "02-imported-mandate.json", "EmbeddedSdJwtVcMandate",
@@ -254,6 +266,12 @@ def main():
         ("L3 missing embeddedKbJwtPresentation", "07-imported-payment-authorization.json",
          "EmbeddedKbJwtAuthorization",
          lambda obj: (obj.pop("embeddedKbJwtPresentation", None), obj)[1]),
+        ("cart-quote proof on proof-preserving", "14-imported-cart-quote.json", "EmbeddedCartQuote",
+         lambda obj: (obj.__setitem__("proof", {"type": "DataIntegrityProof"}), obj)[1]),
+        ("cart-quote missing embeddedCartMandate", "14-imported-cart-quote.json", "EmbeddedCartQuote",
+         lambda obj: (obj.pop("embeddedCartMandate", None), obj)[1]),
+        ("confirmation missing confirmedBy", "15-human-present-confirmation.json", "EmbeddedCartUserConfirmation",
+         lambda obj: (obj.pop("confirmedBy", None), obj)[1]),
     ])
 
     section("SHACL validation")
