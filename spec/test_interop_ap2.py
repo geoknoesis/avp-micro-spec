@@ -287,13 +287,60 @@ def test_intersect_limits_takes_most_restrictive():
     assert out["per_day"] == "500.00"   # only side that has it
 
 
+# ---- §7 export: native PurchaseConfirmation -> AP2 human-present approval (bidirectional) ----
+
+def test_export_purchase_confirmation_maps_to_ap2_user_approval():
+    conf = _signed_confirmation()  # native; confirmedBy = did:key of seed_key("principal")
+    claims = interop.export_purchase_confirmation(conf)
+    assert claims["iss"] == conf["confirmedBy"]   # the human/principal attests...
+    assert claims["sub"] == conf["payer"]          # ...on behalf of the agent
+    assert claims["cart_hash"] == conf["serviceRequestHash"]
+    assert claims["iat"] == interop.iso_to_numericdate(conf["timestamp"])
+    assert claims["exp"] == interop.iso_to_numericdate(conf["expires"])
+
+
+def test_purchase_confirmation_round_trips_avp_to_ap2_to_avp():
+    principal = ac.seed_key("principal")
+    conf = _signed_confirmation()  # signer == confirmedBy == did:key(principal)
+    claims = interop.export_purchase_confirmation(conf)
+    # the principal signs the AP2 approval with the SAME P-256 key (both stacks are P-256)
+    compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
+        {"alg": "ES256", "typ": "dc+sd-jwt", "kid": conf["confirmedBy"] + "#k"},
+        claims, principal))
+    proj = interop.import_cart_user_confirmation(
+        compact, quote_digest=conf["quoteDigest"], agent_did=conf["payer"],
+        payee=conf["payee"], amount=conf["amount"], currency=conf["currency"],
+        service_request_hash=conf["serviceRequestHash"], confirmed_by=conf["confirmedBy"],
+        quote=conf["quote"], mode="proof-preserving")
+    assert proj["serviceRequestHash"] == conf["serviceRequestHash"]
+    assert proj["confirmedBy"] == conf["confirmedBy"]
+    # the re-imported projection verifies — a did:key principal resolves locally (no resolver)
+    assert interop.verify_purchase_confirmation(proj) is True
+
+
+def test_imported_confirmation_verifies_with_didkey_principal():
+    # the projection path also accepts a did:key confirmedBy resolved locally (not just did:web)
+    principal = ac.seed_key("principal")
+    compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
+        {"alg": "ES256", "typ": "dc+sd-jwt", "kid": "k"},
+        {"iss": ac.did_key(principal.public_key()), "sub": "did:key:zDnaeAGENT",
+         "cart_hash": "sha-256:cart"}, principal))
+    proj = interop.import_cart_user_confirmation(
+        compact, quote_digest="sha-256:q", agent_did="did:key:zDnaeAGENT",
+        payee="did:key:zDnaePAYEE", amount="24.00", currency="USD",
+        service_request_hash="sha-256:cart", confirmed_by=ac.did_key(principal.public_key()),
+        quote="urn:avp:quote:1")
+    assert interop.verify_purchase_confirmation(proj) is True
+
+
 # ---- generated vectors exist ----
 
 def test_new_vectors_exist():
     base = _Path("spec/interop-sd-jwt-vc/test-vectors")
     for name in ("11-foreign-intent-mandate.json", "12-imported-intent-mandate.json",
                  "13-foreign-cart-mandate.json", "14-imported-cart-quote.json",
-                 "15-human-present-confirmation.json", "16-autonomous-no-confirmation.json"):
+                 "15-human-present-confirmation.json", "16-autonomous-no-confirmation.json",
+                 "17-exported-cart-user-approval.json"):
         assert (base / name).exists(), f"missing vector: {name}"
     pay = _Path("spec/payments/test-vectors")
     assert (pay / "14b-purchase-confirmation.json").exists()

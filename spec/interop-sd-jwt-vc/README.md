@@ -107,6 +107,7 @@ the cross-stack verification rules; `generate.py` emits the `test-vectors/` belo
 | `14-imported-cart-quote.json` | V→A import of the CartMandate → `EmbeddedCartQuote` projection (`serviceRequestHash` binds the canonical cart) |
 | `15-human-present-confirmation.json` | V→A import of a human-present cart approval → `EmbeddedCartUserConfirmation` projection |
 | `16-autonomous-no-confirmation.json` | Autonomous import (no human-present approval) → **no** confirmation, advised via `importAdvisory` |
+| `17-exported-cart-user-approval.json` | **Export** (A→V): a native `PurchaseConfirmation` projected to an AP2 human-present approval (signed by the principal's own P-256 key), then re-imported — the human-present case round-trips A→V→A |
 
 The native principal-signed `PurchaseConfirmation` (`ecdsa-jcs-2022`) and a `PaymentAuthorization` carrying it are **payments-bundle** objects, so they live under [`../payments/test-vectors/`](../payments/test-vectors/) as `14b-purchase-confirmation.json` and `18-payment-authorization-confirmed.json`.
 
@@ -129,7 +130,12 @@ human approval to the AVP-Micro mandate/payment model, in both directions:
   principal), never by the agent (`payer`); a confirmation forged by the agent is
   rejected. Optional and additive — absent ⇒ standing delegation / autonomous, the
   default; the **autonomous** import is explicitly advised rather than fabricating an
-  approval.
+  approval. The case is **bidirectional**: `import_cart_user_confirmation` brings an AP2
+  human-present approval *in* (as an `EmbeddedCartUserConfirmation` projection), and
+  `export_purchase_confirmation` projects a native confirmation back *out* to an AP2
+  approval signed by the principal's own P-256 key — so exported authority roots in the
+  principal DID, not the bridge (§11.6). A `did:key` principal is resolved locally; a
+  `did:web` principal via the resolver.
 
 ### Scope of the vectors
 

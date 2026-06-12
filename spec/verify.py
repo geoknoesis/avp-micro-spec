@@ -329,6 +329,20 @@ def main() -> int:
           pc["serviceRequestHash"] == authz_confirmed["serviceRequestHash"])
     check("confirmed authz still verifies (agent proof)", ac.verify_ecdsa_jcs_2022(authz_confirmed))
 
+    # EXPORT direction (§7): native confirmation -> AP2 approval -> re-import, all P-256
+    exported = load(INTEROP, "17-exported-cart-user-approval.json")
+    back = interop.export_purchase_confirmation(native_conf)
+    check("export maps confirmedBy -> AP2 iss (principal attests)", back["iss"] == native_conf["confirmedBy"])
+    check("export maps payer -> AP2 sub (on behalf of the agent)", back["sub"] == native_conf["payer"])
+    check("export maps serviceRequestHash -> AP2 cart_hash",
+          back["cart_hash"] == native_conf["serviceRequestHash"])
+    reimported = exported["reimportedProjection"]
+    check("export round-trip preserves serviceRequestHash",
+          reimported["serviceRequestHash"] == native_conf["serviceRequestHash"])
+    check("export round-trip preserves confirmedBy", reimported["confirmedBy"] == native_conf["confirmedBy"])
+    check("re-imported approval verifies (did:key principal resolves locally)",
+          interop.verify_purchase_confirmation(reimported))
+
     # autonomous import: NO confirmation, explicitly advised (§10)
     check("autonomous import has no PurchaseConfirmation",
           "EmbeddedCartUserConfirmation" not in autonomous.get("type", []))

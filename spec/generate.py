@@ -589,6 +589,26 @@ def main() -> None:
     authz_confirmed = ac.sign_ecdsa_jcs_2022(authz_confirmed, agent, "2026-03-25T21:30:02Z")
     write(PAY, "18-payment-authorization-confirmed.json", authz_confirmed)
 
+    # 17 (interop bundle): EXPORT direction -- a native AVP PurchaseConfirmation projected
+    # back out to an AP2 human-present cart approval, signed by the SAME principal key (both
+    # stacks are P-256), then re-imported to show the §7 case round-trips A->V->A losslessly.
+    exported_claims = interop.export_purchase_confirmation(native_conf)
+    exported_compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
+        {"alg": "ES256", "typ": "dc+sd-jwt", "kid": DID_ISSUER + "#" + DID_ISSUER.split(":")[-1]},
+        exported_claims, issuer))
+    reimported = interop.import_cart_user_confirmation(
+        exported_compact, quote_digest=native_conf["quoteDigest"], agent_did=native_conf["payer"],
+        payee=native_conf["payee"], amount=native_conf["amount"], currency=native_conf["currency"],
+        service_request_hash=native_conf["serviceRequestHash"],
+        confirmed_by=native_conf["confirmedBy"], quote=native_conf["quote"], mode="proof-preserving")
+    write(INTEROP, "17-exported-cart-user-approval.json", {
+        "_note": "EXPORT (A->V): a native PurchaseConfirmation projected to an AP2 human-present "
+                 "cart approval (ES256, signed by the principal's own key), then re-imported to "
+                 "show the human-present case round-trips losslessly.",
+        "exportedClaims": exported_claims,
+        "compact": exported_compact,
+        "reimportedProjection": reimported})
+
 
 if __name__ == "__main__":
     main()

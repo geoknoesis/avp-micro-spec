@@ -1,0 +1,36 @@
+{
+  "_note": "EXPORT (A->V): a native PurchaseConfirmation projected to an AP2 human-present cart approval (ES256, signed by the principal's own key), then re-imported to show the human-present case round-trips losslessly.",
+  "exportedClaims": {
+    "iss": "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv",
+    "sub": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+    "cart_hash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
+    "iat": 1774474190,
+    "exp": 1774474500
+  },
+  "compact": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDprZXk6ekRuYWVrRmQxeWJqUlh0bUVKS3d1RFY0R1FoSGdRb3ZvR2JkVlZEU3dVd0R1eTh0diN6RG5hZWtGZDF5YmpSWHRtRUpLd3VEVjRHUWhIZ1Fvdm9HYmRWVkRTd1V3RHV5OHR2IiwidHlwIjoiZGMrc2Qtand0In0.eyJjYXJ0X2hhc2giOiJzaGEtMjU2Oi1EcU92b2E3NjVKLUZCWC1wUFV3OTlkY3RweXlNZUdUS082dkM2SU9fME0iLCJleHAiOjE3NzQ0NzQ1MDAsImlhdCI6MTc3NDQ3NDE5MCwiaXNzIjoiZGlkOmtleTp6RG5hZWtGZDF5YmpSWHRtRUpLd3VEVjRHUWhIZ1Fvdm9HYmRWVkRTd1V3RHV5OHR2Iiwic3ViIjoiZGlkOmtleTp6RG5hZXc4TkRVOFZndnhXcFdXeEJlTFdhVmJHTkV1WFl5UkZrMnVMTWpDZGh4a1NVIn0.rSqMyEzJpzQ7VtRcHAQO25Qo473pB9CT6-LnsJQqiHukiJhxuSI6sdwoYH0nGOCT-Zga__0TksWhJiCjDHjBTA~",
+  "reimportedProjection": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://w3id.org/security/data-integrity/v2",
+      "https://w3id.org/spending-authority/v1",
+      "https://w3id.org/avp-micro/v1",
+      "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1"
+    ],
+    "id": "urn:avp:confirm:imported:sha-256:X7gDBi0RsYdB6INIx6okkSK5n4kXCwoWJ8zcju2CPwo",
+    "type": [
+      "PurchaseConfirmation",
+      "EmbeddedCartUserConfirmation"
+    ],
+    "quote": "urn:avp:quote:789",
+    "quoteDigest": "sha-256:X7gDBi0RsYdB6INIx6okkSK5n4kXCwoWJ8zcju2CPwo",
+    "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+    "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "amount": "0.001",
+    "currency": "USD",
+    "serviceRequestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
+    "confirmedBy": "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv",
+    "bridgeMode": "proof-preserving",
+    "embeddedCartUserAuth": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDprZXk6ekRuYWVrRmQxeWJqUlh0bUVKS3d1RFY0R1FoSGdRb3ZvR2JkVlZEU3dVd0R1eTh0diN6RG5hZWtGZDF5YmpSWHRtRUpLd3VEVjRHUWhIZ1Fvdm9HYmRWVkRTd1V3RHV5OHR2IiwidHlwIjoiZGMrc2Qtand0In0.eyJjYXJ0X2hhc2giOiJzaGEtMjU2Oi1EcU92b2E3NjVKLUZCWC1wUFV3OTlkY3RweXlNZUdUS082dkM2SU9fME0iLCJleHAiOjE3NzQ0NzQ1MDAsImlhdCI6MTc3NDQ3NDE5MCwiaXNzIjoiZGlkOmtleTp6RG5hZWtGZDF5YmpSWHRtRUpLd3VEVjRHUWhIZ1Fvdm9HYmRWVkRTd1V3RHV5OHR2Iiwic3ViIjoiZGlkOmtleTp6RG5hZXc4TkRVOFZndnhXcFdXeEJlTFdhVmJHTkV1WFl5UkZrMnVMTWpDZGh4a1NVIn0.rSqMyEzJpzQ7VtRcHAQO25Qo473pB9CT6-LnsJQqiHukiJhxuSI6sdwoYH0nGOCT-Zga__0TksWhJiCjDHjBTA~",
+    "profileVersion": "0.1.0"
+  }
+}

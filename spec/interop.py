@@ -235,7 +235,8 @@ def verify_purchase_confirmation(conf: dict, did_web_resolver: dict | None = Non
     """Verify a PurchaseConfirmation. The defining rule (§11.3): authority is a fresh
     HUMAN approval, so the proof MUST be controlled by confirmedBy (the principal), never
     by the agent (payer). proof-preserving projections (no native proof) instead carry the
-    original approval in iop:embeddedCartUserAuth, verified via did:web. Any error => False."""
+    original approval in iop:embeddedCartUserAuth, verified against confirmedBy's key --
+    resolved locally for a did:key principal, or via did:web. Any error => False."""
     try:
         confirmed_by = conf.get("confirmedBy")
         if not confirmed_by or confirmed_by == conf.get("payer"):
@@ -250,8 +251,13 @@ def verify_purchase_confirmation(conf: dict, did_web_resolver: dict | None = Non
         if not compact:
             return False
         jwk = (did_web_resolver or {}).get(confirmed_by)
-        return jwk is not None and sdjwt.es256_verify(sdjwt.sdjwt_jws(compact),
-                                                      sdjwt.p256_public_from_jwk(jwk))
+        if jwk is not None:
+            pub = sdjwt.p256_public_from_jwk(jwk)
+        elif confirmed_by.startswith("did:key:"):
+            pub = ac.public_from_did_key(confirmed_by)  # principal DID resolves locally
+        else:
+            return False
+        return sdjwt.es256_verify(sdjwt.sdjwt_jws(compact), pub)
     except Exception:
         return False
 
@@ -272,6 +278,26 @@ def import_cart_user_confirmation(user_auth_compact: str, *, quote_digest: str, 
         "bridgeMode": mode, "embeddedCartUserAuth": user_auth_compact,
         "profileVersion": PROFILE_VERSION,
     }
+
+
+def export_purchase_confirmation(conf: dict) -> dict:
+    """Export a PurchaseConfirmation (native or projection) to an AP2 human-present
+    cart-approval claim set: the principal (confirmedBy) attests, over the exact cart
+    (serviceRequestHash), that the agent (payer) may transact. The inverse of
+    import_cart_user_confirmation -- together they make the §7 human-present case
+    lossless in both directions. The claims are signed by the principal's own key
+    (both stacks are P-256), so the exported approval roots in the principal DID, not
+    the bridge (§11.6)."""
+    claims = {
+        "iss": conf["confirmedBy"],
+        "sub": conf["payer"],
+        "cart_hash": conf["serviceRequestHash"],
+    }
+    if "timestamp" in conf:
+        claims["iat"] = iso_to_numericdate(conf["timestamp"])
+    if "expires" in conf:
+        claims["exp"] = iso_to_numericdate(conf["expires"])
+    return claims
 
 
 # ---- §11.2: no-widening limit intersection ----
