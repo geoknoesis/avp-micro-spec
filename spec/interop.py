@@ -274,6 +274,26 @@ def import_cart_user_confirmation(user_auth_compact: str, *, quote_digest: str, 
     }
 
 
+# ---- §11.2: no-widening limit intersection ----
+
+from decimal import Decimal as _Decimal
+
+
+def intersect_limits(a: dict, b: dict) -> dict:
+    """§11.2 no-widening: when both stacks carry a limit, keep the most restrictive
+    (minimum) value. A limit present on only one side is kept as-is."""
+    out = dict(a)
+    for k, v in b.items():
+        if k in out:
+            try:
+                out[k] = v if _Decimal(v) < _Decimal(out[k]) else out[k]
+            except (ValueError, ArithmeticError):
+                out[k] = out[k]  # non-decimal limit (e.g. tz): keep the a-side value
+        else:
+            out[k] = v
+    return out
+
+
 # ---- export: AVP-Micro -> SD-JWT-VC (section "Export") ----
 
 def avp_to_sdjwtvc(vc: dict, sign_priv, kid: str, *, embedded: bool = True) -> str:

@@ -275,3 +275,13 @@ def test_embedded_cart_quote_rejects_proof_on_proof_preserving():
     proj = interop.cart_mandate_to_quote(compact, _cart(), mode="proof-preserving")
     proj["proof"] = {"type": "DataIntegrityProof"}
     assert list(_iop_validator("EmbeddedCartQuote").iter_errors(proj))  # no-downgrade
+
+
+# ---- §11.2: translation never widens authority ----
+
+def test_intersect_limits_takes_most_restrictive():
+    a = {"per_txn": "120.00", "per_day": "500.00"}
+    b = {"per_txn": "100.00"}
+    out = interop.intersect_limits(a, b)
+    assert out["per_txn"] == "100.00"   # stricter wins
+    assert out["per_day"] == "500.00"   # only side that has it
