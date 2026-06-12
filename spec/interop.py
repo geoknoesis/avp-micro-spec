@@ -28,6 +28,7 @@ INTEROP_PAY_CTX = [VC2, DI, DSA, AVP, IOP]   # PaymentAuthorization (L3) bridge
 
 VCT_PLAIN = "mandate.spending-authority.avp"
 VCT_EMBEDDED = "mandate.spending-authority.avp+embedded"
+INTENT_VCT = "mandate.intent.ap2"
 PROFILE_VERSION = "0.1.0"
 
 _ISO = "%Y-%m-%dT%H:%M:%SZ"
@@ -138,6 +139,54 @@ def claims_to_avp_subject(payload: dict) -> dict:
     if "allowed_service_types" in payload:
         subj["allowedServiceTypes"] = list(payload["allowed_service_types"])
     return subj
+
+
+# ---- §5: AP2 IntentMandate <-> DSA SpendingAuthorizationCredential ----
+
+_INTENT_EXTRA_MAP = (
+    ("intent_description", "intentDescription"),
+    ("item_constraints", "itemConstraints"),
+    ("requires_refundability", "refundabilityRequired"),
+    ("requires_user_confirmation", "requiresPurchaseConfirmation"),
+)
+
+
+def intent_extras(claims: dict) -> tuple[dict, list]:
+    """Map AP2 intent-specific claims to iop: extras and return import advisories for
+    the fields AVP policy cannot machine-enforce (M2)."""
+    extras: dict = {}
+    for ap2_field, iop_field in _INTENT_EXTRA_MAP:
+        if ap2_field in claims:
+            extras[iop_field] = claims[ap2_field]
+    advisories = []
+    if "intent_description" in claims or "item_constraints" in claims:
+        advisories.append(
+            "ap2-intent-granularity: natural-language / item-level intent is carried in "
+            "iop: extras but is NOT enforced by AVP spending policy (envelope only)")
+    return extras, advisories
+
+
+def sdjwtvc_intent_to_avp(compact: str, mode: str = "proof-preserving") -> dict:
+    """Import an AP2 IntentMandate (SD-JWT-VC) as an EmbeddedSdJwtVcMandate plus the
+    carried-but-unenforced intent extras. Reuses the §4 claim mapping for the envelope."""
+    vc = sdjwtvc_to_avp(compact, mode)
+    payload, _ = _effective_claims(compact)
+    extras, advisories = intent_extras(payload)
+    vc.update(extras)
+    if advisories:
+        vc["importAdvisory"] = list(vc.get("importAdvisory", [])) + advisories
+    return vc
+
+
+def avp_to_intent_claims(vc: dict) -> dict:
+    """Export a DSA(+iop intent extras) credential back to AP2 intent claim set."""
+    claims = avp_to_claims(vc)
+    claims["vct"] = INTENT_VCT
+    inverse = {iop: ap2 for ap2, iop in _INTENT_EXTRA_MAP}
+    for iop_field, ap2_field in inverse.items():
+        if iop_field in vc:
+            claims[ap2_field] = vc[iop_field]
+    return claims
 
 
 # ---- export: AVP-Micro -> SD-JWT-VC (section "Export") ----
