@@ -229,6 +229,51 @@ def quote_to_cart_claims(quote: dict) -> dict:
     }
 
 
+# ---- §7: PurchaseConfirmation (fresh human approval) ----
+
+def verify_purchase_confirmation(conf: dict, did_web_resolver: dict | None = None) -> bool:
+    """Verify a PurchaseConfirmation. The defining rule (§11.3): authority is a fresh
+    HUMAN approval, so the proof MUST be controlled by confirmedBy (the principal), never
+    by the agent (payer). proof-preserving projections (no native proof) instead carry the
+    original approval in iop:embeddedCartUserAuth, verified via did:web. Any error => False."""
+    try:
+        confirmed_by = conf.get("confirmedBy")
+        if not confirmed_by or confirmed_by == conf.get("payer"):
+            return False  # must name a principal distinct from the agent
+        if "proof" in conf:  # native / co-issued
+            vm = conf["proof"].get("verificationMethod", "")
+            if vm.split("#", 1)[0] != confirmed_by:
+                return False  # signer MUST be confirmedBy
+            return ac.verify_ecdsa_jcs_2022(conf)
+        # proof-preserving projection: verify the embedded AP2 user approval
+        compact = conf.get("embeddedCartUserAuth")
+        if not compact:
+            return False
+        jwk = (did_web_resolver or {}).get(confirmed_by)
+        return jwk is not None and sdjwt.es256_verify(sdjwt.sdjwt_jws(compact),
+                                                      sdjwt.p256_public_from_jwk(jwk))
+    except Exception:
+        return False
+
+
+def import_cart_user_confirmation(user_auth_compact: str, *, quote_digest: str, agent_did: str,
+                                  payee: str, amount: str, currency: str,
+                                  service_request_hash: str, confirmed_by: str, quote: str,
+                                  mode: str = "proof-preserving") -> dict:
+    """Import an AP2 human-present cart approval as an EmbeddedCartUserConfirmation
+    projection (unsigned; authority is the embedded user JWT)."""
+    return {
+        "@context": list(INTEROP_PAY_CTX),
+        "id": "urn:avp:confirm:imported:" + quote_digest,
+        "type": ["PurchaseConfirmation", "EmbeddedCartUserConfirmation"],
+        "quote": quote, "quoteDigest": quote_digest,
+        "payer": agent_did, "payee": payee, "amount": amount, "currency": currency,
+        "serviceRequestHash": service_request_hash, "confirmedBy": confirmed_by,
+        "bridgeMode": mode, "embeddedCartUserAuth": user_auth_compact,
+        "profileVersion": PROFILE_VERSION,
+    }
+
+
 # ---- export: AVP-Micro -> SD-JWT-VC (section "Export") ----
 
 def avp_to_sdjwtvc(vc: dict, sign_priv, kid: str, *, embedded: bool = True) -> str:

@@ -178,3 +178,33 @@ def test_purchase_confirmation_requires_confirmedBy():
     bad = _purchase_confirmation()
     del bad["confirmedBy"]
     assert list(_pay_validator("PurchaseConfirmation").iter_errors(bad))
+
+
+# ---- §7/§11.3: PurchaseConfirmation builder + the "signed by the human, not the agent" rule ----
+
+def _signed_confirmation(principal_label="principal", signer_label=None):
+    principal = ac.seed_key(principal_label)
+    signer = ac.seed_key(signer_label) if signer_label else principal
+    conf = {
+        "@context": ["https://www.w3.org/ns/credentials/v2",
+                     "https://w3id.org/security/data-integrity/v2",
+                     "https://w3id.org/spending-authority/v1",
+                     "https://w3id.org/avp-micro/v1"],
+        "id": "urn:avp:confirm:1", "type": "PurchaseConfirmation",
+        "quote": "urn:avp:quote:789", "quoteDigest": "sha-256:abc",
+        "payer": "did:key:zDnaeAGENT", "payee": ac.did_key(ac.seed_key("payee").public_key()),
+        "amount": "24.00", "currency": "USD", "serviceRequestHash": "sha-256:cart",
+        "confirmedBy": ac.did_key(principal.public_key()),
+        "timestamp": "2026-06-12T11:00:00Z", "expires": "2026-06-12T11:05:00Z", "nonce": "c-1",
+    }
+    return ac.sign_ecdsa_jcs_2022(conf, signer, "2026-06-12T11:00:00Z")
+
+
+def test_purchase_confirmation_verifies_when_signed_by_confirmedBy():
+    assert interop.verify_purchase_confirmation(_signed_confirmation()) is True
+
+
+def test_purchase_confirmation_rejected_when_signed_by_someone_else():
+    # signer != confirmedBy  (e.g. forged by the agent) MUST be rejected
+    forged = _signed_confirmation(principal_label="principal", signer_label="agent-forger")
+    assert interop.verify_purchase_confirmation(forged) is False
