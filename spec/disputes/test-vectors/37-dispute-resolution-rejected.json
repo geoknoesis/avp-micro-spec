@@ -1,0 +1,28 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:dispute-resolution:03",
+  "type": "DisputeResolution",
+  "dispute": "urn:avp:dispute:02",
+  "disputeDigest": "sha-256:kRu7DaxIb84RgXts4qH-95mGN5EWh1EV7hSi2g6GQk8",
+  "resolvedBy": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "resolverRole": "payee",
+  "outcome": "rejected",
+  "resolvedAmount": "0",
+  "currency": "USD",
+  "note": "Output matched the agreed scope; subjective quality is not a billing defect.",
+  "timestamp": "2026-03-27T14:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-27T14:00:00Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2wQG5DzWUFSWjeCYESG1EkWNtjCuLZ1V6Tq432PPtoeg85gxj1qBbq5DQXMUYpmec95UpX1BvDot1fhvKiEgMioP"
+  }
+}

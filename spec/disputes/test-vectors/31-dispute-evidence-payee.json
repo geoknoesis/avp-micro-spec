@@ -1,0 +1,29 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:dispute-evidence:01",
+  "type": "DisputeEvidence",
+  "dispute": "urn:avp:dispute:01",
+  "disputeDigest": "sha-256:4THrAzXkWBcbs_OXED7pgOLb2s31uB0VtBwBsM-oOEI",
+  "submittedBy": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "role": "payee",
+  "sequence": 1,
+  "evidenceType": "delivery-log",
+  "contentDigest": "sha-256:5e098dqj7TAGNxPo8qvwltJU8kF_mcHsv9KNe8x8qGA",
+  "uri": "https://provider.com/evidence/stream-log-001",
+  "statement": "Delivery log shows 48 samples accepted by the client endpoint.",
+  "timestamp": "2026-03-26T11:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-26T11:00:00Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2pTj3HnALhgib1cJiPVMvYMmmGpcZ9L7hr6iUoNZew7x3GKqVrf2fV2N9RW6eL6jQQuKkgKtxthgyiahYSr3hgiz"
+  }
+}

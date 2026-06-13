@@ -1,0 +1,31 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:reversal:02",
+  "type": "Reversal",
+  "cause": "dispute",
+  "resolution": "urn:avp:dispute-resolution:02",
+  "resolutionDigest": "sha-256:28gbmJp1csiQKMNI2merrWtSYOGewHpvvRq7RYki6GI",
+  "execution": "urn:avp:exec:sess-1",
+  "executionDigest": "sha-256:yuPq4tnWyPG_2ygfnPfgqlEahoJbXy-VxZHhyrG0Oiw",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "amount": "0.015",
+  "currency": "USD",
+  "status": "completed",
+  "settlementRef": "internal-ledger://txn/chargeback-01",
+  "timestamp": "2026-03-28T10:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-28T10:00:00Z",
+    "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "zrWree6qcTWP7u7ST2NdxqJ8CcGPgMMuwP9oejNA5a7yptqEn8KA1fxzxv5aB9LbdAzUpg96rzdr5fYj8XwUXgzk"
+  }
+}

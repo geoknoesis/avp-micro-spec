@@ -1,0 +1,28 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:dispute-resolution:01",
+  "type": "DisputeResolution",
+  "dispute": "urn:avp:dispute:01",
+  "disputeDigest": "sha-256:4THrAzXkWBcbs_OXED7pgOLb2s31uB0VtBwBsM-oOEI",
+  "resolvedBy": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "resolverRole": "payee",
+  "outcome": "partial",
+  "resolvedAmount": "0.010",
+  "currency": "USD",
+  "note": "Offer to credit half the disputed window as goodwill.",
+  "timestamp": "2026-03-27T09:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-27T09:00:00Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z4jAt7h1BiUN3H3WhzgnxgDrmchX1WsKtVbjMQzoLA1UeR2qJFzjabJ62mHzi99F4yRhwms6WWxTdzt3cx7wnp4by"
+  }
+}

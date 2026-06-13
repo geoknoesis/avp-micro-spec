@@ -18,6 +18,7 @@ SPEC = Path(__file__).parent
 AUTH = SPEC / "authority" / "test-vectors"
 PAY = SPEC / "payments" / "test-vectors"
 INTEROP = SPEC / "interop-sd-jwt-vc" / "test-vectors"
+DISP = SPEC / "disputes" / "test-vectors"
 
 VC2 = "https://www.w3.org/ns/credentials/v2"
 DI = "https://w3id.org/security/data-integrity/v2"
@@ -25,16 +26,20 @@ DSA = "https://w3id.org/spending-authority/v1"
 AVP = "https://w3id.org/avp-micro/v1"
 DSA_CTX = [VC2, DI, DSA]
 PAY_CTX = [VC2, DI, DSA, AVP]
+DISP_URL = "https://w3id.org/avp-micro/disputes/v1"
+DISP_CTX = [VC2, DI, DSA, AVP, DISP_URL]
 
 issuer = ac.seed_key("issuer-acme-corp")
 agent = ac.seed_key("agent-buyer-01")
 payee = ac.seed_key("service-tool-api")
 wallet = ac.seed_key("wallet-acme")
+arbiter = ac.seed_key("arbiter-org")
 
 DID_ISSUER = ac.did_key(issuer.public_key())
 DID_AGENT = ac.did_key(agent.public_key())
 DID_PAYEE = ac.did_key(payee.public_key())
 DID_WALLET = ac.did_key(wallet.public_key())
+DID_ARBITER = ac.did_key(arbiter.public_key())
 
 
 def write(base: Path, name: str, obj: dict) -> None:
@@ -111,6 +116,7 @@ def main() -> None:
         "_warning": "TEST KEYS ONLY. Seeds are derived deterministically; do not reuse.",
         "principalIssuer": DID_ISSUER, "payerAgent": DID_AGENT,
         "payeeService": DID_PAYEE, "walletService": DID_WALLET,
+        "arbiter": DID_ARBITER,
     })
 
     # ---- Payments bundle ----
@@ -321,6 +327,183 @@ def main() -> None:
     }
     session_budget2 = ac.sign_ecdsa_jcs_2022(session_budget2, agent, "2026-03-25T21:59:05Z")
     write(PAY, "11-session-budget-authorization-2.json", session_budget2)
+
+    # ---- Disputes bundle (refunds, reversals, dispute lifecycle) ----
+    # Reverse value-flow. Voluntary refunds + the adversarial dispute lifecycle
+    # converge on a wallet-signed Reversal. Originals reused from the bundle above:
+    #   one-off:   execution(urn:avp:exec:555)/receipt(urn:avp:receipt:222) = 0.001
+    #   streaming: session_exec(urn:avp:exec:sess-1)/session_receipt(...sess-final) = 0.048
+
+    # 20: voluntary partial refund against the streaming receipt (payee-signed intent)
+    refund = {
+        "@context": DISP_CTX, "id": "urn:avp:refund:01", "type": "Refund",
+        "receipt": "urn:avp:receipt:sess-final", "receiptDigest": ac.jcs_digest(session_receipt),
+        "execution": "urn:avp:exec:sess-1", "executionDigest": ac.jcs_digest(session_exec),
+        "payer": DID_AGENT, "payee": DID_PAYEE, "amount": "0.010", "currency": currency,
+        "reason": "disp:incorrect-amount",
+        "note": "Refunding 10 miscounted sensor samples.",
+        "timestamp": "2026-03-26T09:00:00Z",
+    }
+    refund = ac.sign_ecdsa_jcs_2022(refund, payee, "2026-03-26T09:00:00Z")
+    write(DISP, "20-refund.json", refund)
+
+    # 21: wallet-signed settlement fact for the refund (cause=refund)
+    reversal_refund = {
+        "@context": DISP_CTX, "id": "urn:avp:reversal:01", "type": "Reversal",
+        "cause": "refund",
+        "refund": "urn:avp:refund:01", "refundDigest": ac.jcs_digest(refund),
+        "execution": "urn:avp:exec:sess-1", "executionDigest": ac.jcs_digest(session_exec),
+        "payer": DID_AGENT, "payee": DID_PAYEE, "amount": "0.010", "currency": currency,
+        "status": "completed", "settlementRef": "internal-ledger://txn/refund-01",
+        "timestamp": "2026-03-26T09:05:00Z",
+    }
+    reversal_refund = ac.sign_ecdsa_jcs_2022(reversal_refund, wallet, "2026-03-26T09:05:00Z")
+    write(DISP, "21-reversal-refund.json", reversal_refund)
+
+    # 22: optional payer-signed acknowledgement of funds received
+    reversal_ack = {
+        "@context": DISP_CTX, "id": "urn:avp:reversal-ack:01", "type": "ReversalAcknowledgement",
+        "reversal": "urn:avp:reversal:01", "reversalDigest": ac.jcs_digest(reversal_refund),
+        "payer": DID_AGENT, "payee": DID_PAYEE, "amount": "0.010", "currency": currency,
+        "receivedAt": "2026-03-26T09:10:00Z",
+    }
+    reversal_ack = ac.sign_ecdsa_jcs_2022(reversal_ack, agent, "2026-03-26T09:10:00Z")
+    write(DISP, "22-reversal-ack.json", reversal_ack)
+
+    # 23: a second partial refund (receipt-only binding; intent without settlement yet)
+    refund2 = {
+        "@context": DISP_CTX, "id": "urn:avp:refund:02", "type": "Refund",
+        "receipt": "urn:avp:receipt:sess-final", "receiptDigest": ac.jcs_digest(session_receipt),
+        "payer": DID_AGENT, "payee": DID_PAYEE, "amount": "0.008", "currency": currency,
+        "reason": "disp:goodwill", "note": "Goodwill credit for slow response.",
+        "timestamp": "2026-03-26T09:20:00Z",
+    }
+    refund2 = ac.sign_ecdsa_jcs_2022(refund2, payee, "2026-03-26T09:20:00Z")
+    write(DISP, "23-refund-partial.json", refund2)
+
+    # 30: payer opens a dispute against the streaming charge (proposes an arbiter)
+    dispute = {
+        "@context": DISP_CTX, "id": "urn:avp:dispute:01", "type": "Dispute",
+        "execution": "urn:avp:exec:sess-1", "executionDigest": ac.jcs_digest(session_exec),
+        "receipt": "urn:avp:receipt:sess-final", "receiptDigest": ac.jcs_digest(session_receipt),
+        "payer": DID_AGENT, "payee": DID_PAYEE, "disputedAmount": "0.020", "currency": currency,
+        "reason": "disp:not-delivered",
+        "claim": "Sensor stream dropped ~40% of samples after 21:50; charged for undelivered data.",
+        "arbiter": DID_ARBITER,
+        "timestamp": "2026-03-26T10:00:00Z", "respondBy": "2026-03-29T10:00:00Z",
+    }
+    dispute = ac.sign_ecdsa_jcs_2022(dispute, agent, "2026-03-26T10:00:00Z")
+    write(DISP, "30-dispute.json", dispute)
+
+    # 31: payee representment evidence (sequence 1)
+    ev_payee = {
+        "@context": DISP_CTX, "id": "urn:avp:dispute-evidence:01", "type": "DisputeEvidence",
+        "dispute": "urn:avp:dispute:01", "disputeDigest": ac.jcs_digest(dispute),
+        "submittedBy": DID_PAYEE, "role": "payee", "sequence": 1,
+        "evidenceType": "delivery-log",
+        "contentDigest": ac.content_digest(ac.jcs({"samples_delivered": 48})),
+        "uri": "https://provider.com/evidence/stream-log-001",
+        "statement": "Delivery log shows 48 samples accepted by the client endpoint.",
+        "timestamp": "2026-03-26T11:00:00Z",
+    }
+    ev_payee = ac.sign_ecdsa_jcs_2022(ev_payee, payee, "2026-03-26T11:00:00Z")
+    write(DISP, "31-dispute-evidence-payee.json", ev_payee)
+
+    # 32: payer rebuttal evidence (sequence 2)
+    ev_payer = {
+        "@context": DISP_CTX, "id": "urn:avp:dispute-evidence:02", "type": "DisputeEvidence",
+        "dispute": "urn:avp:dispute:01", "disputeDigest": ac.jcs_digest(dispute),
+        "submittedBy": DID_AGENT, "role": "payer", "sequence": 2,
+        "evidenceType": "client-trace",
+        "contentDigest": ac.content_digest(ac.jcs({"samples_persisted": 29})),
+        "statement": "Client trace persisted only 29 samples; gaps align with the 21:50 window.",
+        "timestamp": "2026-03-26T12:00:00Z",
+    }
+    ev_payer = ac.sign_ecdsa_jcs_2022(ev_payer, agent, "2026-03-26T12:00:00Z")
+    write(DISP, "32-dispute-evidence-payer.json", ev_payer)
+
+    # 33: payee resolution (partial)
+    res_payee = {
+        "@context": DISP_CTX, "id": "urn:avp:dispute-resolution:01", "type": "DisputeResolution",
+        "dispute": "urn:avp:dispute:01", "disputeDigest": ac.jcs_digest(dispute),
+        "resolvedBy": DID_PAYEE, "resolverRole": "payee",
+        "outcome": "partial", "resolvedAmount": "0.010", "currency": currency,
+        "note": "Offer to credit half the disputed window as goodwill.",
+        "timestamp": "2026-03-27T09:00:00Z",
+    }
+    res_payee = ac.sign_ecdsa_jcs_2022(res_payee, payee, "2026-03-27T09:00:00Z")
+    write(DISP, "33-dispute-resolution-payee.json", res_payee)
+
+    # 34: arbiter resolution (upheld), superseding the payee resolution (escalation)
+    res_arbiter = {
+        "@context": DISP_CTX, "id": "urn:avp:dispute-resolution:02", "type": "DisputeResolution",
+        "dispute": "urn:avp:dispute:01", "disputeDigest": ac.jcs_digest(dispute),
+        "resolvedBy": DID_ARBITER, "resolverRole": "arbiter",
+        "outcome": "upheld", "resolvedAmount": "0.015", "currency": currency,
+        "supersedes": "urn:avp:dispute-resolution:01", "supersedesDigest": ac.jcs_digest(res_payee),
+        "note": "Arbiter finds 75% of the disputed window undelivered; awards 0.015.",
+        "timestamp": "2026-03-28T09:00:00Z",
+    }
+    res_arbiter = ac.sign_ecdsa_jcs_2022(res_arbiter, arbiter, "2026-03-28T09:00:00Z")
+    write(DISP, "34-dispute-resolution-arbiter.json", res_arbiter)
+
+    # 35: wallet-signed settlement fact for the upheld dispute (cause=dispute = chargeback)
+    reversal_dispute = {
+        "@context": DISP_CTX, "id": "urn:avp:reversal:02", "type": "Reversal",
+        "cause": "dispute",
+        "resolution": "urn:avp:dispute-resolution:02", "resolutionDigest": ac.jcs_digest(res_arbiter),
+        "execution": "urn:avp:exec:sess-1", "executionDigest": ac.jcs_digest(session_exec),
+        "payer": DID_AGENT, "payee": DID_PAYEE, "amount": "0.015", "currency": currency,
+        "status": "completed", "settlementRef": "internal-ledger://txn/chargeback-01",
+        "timestamp": "2026-03-28T10:00:00Z",
+    }
+    reversal_dispute = ac.sign_ecdsa_jcs_2022(reversal_dispute, wallet, "2026-03-28T10:00:00Z")
+    write(DISP, "35-reversal-dispute.json", reversal_dispute)
+
+    # 36 + 37: a separate dispute that is REJECTED (no reversal)
+    dispute_r = {
+        "@context": DISP_CTX, "id": "urn:avp:dispute:02", "type": "Dispute",
+        "receipt": "urn:avp:receipt:222", "receiptDigest": ac.jcs_digest(receipt),
+        "execution": "urn:avp:exec:555", "executionDigest": ac.jcs_digest(execution),
+        "payer": DID_AGENT, "payee": DID_PAYEE, "disputedAmount": "0.001", "currency": currency,
+        "reason": "disp:quality", "claim": "Summary quality was poor.",
+        "arbiter": DID_ARBITER, "timestamp": "2026-03-26T14:00:00Z",
+    }
+    dispute_r = ac.sign_ecdsa_jcs_2022(dispute_r, agent, "2026-03-26T14:00:00Z")
+    write(DISP, "36-dispute-rejected.json", dispute_r)
+
+    res_rejected = {
+        "@context": DISP_CTX, "id": "urn:avp:dispute-resolution:03", "type": "DisputeResolution",
+        "dispute": "urn:avp:dispute:02", "disputeDigest": ac.jcs_digest(dispute_r),
+        "resolvedBy": DID_PAYEE, "resolverRole": "payee",
+        "outcome": "rejected", "resolvedAmount": "0", "currency": currency,
+        "note": "Output matched the agreed scope; subjective quality is not a billing defect.",
+        "timestamp": "2026-03-27T14:00:00Z",
+    }
+    res_rejected = ac.sign_ecdsa_jcs_2022(res_rejected, payee, "2026-03-27T14:00:00Z")
+    write(DISP, "37-dispute-resolution-rejected.json", res_rejected)
+
+    # 38 + 39: a separate dispute that is WITHDRAWN by the payer (no reversal)
+    dispute_w = {
+        "@context": DISP_CTX, "id": "urn:avp:dispute:03", "type": "Dispute",
+        "receipt": "urn:avp:receipt:222", "receiptDigest": ac.jcs_digest(receipt),
+        "payer": DID_AGENT, "payee": DID_PAYEE, "disputedAmount": "0.001", "currency": currency,
+        "reason": "disp:duplicate", "claim": "Possible duplicate of an earlier charge.",
+        "timestamp": "2026-03-26T15:00:00Z",
+    }
+    dispute_w = ac.sign_ecdsa_jcs_2022(dispute_w, agent, "2026-03-26T15:00:00Z")
+    write(DISP, "38-dispute-withdrawn.json", dispute_w)
+
+    res_withdrawn = {
+        "@context": DISP_CTX, "id": "urn:avp:dispute-resolution:04", "type": "DisputeResolution",
+        "dispute": "urn:avp:dispute:03", "disputeDigest": ac.jcs_digest(dispute_w),
+        "resolvedBy": DID_AGENT, "resolverRole": "payer",
+        "outcome": "withdrawn", "resolvedAmount": "0", "currency": currency,
+        "note": "Reconciled internally; not a duplicate. Withdrawing.",
+        "timestamp": "2026-03-27T15:00:00Z",
+    }
+    res_withdrawn = ac.sign_ecdsa_jcs_2022(res_withdrawn, agent, "2026-03-27T15:00:00Z")
+    write(DISP, "39-dispute-resolution-withdrawn.json", res_withdrawn)
 
     # ---- Interop (SD-JWT-VC) bundle ----
     # Two P-256 (ES256) test keys: a bridge that signs export envelopes, and a

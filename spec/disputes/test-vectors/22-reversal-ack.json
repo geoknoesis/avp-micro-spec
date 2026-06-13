@@ -1,0 +1,26 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:reversal-ack:01",
+  "type": "ReversalAcknowledgement",
+  "reversal": "urn:avp:reversal:01",
+  "reversalDigest": "sha-256:rgIiONAPv5GNms7QqhokQO-vJARasKFp1IbuB2_RN5A",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "amount": "0.010",
+  "currency": "USD",
+  "receivedAt": "2026-03-26T09:10:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-26T09:10:00Z",
+    "verificationMethod": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU#zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z37MYCH9wZCpHbXSWsqLPLr3PBwqLdP5vSEdX2dHWz2wLDtbhUCQ28P1Lwn3joTi3cALsAyFewvWp6Tfvs2jdT14D"
+  }
+}

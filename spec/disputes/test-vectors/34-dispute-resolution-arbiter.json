@@ -1,0 +1,30 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:dispute-resolution:02",
+  "type": "DisputeResolution",
+  "dispute": "urn:avp:dispute:01",
+  "disputeDigest": "sha-256:4THrAzXkWBcbs_OXED7pgOLb2s31uB0VtBwBsM-oOEI",
+  "resolvedBy": "did:key:zDnaekYkgcLpQdXTPne1rD3Xxo4JkYnWWqjxtmLkwANPiDXMu",
+  "resolverRole": "arbiter",
+  "outcome": "upheld",
+  "resolvedAmount": "0.015",
+  "currency": "USD",
+  "supersedes": "urn:avp:dispute-resolution:01",
+  "supersedesDigest": "sha-256:_HyeQ9f7otODtwwBX69N1SSz3pcGJ0xvIP5I_OGZcWY",
+  "note": "Arbiter finds 75% of the disputed window undelivered; awards 0.015.",
+  "timestamp": "2026-03-28T09:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-28T09:00:00Z",
+    "verificationMethod": "did:key:zDnaekYkgcLpQdXTPne1rD3Xxo4JkYnWWqjxtmLkwANPiDXMu#zDnaekYkgcLpQdXTPne1rD3Xxo4JkYnWWqjxtmLkwANPiDXMu",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2uayt2fVLT8JNpguwHYJdtUXo1aU4y1swjxrhctgRFYMYv9bAVcyfHqa6KsuakWSmabtFAHkpVGHANPru6PovGux"
+  }
+}

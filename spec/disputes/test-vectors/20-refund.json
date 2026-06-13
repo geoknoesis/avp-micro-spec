@@ -1,0 +1,30 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:refund:01",
+  "type": "Refund",
+  "receipt": "urn:avp:receipt:sess-final",
+  "receiptDigest": "sha-256:y0O-QjcYu6RM5bG-CjlfAa3VQPdd8E6jgqjZWTPA3yo",
+  "execution": "urn:avp:exec:sess-1",
+  "executionDigest": "sha-256:yuPq4tnWyPG_2ygfnPfgqlEahoJbXy-VxZHhyrG0Oiw",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "amount": "0.010",
+  "currency": "USD",
+  "reason": "disp:incorrect-amount",
+  "note": "Refunding 10 miscounted sensor samples.",
+  "timestamp": "2026-03-26T09:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-26T09:00:00Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2Acq7q6TJFtcSt2GWr1QeyBmt1umrop6fAYvVRaoJARRYBcvx4o7CAFde25N3PsZQ3Cj5LUo826FvzaRZsrZGQbF"
+  }
+}

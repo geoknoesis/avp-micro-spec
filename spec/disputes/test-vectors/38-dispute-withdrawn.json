@@ -1,0 +1,28 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:dispute:03",
+  "type": "Dispute",
+  "receipt": "urn:avp:receipt:222",
+  "receiptDigest": "sha-256:sOPtofkZd72P4Nllb1dZMPJlx2BpJc8TJVbGTx4uPXY",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "disputedAmount": "0.001",
+  "currency": "USD",
+  "reason": "disp:duplicate",
+  "claim": "Possible duplicate of an earlier charge.",
+  "timestamp": "2026-03-26T15:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-26T15:00:00Z",
+    "verificationMethod": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU#zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "zH2JWKPADzAyWoiY7yKn9dBHSnSRBWpkUWYRiGNwzTpHkE8j4xqUXX7Pu1jNKLb6Yz37h1BsNTuUMDiHtmVQTfd3"
+  }
+}

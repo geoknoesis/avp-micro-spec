@@ -1,0 +1,32 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:dispute:01",
+  "type": "Dispute",
+  "execution": "urn:avp:exec:sess-1",
+  "executionDigest": "sha-256:yuPq4tnWyPG_2ygfnPfgqlEahoJbXy-VxZHhyrG0Oiw",
+  "receipt": "urn:avp:receipt:sess-final",
+  "receiptDigest": "sha-256:y0O-QjcYu6RM5bG-CjlfAa3VQPdd8E6jgqjZWTPA3yo",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "disputedAmount": "0.020",
+  "currency": "USD",
+  "reason": "disp:not-delivered",
+  "claim": "Sensor stream dropped ~40% of samples after 21:50; charged for undelivered data.",
+  "arbiter": "did:key:zDnaekYkgcLpQdXTPne1rD3Xxo4JkYnWWqjxtmLkwANPiDXMu",
+  "timestamp": "2026-03-26T10:00:00Z",
+  "respondBy": "2026-03-29T10:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-26T10:00:00Z",
+    "verificationMethod": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU#zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z4FkyEArA39GWKxvmR7urZcp98y1H8JQbHxwNX1RYpGhdkpsQTXhYTf5NFU4zeZsRpz6HTnALR1bB5VMsX5hwY5YD"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/disputes/v1"
+  ],
+  "id": "urn:avp:dispute-resolution:04",
+  "type": "DisputeResolution",
+  "dispute": "urn:avp:dispute:03",
+  "disputeDigest": "sha-256:SB9CqsdKHQl3Ap2__oY04ZJeVNVRk3C4xoW9YIbq8zw",
+  "resolvedBy": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "resolverRole": "payer",
+  "outcome": "withdrawn",
+  "resolvedAmount": "0",
+  "currency": "USD",
+  "note": "Reconciled internally; not a duplicate. Withdrawing.",
+  "timestamp": "2026-03-27T15:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-27T15:00:00Z",
+    "verificationMethod": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU#zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2wZpLk5SmXhCdPdvFnk8EuGwmdhWSm7iqQ7Z8jUdssFpzK7go3SGYJFBpsocKvqScXjPHVrAx4DP3PvcHvBwqHFG"
+  }
+}
