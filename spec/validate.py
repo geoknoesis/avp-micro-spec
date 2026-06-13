@@ -25,10 +25,12 @@ SPEC = Path(__file__).parent
 AUTH = SPEC / "authority"
 PAY = SPEC / "payments"
 INTEROP = SPEC / "interop-sd-jwt-vc"
+DISP = SPEC / "disputes"
 SEC_PROOF = "https://w3id.org/security#proof"
 DSA_NS = "https://w3id.org/spending-authority/v1#"
 AVP_NS = "https://w3id.org/avp-micro/v1#"
 IOP_NS = "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#"
+DISP_NS = "https://w3id.org/avp-micro/disputes/v1#"
 
 # vector file -> ($def name, schema bundle path, shapes path, namespace, dir)
 AUTH_VECTORS = {
@@ -69,6 +71,22 @@ INTEROP_VECTORS = {
     "15-human-present-confirmation.json": "PurchaseConfirmation",
     "16-autonomous-no-confirmation.json": "SpendingAuthorizationCredential",
 }
+DISPUTE_VECTORS = {
+    "20-refund.json": "Refund",
+    "21-reversal-refund.json": "Reversal",
+    "22-reversal-ack.json": "ReversalAcknowledgement",
+    "23-refund-partial.json": "Refund",
+    "30-dispute.json": "Dispute",
+    "31-dispute-evidence-payee.json": "DisputeEvidence",
+    "32-dispute-evidence-payer.json": "DisputeEvidence",
+    "33-dispute-resolution-payee.json": "DisputeResolution",
+    "34-dispute-resolution-arbiter.json": "DisputeResolution",
+    "35-reversal-dispute.json": "Reversal",
+    "36-dispute-rejected.json": "Dispute",
+    "37-dispute-resolution-rejected.json": "DisputeResolution",
+    "38-dispute-withdrawn.json": "Dispute",
+    "39-dispute-resolution-withdrawn.json": "DisputeResolution",
+}
 
 failures = []
 
@@ -83,6 +101,7 @@ def ok(label, cond, detail=""):
 _dsa_ctx = json.loads((AUTH / "context" / "v1.jsonld").read_text(encoding="utf-8"))
 _avp_ctx = json.loads((PAY / "context" / "v1.jsonld").read_text(encoding="utf-8"))
 _iop_ctx = json.loads((INTEROP / "context" / "v1.jsonld").read_text(encoding="utf-8"))
+_disp_ctx = json.loads((DISP / "context" / "v1.jsonld").read_text(encoding="utf-8"))
 _ctx_dir = SPEC / "contexts"
 # Stable external W3C contexts are vendored locally so validation is offline and
 # deterministic (w3.org content-negotiation via the pyld requests loader is flaky --
@@ -91,6 +110,7 @@ _LOCAL = {
     "https://w3id.org/spending-authority/v1": _dsa_ctx,
     "https://w3id.org/avp-micro/v1": _avp_ctx,
     "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1": _iop_ctx,
+    "https://w3id.org/avp-micro/disputes/v1": _disp_ctx,
     "https://www.w3.org/ns/credentials/v2":
         json.loads((_ctx_dir / "credentials-v2.jsonld").read_text(encoding="utf-8")),
     "https://w3id.org/security/data-integrity/v2":
@@ -186,7 +206,9 @@ def main():
                 AUTH / "shapes" / "dsa-shapes.ttl", PAY / "vocab" / "avp.ttl",
                 PAY / "vocab" / "dimensions.ttl", PAY / "vocab" / "units.ttl",
                 PAY / "shapes" / "avp-shapes.ttl",
-                INTEROP / "vocab" / "interop.ttl", INTEROP / "shapes" / "interop-shapes.ttl"]:
+                INTEROP / "vocab" / "interop.ttl", INTEROP / "shapes" / "interop-shapes.ttl",
+                DISP / "vocab" / "disputes.ttl", DISP / "vocab" / "reasons.ttl",
+                DISP / "shapes" / "disputes-shapes.ttl"]:
         try:
             g = rdflib.Graph().parse(ttl.as_posix(), format="turtle")
             ok(f"{ttl.parent.parent.name}/{ttl.name} parses", True)
@@ -228,11 +250,22 @@ def main():
         "14-imported-cart-quote.json": [(IOP_NS + "embedded", "iop:embedded")],
         "15-human-present-confirmation.json": [(IOP_NS + "embedded", "iop:embedded")],
     }, require_proof=False)  # proof-preserving objects are unsigned projections
+    expand_check(DISP, DISPUTE_VECTORS, {
+        "20-refund.json": [(DISP_NS + "reason", "disp:reason"),
+                           (DISP_NS + "receiptDigest", "disp:receiptDigest")],
+        "30-dispute.json": [(DISP_NS + "disputedAmount", "disp:disputedAmount"),
+                            (DISP_NS + "arbiter", "disp:arbiter")],
+        "34-dispute-resolution-arbiter.json": [(DISP_NS + "supersedes", "disp:supersedes"),
+                                               (DISP_NS + "outcome", "disp:outcome")],
+        "35-reversal-dispute.json": [(DISP_NS + "cause", "disp:cause"),
+                                     (DISP_NS + "resolution", "disp:resolution")],
+    })
 
     section("JSON Schema validation")
     schema_check(AUTH, AUTH_VECTORS, "dsa.schema.json")
     schema_check(PAY, PAY_VECTORS, "avp-micro.schema.json")
     schema_check(INTEROP, INTEROP_VECTORS, "interop.schema.json")
+    schema_check(DISP, DISPUTE_VECTORS, "disputes.schema.json")
     negative_schema_check(AUTH, "dsa.schema.json", [
         ("DSA proof type", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
          lambda obj: (obj["proof"].__setitem__("type", "NotDataIntegrityProof") or obj)),
@@ -279,11 +312,29 @@ def main():
         ("confirmation missing confirmedBy", "15-human-present-confirmation.json", "PurchaseConfirmation",
          lambda obj: (obj.pop("confirmedBy", None), obj)[1]),
     ])
+    negative_schema_check(DISP, "disputes.schema.json", [
+        ("Refund missing reason", "20-refund.json", "Refund",
+         lambda obj: (obj.pop("reason", None), obj)[1]),
+        ("Refund proof type", "20-refund.json", "Refund",
+         lambda obj: (obj["proof"].__setitem__("type", "NotDataIntegrityProof") or obj)),
+        ("Refund context order", "20-refund.json", "Refund",
+         lambda obj: (obj.__setitem__("@context", list(reversed(obj["@context"]))) or obj)),
+        ("Reversal with neither refund nor resolution", "21-reversal-refund.json", "Reversal",
+         lambda obj: (obj.pop("refund", None), obj.pop("refundDigest", None), obj)[2]),
+        ("Dispute with no contested object", "30-dispute.json", "Dispute",
+         lambda obj: (obj.pop("receipt", None), obj.pop("receiptDigest", None),
+                      obj.pop("execution", None), obj.pop("executionDigest", None), obj)[4]),
+        ("withdrawn resolved by payee", "39-dispute-resolution-withdrawn.json", "DisputeResolution",
+         lambda obj: (obj.__setitem__("resolverRole", "payee") or obj)),
+        ("arbiter resolution without supersedes", "34-dispute-resolution-arbiter.json", "DisputeResolution",
+         lambda obj: (obj.pop("supersedes", None), obj.pop("supersedesDigest", None), obj)[2]),
+    ])
 
     section("SHACL validation")
     shacl_check(AUTH, AUTH_VECTORS, "dsa-shapes.ttl")
     shacl_check(PAY, PAY_VECTORS, "avp-shapes.ttl")
     shacl_check(INTEROP, INTEROP_VECTORS, "interop-shapes.ttl")
+    shacl_check(DISP, DISPUTE_VECTORS, "disputes-shapes.ttl")
 
     print()
     if failures:
