@@ -10,12 +10,14 @@ import avp_crypto as ac
 import pricing
 import interop
 import sdjwt
+import settlement as st
 
 SPEC = Path(__file__).parent
 AUTH = SPEC / "authority" / "test-vectors"
 PAY = SPEC / "payments" / "test-vectors"
 INTEROP = SPEC / "interop-sd-jwt-vc" / "test-vectors"
 DISP = SPEC / "disputes" / "test-vectors"
+SETTLE = SPEC / "settlement" / "test-vectors"
 _failed = []
 
 
@@ -495,6 +497,98 @@ def main() -> int:
           ev_payee["sequence"] != ev_payer["sequence"])
     check("evidence roles match submitter",
           ev_payee["role"] == "payee" and ev_payer["role"] == "payer")
+
+    print("On-chain settlement binding:")
+    binding = load(SETTLE, "40-payee-account-binding.json")
+    instr_evm = load(SETTLE, "41-settlement-instruction-evm.json")
+    proof_evm = load(SETTLE, "42-settlement-proof-evm.json")
+    instr_x402 = load(SETTLE, "43-settlement-instruction-x402.json")
+    proof_x402 = load(SETTLE, "44-settlement-proof-x402.json")
+    instr_ln = load(SETTLE, "45-settlement-instruction-lightning.json")
+    lock_ln = load(SETTLE, "46-escrow-lock-lightning.json")
+    proof_ln = load(SETTLE, "47-settlement-proof-lightning.json")
+    release_ln = load(SETTLE, "48-escrow-release-lightning.json")
+    instr_evm_esc = load(SETTLE, "49-settlement-instruction-evm-escrow.json")
+    lock_evm = load(SETTLE, "50-escrow-lock-evm.json")
+    proof_evm_refund = load(SETTLE, "51-settlement-proof-evm-refund.json")
+    refund_evm = load(SETTLE, "52-escrow-refund-evm.json")
+    instr_rev = load(SETTLE, "53-reverse-settlement-instruction.json")
+    proof_rev = load(SETTLE, "54-reverse-settlement-proof.json")
+
+    settle_objs = [("40 binding", binding), ("41 instr(evm)", instr_evm),
+                   ("42 proof(evm)", proof_evm), ("43 instr(x402)", instr_x402),
+                   ("44 proof(x402)", proof_x402), ("45 instr(ln)", instr_ln),
+                   ("46 lock(ln)", lock_ln), ("47 proof(ln)", proof_ln),
+                   ("48 release(ln)", release_ln), ("49 instr(evm-esc)", instr_evm_esc),
+                   ("50 lock(evm)", lock_evm), ("51 proof(evm-refund)", proof_evm_refund),
+                   ("52 refund(evm)", refund_evm), ("53 instr(reverse)", instr_rev),
+                   ("54 proof(reverse)", proof_rev)]
+    for label, obj in settle_objs:
+        check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
+
+    # signer binding: payee signs the account binding; wallet signs everything else.
+    check("payee-account binding signed by its subject (payee)",
+          controller(binding) == binding["subject"] == payee)
+    for label, obj in settle_objs:
+        if obj is binding:
+            continue
+        check(f"{label} signed by wallet", controller(obj) == wallet)
+
+    # instruction <-> authorization economic binding
+    for label, instr in [("evm", instr_evm), ("x402", instr_x402), ("ln", instr_ln),
+                         ("evm-esc", instr_evm_esc)]:
+        check(f"instr({label}).authorization == authz.id", instr["authorization"] == authz["id"])
+        check(f"instr({label}).authorizationDigest matches authz",
+              instr["authorizationDigest"] == ac.jcs_digest(authz))
+        check(f"instr({label}).amount == authz.amount", instr["amount"] == authz["amount"])
+        check(f"instr({label}).currency == authz.currency", instr["currency"] == authz["currency"])
+
+    # base-unit invariant: stablecoin rails == amount x 10^decimals; Lightning via rate.
+    for label, instr in [("evm", instr_evm), ("x402", instr_x402), ("evm-esc", instr_evm_esc)]:
+        check(f"instr({label}).amountBase == amount x 10^decimals",
+              instr["amountBase"] == st.to_base_units(instr["amount"], st.decimals_for_asset(instr["asset"])))
+    check("instr(ln).amountBase == usd_to_msat(amount, rate)",
+          instr_ln["amountBase"] == st.usd_to_msat(instr_ln["amount"], instr_ln["rate"]))
+
+    # DID <-> account binding (archetype a for EVM did:pkh; archetype b for x402)
+    check("instr(evm) payeeAccount bound via did:pkh", st.account_binding_ok(instr_evm, None))
+    check("instr(x402) payeeAccount bound via PayeeAccountBinding",
+          st.account_binding_ok(instr_x402, binding))
+    check("instr(x402) references the binding it relies on",
+          instr_x402.get("payeeAccountBinding") == binding["id"])
+
+    # finality: confirmation rails reach threshold; Lightning via preimage==payment_hash
+    for label, proof, thr in [("evm", proof_evm, instr_evm["confirmationThreshold"]),
+                             ("x402", proof_x402, instr_x402["confirmationThreshold"]),
+                             ("evm-refund", proof_evm_refund, instr_evm_esc["confirmationThreshold"]),
+                             ("reverse", proof_rev, instr_rev["confirmationThreshold"])]:
+        check(f"proof({label}) final at threshold", st.finality_ok(proof, thr))
+    check("proof(ln) final via preimage reveal", st.finality_ok(proof_ln, 0))
+
+    # proof <-> instruction binding + settled == instructed amount
+    for label, instr, proof in [("evm", instr_evm, proof_evm), ("x402", instr_x402, proof_x402),
+                               ("ln", instr_ln, proof_ln)]:
+        check(f"proof({label}).instruction == instr.id", proof["instruction"] == instr["id"])
+        check(f"proof({label}).instructionDigest matches instr",
+              proof["instructionDigest"] == ac.jcs_digest(instr))
+        check(f"proof({label}).settledAmountBase == instr.amountBase",
+              proof["settledAmountBase"] == instr["amountBase"])
+
+    # escrow linkage: release/refund bind their lock + a final settlement proof
+    check("ln release binds its lock", release_ln["lockDigest"] == ac.jcs_digest(lock_ln))
+    check("ln release binds the LN settlement proof",
+          release_ln["settlementProofDigest"] == ac.jcs_digest(proof_ln))
+    check("ln lock references the escrow instruction", lock_ln["instruction"] == instr_ln["id"])
+    check("evm refund binds its lock", refund_evm["lockDigest"] == ac.jcs_digest(lock_evm))
+    check("evm refund binds the refund proof",
+          refund_evm["settlementProofDigest"] == ac.jcs_digest(proof_evm_refund))
+    check("evm refund reason is timeout", refund_evm["reason"] == "timeout")
+
+    # on-chain reversal: a compensating transfer with payer/payee swapped vs the original
+    check("reverse instruction swaps payer/payee vs the original payment",
+          instr_rev["payer"] == instr_evm["payee"] and instr_rev["payee"] == instr_evm["payer"])
+    check("reverse proof settles the reverse instruction amount",
+          proof_rev["settledAmountBase"] == instr_rev["amountBase"])
 
     print("Negative control (tamper detection):")
     tampered = json.loads(json.dumps(authz))
