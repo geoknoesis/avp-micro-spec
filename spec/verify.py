@@ -15,6 +15,7 @@ SPEC = Path(__file__).parent
 AUTH = SPEC / "authority" / "test-vectors"
 PAY = SPEC / "payments" / "test-vectors"
 INTEROP = SPEC / "interop-sd-jwt-vc" / "test-vectors"
+DISP = SPEC / "disputes" / "test-vectors"
 _failed = []
 
 
@@ -359,6 +360,119 @@ def main() -> int:
     # no-widening intersection (§11.2)
     check("intersect_limits keeps the most restrictive",
           interop.intersect_limits({"per_txn": "120.00"}, {"per_txn": "100.00"})["per_txn"] == "100.00")
+
+    print("Refunds, reversals & dispute lifecycle:")
+    arbiter = dids["arbiter"]
+    refund = load(DISP, "20-refund.json")
+    rev_refund = load(DISP, "21-reversal-refund.json")
+    rev_ack = load(DISP, "22-reversal-ack.json")
+    refund2 = load(DISP, "23-refund-partial.json")
+    dispute = load(DISP, "30-dispute.json")
+    ev_payee = load(DISP, "31-dispute-evidence-payee.json")
+    ev_payer = load(DISP, "32-dispute-evidence-payer.json")
+    res_payee = load(DISP, "33-dispute-resolution-payee.json")
+    res_arb = load(DISP, "34-dispute-resolution-arbiter.json")
+    rev_dispute = load(DISP, "35-reversal-dispute.json")
+    dispute_r = load(DISP, "36-dispute-rejected.json")
+    res_rej = load(DISP, "37-dispute-resolution-rejected.json")
+    dispute_w = load(DISP, "38-dispute-withdrawn.json")
+    res_wd = load(DISP, "39-dispute-resolution-withdrawn.json")
+
+    # B1: every dispute object's proof verifies
+    for label, obj in [("20 refund", refund), ("21 reversal(refund)", rev_refund),
+                       ("22 reversal-ack", rev_ack), ("23 refund partial", refund2),
+                       ("30 dispute", dispute), ("31 evidence(payee)", ev_payee),
+                       ("32 evidence(payer)", ev_payer), ("33 resolution(payee)", res_payee),
+                       ("34 resolution(arbiter)", res_arb), ("35 reversal(dispute)", rev_dispute),
+                       ("36 dispute(rejected)", dispute_r), ("37 resolution(rejected)", res_rej),
+                       ("38 dispute(withdrawn)", dispute_w), ("39 resolution(withdrawn)", res_wd)]:
+        check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
+
+    # B2: signer binding
+    check("refund signed by payee", controller(refund) == payee)
+    check("refund-partial signed by payee", controller(refund2) == payee)
+    check("reversal(refund) signed by wallet", controller(rev_refund) == wallet)
+    check("reversal-ack signed by payer", controller(rev_ack) == agent)
+    check("dispute signed by payer", controller(dispute) == agent)
+    check("evidence(payee) signer == submittedBy == payee",
+          controller(ev_payee) == ev_payee["submittedBy"] == payee)
+    check("evidence(payer) signer == submittedBy == payer",
+          controller(ev_payer) == ev_payer["submittedBy"] == agent)
+    check("resolution(payee) signed by payee (resolvedBy)",
+          controller(res_payee) == payee == res_payee["resolvedBy"])
+    check("resolution(arbiter) signed by arbiter (resolvedBy)",
+          controller(res_arb) == arbiter == res_arb["resolvedBy"])
+    check("reversal(dispute) signed by wallet", controller(rev_dispute) == wallet)
+    check("resolution(rejected) signed by payee", controller(res_rej) == payee)
+    check("resolution(withdrawn) signed by payer (resolvedBy)",
+          controller(res_wd) == agent == res_wd["resolvedBy"])
+    check("reversal(refund) wallet == original execution wallet",
+          controller(rev_refund) == controller(session_exec))
+    check("reversal(dispute) wallet == original execution wallet",
+          controller(rev_dispute) == controller(session_exec))
+
+    # B3: digest binding (pinned to the exact referenced signed object)
+    check("refund.receiptDigest matches receipt(09)",
+          refund["receiptDigest"] == ac.jcs_digest(session_receipt))
+    check("dispute.executionDigest matches execution(08)",
+          dispute["executionDigest"] == ac.jcs_digest(session_exec))
+    check("evidence binds dispute digest", ev_payee["disputeDigest"] == ac.jcs_digest(dispute))
+    check("payee resolution binds dispute digest", res_payee["disputeDigest"] == ac.jcs_digest(dispute))
+    check("arbiter supersedesDigest matches payee resolution",
+          res_arb["supersedesDigest"] == ac.jcs_digest(res_payee))
+    check("reversal(refund).refundDigest matches refund",
+          rev_refund["refundDigest"] == ac.jcs_digest(refund))
+    check("reversal(dispute).resolutionDigest matches arbiter resolution",
+          rev_dispute["resolutionDigest"] == ac.jcs_digest(res_arb))
+    check("reversal-ack.reversalDigest matches reversal",
+          rev_ack["reversalDigest"] == ac.jcs_digest(rev_refund))
+
+    # B4 + B5: party / currency consistency with the original
+    check("refund parties match original receipt",
+          refund["payer"] == session_receipt["payer"] and refund["payee"] == session_receipt["payee"])
+    check("dispute parties match original receipt",
+          dispute["payer"] == session_receipt["payer"] and dispute["payee"] == session_receipt["payee"])
+    check("refund currency matches original", refund["currency"] == session_receipt["currency"])
+    check("dispute currency matches original", dispute["currency"] == session_receipt["currency"])
+
+    # A1 + A4: amount bounds
+    orig08 = Decimal(session_exec["amount"])  # 0.048
+    check("refund amount <= original", Decimal(refund["amount"]) <= orig08)
+    check("dispute disputedAmount <= original", Decimal(dispute["disputedAmount"]) <= orig08)
+    check("payee resolvedAmount <= disputedAmount",
+          Decimal(res_payee["resolvedAmount"]) <= Decimal(dispute["disputedAmount"]))
+    check("arbiter resolvedAmount <= disputedAmount",
+          Decimal(res_arb["resolvedAmount"]) <= Decimal(dispute["disputedAmount"]))
+
+    # A3: reversal amount equals its trigger
+    check("reversal(refund) amount == refund amount", rev_refund["amount"] == refund["amount"])
+    check("reversal(dispute) amount == arbiter resolvedAmount",
+          rev_dispute["amount"] == res_arb["resolvedAmount"])
+
+    # A2: no over-refund against one original execution (sum of settled reversals)
+    settled08 = sum(Decimal(r["amount"]) for r in (rev_refund, rev_dispute)
+                    if r.get("execution") == session_exec["id"] and r["status"] in ("completed", "partial"))
+    check("cumulative settled returns <= original (exec 08)", settled08 <= orig08)
+
+    # S1: a dispute-caused reversal references an upheld/partial resolution
+    check("reversal(dispute) references upheld/partial resolution",
+          rev_dispute["cause"] == "dispute" and res_arb["outcome"] in ("upheld", "partial"))
+    # S2: arbiter resolution supersedes a payee resolution; arbiter == dispute.arbiter
+    check("arbiter resolution supersedes a payee resolution",
+          res_arb.get("supersedes") == res_payee["id"] and res_payee["resolverRole"] == "payee")
+    check("arbiter == dispute.arbiter", res_arb["resolvedBy"] == dispute["arbiter"])
+    # S3: withdrawn -> role=payer and resolvedAmount 0
+    check("withdrawn resolved by payer, amount 0",
+          res_wd["resolverRole"] == "payer" and Decimal(res_wd["resolvedAmount"]) == 0)
+    # S4: rejected -> resolvedAmount 0 and no reversal references it
+    check("rejected resolvedAmount 0", Decimal(res_rej["resolvedAmount"]) == 0)
+    check("no reversal references the rejected resolution",
+          all(r.get("resolution") != res_rej["id"] for r in (rev_refund, rev_dispute)))
+    # S5: evidence sequence unique and role matches submitter
+    check("evidence sequences unique",
+          ev_payee["sequence"] != ev_payer["sequence"])
+    check("evidence roles match submitter",
+          ev_payee["role"] == "payee" and ev_payer["role"] == "payer")
 
     print("Negative control (tamper detection):")
     tampered = json.loads(json.dumps(authz))
