@@ -170,6 +170,25 @@ def main() -> int:
         check(f"pricing case '{case['name']}' == {case['expected']}",
               str(got) == case["expected"])
 
+    # adversarial: the evaluator MUST reject silent under-charging and invalid usage
+    def _pricing_raises(model, usage):
+        try:
+            pricing.evaluate(model, usage)
+            return False
+        except pricing.PricingError:
+            return True
+    check("graduated TieredRate without an open-ended tier is rejected (no silent undercharge)",
+          _pricing_raises(
+              {"type": "TieredRate", "dimension": "dim:Requests", "unit": "qudtu:NUM",
+               "tierMode": "graduated", "currency": "USD",
+               "tiers": [{"upTo": "100", "amount": "1.0"}, {"upTo": "200", "amount": "0.5"}]},
+              {"dim:Requests": "300"}))
+    check("negative usage quantity is rejected (no negative charge)",
+          _pricing_raises(
+              {"type": "PerUnit", "dimension": "dim:Requests", "unit": "qudtu:NUM",
+               "amount": "0.10", "currency": "USD"},
+              {"dim:Requests": "-100"}))
+
     print("Interop (SD-JWT-VC bridge):")
     keys = load(INTEROP, "keys.json")
     resolver = keys["didWebResolver"]
