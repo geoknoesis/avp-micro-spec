@@ -1,0 +1,115 @@
+# AVP-Micro Disputes core RDFS/OWL ontology.
+#
+# Declares the classes and properties whose JSON-LD term mappings are defined in
+# ../context/v1.jsonld. The reverse value-flow: voluntary Refund and the adversarial
+# Dispute lifecycle, converging on a wallet-signed Reversal settlement fact.
+#
+# Namespace: https://w3id.org/avp-micro/disputes/v1#  (prefix disp:)
+@prefix disp: <https://w3id.org/avp-micro/disputes/v1#> .
+@prefix avp:  <https://w3id.org/avp-micro/v1#> .
+@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+<https://w3id.org/avp-micro/disputes/v1> a owl:Ontology ;
+  dct:title "AVP-Micro Disputes vocabulary"@en ;
+  dct:description "Classes and properties for the AVP-Micro reverse value-flow: refunds, reversals, chargebacks, and the dispute lifecycle."@en ;
+  owl:versionInfo "0.1.0" ;
+  rdfs:seeAlso <https://w3id.org/avp-micro/v1> .
+
+#################################################################
+# Classes
+#
+# None of these are dsa:AuthorizationInstance: reverse-flow value movement does not
+# consume spending authority. They are payee/payer/wallet/arbiter-signed records.
+#################################################################
+
+disp:Refund a owl:Class ;
+  rdfs:label "Refund"@en ;
+  rdfs:comment "A payee-signed voluntary return-of-value intent referencing a prior PaymentReceipt. A commitment, not an authorization."@en .
+
+disp:Dispute a owl:Class ;
+  rdfs:label "Dispute"@en ;
+  rdfs:comment "A payer-signed case contesting a prior charge, bound to the receipt/execution/authorization it concerns. Opens the adversarial lifecycle."@en .
+
+disp:DisputeEvidence a owl:Class ;
+  rdfs:label "Dispute evidence"@en ;
+  rdfs:comment "An append-only, party-signed evidence (or representment) record submitted within a dispute by the payer or the payee."@en .
+
+disp:DisputeResolution a owl:Class ;
+  rdfs:label "Dispute resolution"@en ;
+  rdfs:comment "A signed decision for a dispute (upheld/rejected/partial/withdrawn), signed by the payee, the payer (withdrawal), or an arbiter (binding, on escalation)."@en .
+
+disp:Reversal a owl:Class ;
+  rdfs:label "Reversal"@en ;
+  rdfs:comment "A wallet-signed settlement fact recording value actually returned to the payer, caused by a Refund or by an upheld/partial DisputeResolution."@en .
+
+disp:ReversalAcknowledgement a owl:Class ;
+  rdfs:label "Reversal acknowledgement"@en ;
+  rdfs:comment "An OPTIONAL payer-signed confirmation that returned funds were received, referencing a Reversal."@en .
+
+#################################################################
+# Object properties (node references / DIDs / IRIs)
+#################################################################
+
+disp:receipt a owl:ObjectProperty ; rdfs:label "receipt"@en ;
+  rdfs:comment "IRI of the referenced PaymentReceipt being refunded or disputed."@en .
+disp:dispute a owl:ObjectProperty ; rdfs:label "dispute"@en ;
+  rdfs:comment "IRI of the Dispute an evidence or resolution belongs to."@en .
+disp:refund a owl:ObjectProperty ; rdfs:label "refund"@en ;
+  rdfs:comment "IRI of the triggering Refund (when a Reversal has cause=refund)."@en .
+disp:resolution a owl:ObjectProperty ; rdfs:label "resolution"@en ;
+  rdfs:comment "IRI of the triggering DisputeResolution (when a Reversal has cause=dispute)."@en .
+disp:reversal a owl:ObjectProperty ; rdfs:label "reversal"@en ;
+  rdfs:comment "IRI of the acknowledged Reversal."@en .
+disp:supersedes a owl:ObjectProperty ; rdfs:label "supersedes"@en ;
+  rdfs:comment "IRI of a prior DisputeResolution overridden by an arbiter resolution on escalation."@en .
+disp:submittedBy a owl:ObjectProperty ; rdfs:label "submitted by"@en ;
+  rdfs:comment "DID of the party (payer or payee) that signed an evidence record."@en .
+disp:arbiter a owl:ObjectProperty ; rdfs:label "arbiter"@en ;
+  rdfs:comment "DID of the arbiter proposed/agreed for escalation of a dispute."@en .
+disp:resolvedBy a owl:ObjectProperty ; rdfs:label "resolved by"@en ;
+  rdfs:comment "DID of the party that signed a DisputeResolution (MUST control its proof)."@en .
+disp:reason a owl:ObjectProperty ; rdfs:label "reason"@en ;
+  rdfs:comment "IRI of a dispute/refund reason concept (a disp: SKOS concept; the scheme is extensible)."@en .
+
+#################################################################
+# Digest properties (content digests over the referenced signed object)
+#################################################################
+
+disp:receiptDigest a owl:DatatypeProperty ; rdfs:label "receipt digest"@en ; rdfs:range xsd:string .
+disp:executionDigest a owl:DatatypeProperty ; rdfs:label "execution digest"@en ; rdfs:range xsd:string .
+disp:authorizationDigest a owl:DatatypeProperty ; rdfs:label "authorization digest"@en ; rdfs:range xsd:string .
+disp:disputeDigest a owl:DatatypeProperty ; rdfs:label "dispute digest"@en ; rdfs:range xsd:string .
+disp:refundDigest a owl:DatatypeProperty ; rdfs:label "refund digest"@en ; rdfs:range xsd:string .
+disp:resolutionDigest a owl:DatatypeProperty ; rdfs:label "resolution digest"@en ; rdfs:range xsd:string .
+disp:reversalDigest a owl:DatatypeProperty ; rdfs:label "reversal digest"@en ; rdfs:range xsd:string .
+disp:supersedesDigest a owl:DatatypeProperty ; rdfs:label "supersedes digest"@en ; rdfs:range xsd:string .
+disp:contentDigest a owl:DatatypeProperty ; rdfs:label "content digest"@en ; rdfs:range xsd:string .
+
+#################################################################
+# Scalar / enumerated properties
+#################################################################
+
+disp:disputedAmount a owl:DatatypeProperty ; rdfs:label "disputed amount"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Strictly positive decimal (string) amount in dispute."@en .
+disp:resolvedAmount a owl:DatatypeProperty ; rdfs:label "resolved amount"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Non-negative decimal (string) amount to be returned by a resolution; 0 for rejected/withdrawn."@en .
+disp:cause a owl:DatatypeProperty ; rdfs:label "cause"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Either 'refund' or 'dispute' — what triggered a Reversal."@en .
+disp:outcome a owl:DatatypeProperty ; rdfs:label "outcome"@en ; rdfs:range xsd:string ;
+  rdfs:comment "One of 'upheld', 'rejected', 'partial', 'withdrawn'."@en .
+disp:resolverRole a owl:DatatypeProperty ; rdfs:label "resolver role"@en ; rdfs:range xsd:string ;
+  rdfs:comment "One of 'payer', 'payee', 'arbiter'."@en .
+disp:role a owl:DatatypeProperty ; rdfs:label "role"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Side that submitted an evidence record: 'payer' or 'payee'."@en .
+disp:evidenceType a owl:DatatypeProperty ; rdfs:label "evidence type"@en ; rdfs:range xsd:string .
+disp:claim a owl:DatatypeProperty ; rdfs:label "claim"@en ; rdfs:range xsd:string .
+disp:note a owl:DatatypeProperty ; rdfs:label "note"@en ; rdfs:range xsd:string .
+disp:statement a owl:DatatypeProperty ; rdfs:label "statement"@en ; rdfs:range xsd:string .
+disp:uri a owl:DatatypeProperty ; rdfs:label "uri"@en ; rdfs:range xsd:anyURI .
+disp:respondBy a owl:DatatypeProperty ; rdfs:label "respond by"@en ; rdfs:range xsd:dateTime .
+disp:receivedAt a owl:DatatypeProperty ; rdfs:label "received at"@en ; rdfs:range xsd:dateTime .

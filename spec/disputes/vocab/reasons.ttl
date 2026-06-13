@@ -1,0 +1,56 @@
+# AVP-Micro dispute/refund reason codes (native, extensible SKOS scheme).
+#
+# Informative skos:note / rdfs:seeAlso map concepts to external frameworks
+# (card-network chargeback families, ISO 20022 returns). These mappings are
+# NON-NORMATIVE. Implementers MAY mint additional concepts in their own scheme.
+#
+# Namespace: https://w3id.org/avp-micro/disputes/v1#  (prefix disp:)
+@prefix disp: <https://w3id.org/avp-micro/disputes/v1#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+disp:DisputeReasonScheme a skos:ConceptScheme ;
+  skos:prefLabel "AVP-Micro dispute/refund reason scheme"@en ;
+  skos:definition "An extensible set of reason concepts for refunds and disputes."@en .
+
+disp:not-delivered a skos:Concept ; skos:inScheme disp:DisputeReasonScheme ;
+  skos:prefLabel "Service not delivered"@en ;
+  skos:definition "The paid-for service or output was never provided."@en ;
+  skos:note "Maps to card-network 'services not rendered'; ISO 20022 return."@en .
+
+disp:not-as-described a skos:Concept ; skos:inScheme disp:DisputeReasonScheme ;
+  skos:prefLabel "Not as described"@en ;
+  skos:definition "The delivered output did not match the agreed terms."@en ;
+  skos:note "Maps to card-network 'not as described / defective'."@en .
+
+disp:unauthorized a skos:Concept ; skos:inScheme disp:DisputeReasonScheme ;
+  skos:prefLabel "Unauthorized"@en ;
+  skos:definition "The payer or principal did not authorize the charge."@en ;
+  skos:note "Maps to card-network fraud / unauthorized family."@en .
+
+disp:incorrect-amount a skos:Concept ; skos:inScheme disp:DisputeReasonScheme ;
+  skos:prefLabel "Incorrect amount"@en ;
+  skos:definition "The amount charged did not match the quote or metered usage."@en ;
+  skos:note "Maps to card-network 'incorrect amount'."@en .
+
+disp:duplicate a skos:Concept ; skos:inScheme disp:DisputeReasonScheme ;
+  skos:prefLabel "Duplicate charge"@en ;
+  skos:definition "The same charge was processed more than once."@en ;
+  skos:note "Maps to card-network 'duplicate processing'."@en .
+
+disp:canceled a skos:Concept ; skos:inScheme disp:DisputeReasonScheme ;
+  skos:prefLabel "Canceled"@en ;
+  skos:definition "The service was canceled before delivery."@en ;
+  skos:note "Maps to card-network 'canceled recurring / services'."@en .
+
+disp:quality a skos:Concept ; skos:inScheme disp:DisputeReasonScheme ;
+  skos:prefLabel "Quality complaint"@en ;
+  skos:definition "A subjective complaint about the quality of the delivered output."@en .
+
+disp:goodwill a skos:Concept ; skos:inScheme disp:DisputeReasonScheme ;
+  skos:prefLabel "Goodwill"@en ;
+  skos:definition "A voluntary refund with no asserted fault; refund-only."@en .
+
+disp:other a skos:Concept ; skos:inScheme disp:DisputeReasonScheme ;
+  skos:prefLabel "Other"@en ;
+  skos:definition "Any reason not covered by another concept; SHOULD accompany a free-text note."@en .
