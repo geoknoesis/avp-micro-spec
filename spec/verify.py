@@ -417,6 +417,7 @@ def main() -> int:
     check("dispute.executionDigest matches execution(08)",
           dispute["executionDigest"] == ac.jcs_digest(session_exec))
     check("evidence binds dispute digest", ev_payee["disputeDigest"] == ac.jcs_digest(dispute))
+    check("payer evidence binds dispute digest", ev_payer["disputeDigest"] == ac.jcs_digest(dispute))
     check("payee resolution binds dispute digest", res_payee["disputeDigest"] == ac.jcs_digest(dispute))
     check("arbiter supersedesDigest matches payee resolution",
           res_arb["supersedesDigest"] == ac.jcs_digest(res_payee))
@@ -455,7 +456,7 @@ def main() -> int:
     check("cumulative settled returns <= original (exec 08)", settled08 <= orig08)
 
     # S1: a dispute-caused reversal references an upheld/partial resolution
-    check("reversal(dispute) references upheld/partial resolution",
+    check("reversal(dispute) cause=dispute and resolution outcome is upheld/partial",
           rev_dispute["cause"] == "dispute" and res_arb["outcome"] in ("upheld", "partial"))
     # S2: arbiter resolution supersedes a payee resolution; arbiter == dispute.arbiter
     check("arbiter resolution supersedes a payee resolution",
