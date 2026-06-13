@@ -1,4 +1,4 @@
-cryptography>=41.0.0
+cryptography>=43.0.0
 rdflib>=7.0.0
 pyld>=2.0.0
 jsonschema[format-nongpl]>=4.21.0

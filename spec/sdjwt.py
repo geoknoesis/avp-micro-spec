@@ -8,7 +8,7 @@ the harness already requires):
   * deterministic P-256 (secp256r1) test keys
   * ES256 (ECDSA P-256 + SHA-256) JWS compact sign/verify with raw R||S signatures
     (RFC 7515 / RFC 7518)
-  * JWK import/export for EC P-256 and OKP Ed25519 public keys (RFC 7517/8037)
+  * JWK import/export for EC P-256 public keys (RFC 7517)
   * SD-JWT compact handling for the degenerate (no-disclosure) case this profile
     uses in proof-preserving mode: ``<JWS>~``
 
@@ -22,12 +22,8 @@ import hashlib
 import json
 from typing import Any
 
-from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives.asymmetric.ed25519 import (
-    Ed25519PrivateKey,
-    Ed25519PublicKey,
-)
 from cryptography.hazmat.primitives.asymmetric.utils import (
     decode_dss_signature,
     encode_dss_signature,
@@ -76,17 +72,6 @@ def p256_public_from_jwk(jwk: dict) -> ec.EllipticCurvePublicKey:
     return ec.EllipticCurvePublicNumbers(x, y, ec.SECP256R1()).public_key()
 
 
-def ed25519_public_jwk(pub: Ed25519PublicKey) -> dict:
-    raw = pub.public_bytes(
-        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
-    )
-    return {"kty": "OKP", "crv": "Ed25519", "x": b64u_encode(raw)}
-
-
-def ed25519_public_from_jwk(jwk: dict) -> Ed25519PublicKey:
-    return Ed25519PublicKey.from_public_bytes(b64u_decode(jwk["x"]))
-
-
 # ---- ES256 JWS (compact) ----
 
 def es256_sign(header: dict, payload: dict, priv: ec.EllipticCurvePrivateKey) -> str:
@@ -119,22 +104,6 @@ def jws_header(jws: str) -> dict:
 
 def jws_payload(jws: str) -> dict:
     return json.loads(b64u_decode(jws.split(".")[1]))
-
-
-# ---- EdDSA JWS (compact) -- used for the agent key-binding JWT (L3) ----
-
-def eddsa_jws_sign(header: dict, payload: dict, priv: Ed25519PrivateKey) -> str:
-    signing_input = (_b64u_json(header) + "." + _b64u_json(payload)).encode("ascii")
-    return signing_input.decode("ascii") + "." + b64u_encode(priv.sign(signing_input))
-
-
-def eddsa_jws_verify(jws: str, pub: Ed25519PublicKey) -> bool:
-    try:
-        h_b64, p_b64, sig_b64 = jws.split(".")
-        pub.verify(b64u_decode(sig_b64), (h_b64 + "." + p_b64).encode("ascii"))
-        return True
-    except Exception:
-        return False
 
 
 def sd_hash(sd_input: str) -> str:

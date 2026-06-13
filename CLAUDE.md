@@ -42,8 +42,8 @@ python spec/validate.py
 
 `generate.py` is the canonical source of truth — it (re)writes every test vector using the deterministic key derivation in `avp_crypto.py` and `sdjwt.py`. Running it overwrites existing vectors; that is intended.
 
-- **`avp_crypto.py`**: Ed25519 key derivation (`seed_key`), `did:key` encoding, JCS canonicalization, `eddsa-jcs-2022` sign/verify. The mandatory-to-implement cryptosuite for AVP-Micro.
-- **`sdjwt.py`**: P-256 key derivation (`seed_p256`), ES256 sign/verify (raw R‖S), JWK encode/decode, `sdjwt_compact`, `sdjwt_jws`, `make_disclosure`, `disclosure_digest`, `sd_hash`, EdDSA key-binding JWT helpers. Used only by the interop bundle.
+- **`avp_crypto.py`**: P-256 key derivation (`seed_key`), `did:key` P-256 `Multikey` encoding (multicodec `p256-pub`), JCS canonicalization, `ecdsa-jcs-2022` sign/verify (deterministic RFC 6979, canonical low-s, raw R‖S). The mandatory-to-implement cryptosuite for AVP-Micro.
+- **`sdjwt.py`**: P-256 key derivation (`seed_p256`), ES256 sign/verify (raw R‖S) — also used for the agent key-binding JWT (L3) — JWK encode/decode, `sdjwt_compact`, `sdjwt_jws`, `make_disclosure`, `disclosure_digest`, `sd_hash`. Used only by the interop bundle.
 - **`interop.py`**: AVP-Micro ⇄ SD-JWT-VC translator. Claim mapping, three bridge modes (proof-preserving / co-issued / attested), cross-stack verification, lossy-case `importAdvisory` surfacing, L3 key-binding JWT.
 - **`pricing.py`**: Pricing-model evaluator (flat, per-call, tiered, composite) used by the Payments bundle.
 

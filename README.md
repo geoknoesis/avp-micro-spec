@@ -32,7 +32,7 @@ All checks must report `PASS`.
 
 | File | Purpose |
 |------|---------|
-| `spec/avp_crypto.py` | Ed25519 key derivation, JCS canonicalization, `eddsa-jcs-2022` sign/verify |
+| `spec/avp_crypto.py` | P-256 key derivation, JCS canonicalization, `ecdsa-jcs-2022` sign/verify (deterministic, low-s) |
 | `spec/sdjwt.py` | P-256 keys, ES256/JOSE, JWK, SD-JWT primitives for the interop bundle |
 | `spec/interop.py` | AVP-Micro ⇄ SD-JWT-VC translator: claim mapping, both envelopes, cross-stack verification |
 | `spec/pricing.py` | Pricing-model evaluator (flat, per-call, tiered, composite) |
