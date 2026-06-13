@@ -403,7 +403,9 @@ def wallet_process(world: World, authz: dict) -> dict:
         "authorization": authz["id"], "amount": str(settled), "currency": authz["currency"],
         "status": status, "settlementRef": ref, "timestamp": world.clock.now(),
     }
-    return world.actor("wallet").sign(execution, world.clock.now())
+    signed = world.actor("wallet").sign(execution, world.clock.now())
+    world.ctx["execution"] = signed
+    return signed
 
 
 # ---- streaming / session ----------------------------------------------------
@@ -532,43 +534,89 @@ def _do_execute(world, step):
     return {"status": execution["status"], "settled": execution["amount"]}
 
 
+_OBJECT_OF = {
+    "quote": "quote", "authorize": "authz", "confirm": "confirmation",
+    "execute": "execution", "replay": "execution", "receipt": "receipt",
+    "open_session": "session", "budget_authorize": "sba", "accrue": "accrual",
+    "close_session": "sessionExecution",
+}
+
+
+def _execute_step(world: World, step: dict):
+    """Run one step against the world; return (outcome_dict, emitted_object_or_None).
+    A Reject is turned into an outcome, not raised -- the runner decides if it was
+    expected."""
+    action = step["action"]
+    if action == "corrupt_authz":                          # post-signing corruption breaks the proof
+        seg = world.ctx["authz"]["proof"]["proofValue"]
+        world.ctx["authz"]["proof"]["proofValue"] = "z" + ("A" if seg[1] != "A" else "B") + seg[2:]
+        return {"outcome": "ok"}, None
+    try:
+        res = HANDLERS[action](world, step) or {"ok": True}
+        if isinstance(res, dict) and "_set" in res:
+            _store(world, *res["_set"])
+        outcome = {"outcome": "ok", **{k: v for k, v in res.items() if not k.startswith("_")}}
+    except Reject as r:
+        outcome = {"outcome": "reject", "code": r.code}
+    obj = world.ctx.get(_OBJECT_OF.get(action)) if _OBJECT_OF.get(action) else None
+    return outcome, obj
+
+
+def _matches(expect, got) -> bool:
+    if expect == "ok":
+        return got["outcome"] == "ok"
+    if "reject" in expect:
+        return got["outcome"] == "reject" and got.get("code") == expect["reject"]
+    if got["outcome"] != "ok":
+        return False
+    if "status" in expect and got.get("status") != expect["status"]:
+        return False
+    if "settled" in expect and _d(got.get("settled", 0)) != _d(expect["settled"]):
+        return False
+    return True
+
+
 def run_scenario(sc: dict) -> None:
     """Execute a declarative scenario; raise AssertionError on any unmet expectation."""
     world = World(sc)
     for i, step in enumerate(sc["steps"]):
-        label = f"{sc['name']} step {i} ({step['action']})"
-        # post-signing corruption breaks the proof
-        if step["action"] == "corrupt_authz":
-            seg = world.ctx["authz"]["proof"]["proofValue"]
-            world.ctx["authz"]["proof"]["proofValue"] = "z" + ("A" if seg[1] != "A" else "B") + seg[2:]
-            _check(step.get("expect", "ok"), {"outcome": "ok"}, label)
-            continue
-        try:
-            res = HANDLERS[step["action"]](world, step) or {"ok": True}
-            if isinstance(res, dict) and "_set" in res:
-                _store(world, *res["_set"])
-            outcome = {"outcome": "ok", **{k: v for k, v in (res or {}).items() if not k.startswith("_")}}
-        except Reject as r:
-            outcome = {"outcome": "reject", "code": r.code}
-        _check(step.get("expect", "ok"), outcome, label)
+        outcome, _ = _execute_step(world, step)
+        assert _matches(step.get("expect", "ok"), outcome), \
+            f"{sc['name']} step {i} ({step['action']}): expected {step.get('expect', 'ok')}, got {outcome}"
     _check_final(sc, world)
 
 
-def _check(expect, got, label):
-    if expect == "ok":
-        assert got["outcome"] == "ok", f"{label}: expected ok, got {got}"
-        return
-    if "reject" in expect:
-        assert got["outcome"] == "reject", f"{label}: expected reject:{expect['reject']}, got {got}"
-        assert got["code"] == expect["reject"], f"{label}: expected reject:{expect['reject']}, got reject:{got['code']}"
-        return
-    # status/settled expectation on an execution
-    assert got["outcome"] == "ok", f"{label}: expected {expect}, got {got}"
-    if "status" in expect:
-        assert got.get("status") == expect["status"], f"{label}: status {got.get('status')} != {expect['status']}"
-    if "settled" in expect:
-        assert _d(got.get("settled", 0)) == _d(expect["settled"]), \
-            f"{label}: settled {got.get('settled')} != {expect['settled']}"
+def _bal(d: dict) -> dict:
+    return {k: str(v) for k, v in d.items()}
+
+
+def run_traced(sc: dict) -> dict:
+    """Execute a scenario and return a structured trace (for UIs/tooling): each step's
+    outcome, the signed message it emitted, the clock, and the ledger after it -- plus
+    the spending-authority credential and the overall pass/fail. Never raises."""
+    world = World(sc)
+    start = _bal(world.ledger.bal)
+    trace, all_ok = [], True
+    for i, step in enumerate(sc["steps"]):
+        outcome, obj = _execute_step(world, step)
+        matched = _matches(step.get("expect", "ok"), outcome)
+        all_ok = all_ok and matched
+        trace.append({
+            "i": i, "action": step["action"],
+            "params": {k: v for k, v in step.items() if k not in ("action", "expect")},
+            "expect": step.get("expect", "ok"), "outcome": outcome, "matched": matched,
+            "object": obj, "clock": world.clock.now(), "balances": _bal(world.ledger.bal),
+        })
+    final_ok = all(world.ledger.bal.get(r, Decimal(0)) == _d(v)
+                   for r, v in sc.get("finalBalances", {}).items())
+    return {
+        "name": sc["name"], "description": sc.get("description", ""),
+        "policy": sc.get("policy", {}), "credential": world.credential,
+        "imported": sc.get("credential", {}).get("source") == "ap2-intent",
+        "resolver": sorted(world.resolver.keys()),
+        "start": start, "final": _bal(world.ledger.bal), "finalBalances": sc.get("finalBalances", {}),
+        "trace": trace, "ok": all_ok and final_ok,
+    }
 
 
 def _check_final(sc, world):
