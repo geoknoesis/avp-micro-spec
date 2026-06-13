@@ -55,7 +55,7 @@ PAY_VECTORS = {
     "18-payment-authorization-confirmed.json": "PaymentAuthorization",
 }
 # Bridged vectors validate against their SEMANTIC type's interop $def; the securing
-# axis is the shared SecuringDescriptor/bridgeSecured mixin inside each $def (D8/D9).
+# axis is the shared SecuringDescriptor/bridgeSecured mixin inside each $def.
 INTEROP_VECTORS = {
     "02-imported-mandate.json": "SpendingAuthorizationCredential",
     "04-imported-from-foreign.json": "SpendingAuthorizationCredential",

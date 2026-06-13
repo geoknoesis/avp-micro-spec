@@ -160,7 +160,7 @@
       AVP-Micro secures JSON-LD credentials with W3C Data Integrity
       (<code>ecdsa-jcs-2022</code>) over DIDs, whereas SD-JWT-VC secures JOSE tokens
       with <code>ES256</code> over <code>iss</code>/<code>sub</code> identifiers. Both
-      now sign over the <strong>same curve</strong> (P-256), so what differs is the
+      sign over the <strong>same curve</strong> (P-256), so what differs is the
       <em>envelope</em> &mdash; canonicalization, proof serialization, and identifier
       scheme &mdash; not the key or signature algorithm; the bridge is a transcoding,
       not a key migration. This
@@ -788,7 +788,7 @@
         issuer signature on export, or the absence of an outer proof on import) as a
         substitute. The outer signature attests only transport, typing, and holder
         binding.</li>
-      <li><strong>Suite and layer pinning.</strong> Both layers now sign over the same
+      <li><strong>Suite and layer pinning.</strong> Both layers sign over the same
         curve (P-256), so a verifier <em>MUST</em> distinguish them by <em>suite and
         signing input</em>, not by key type: the embedded authority <em>MUST</em> be
         verified as an <code>ecdsa-jcs-2022</code> Data Integrity proof over its JCS
@@ -842,7 +842,7 @@
         key-resolution method, so proof-preserving import depends on the
         <a>did:web binding convention</a> (<a href="#identity-import"></a>), failing
         which the object cannot be imported proof-preservingly. (The signing curve is
-        no longer a barrier &mdash; both stacks use P-256.)</li>
+        not a barrier &mdash; both stacks use P-256.)</li>
     </ul>
   </section>
 

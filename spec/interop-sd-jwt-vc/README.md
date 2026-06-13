@@ -167,7 +167,7 @@ human approval to the AVP-Micro mandate/payment model, in both directions:
 
 ### Scope of the vectors
 
-All three bridge modes and both layers are now vectorised:
+All three bridge modes and both layers are vectorised:
 
 - **Mandate bridge** (DSA `SpendingAuthorizationCredential` ↔ SD-JWT-VC L1), both
   directions, `proof-preserving`.
@@ -192,7 +192,7 @@ HTTP `Link` headers. Refresh those files from the canonical URLs if the contexts
 
 Two distinct stacks meet here. AVP-Micro objects use W3C Data Integrity
 `DataIntegrityProof` with `ecdsa-jcs-2022` over `did:key` (P-256). SD-JWT-VC objects
-use `ES256` (P-256) JOSE signatures with `cnf` holder binding. Both now sign over the
+use `ES256` (P-256) JOSE signatures with `cnf` holder binding. Both sign over the
 same P-256 curve; the profile still never collapses the two envelopes — it carries each
 in its native form and requires verifiers to check the one that bears the authority
 (see the spec "Cross-stack verification" section).

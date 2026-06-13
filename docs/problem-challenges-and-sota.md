@@ -1,6 +1,6 @@
 # Problem, Challenges, and State of the Art
 
-This document describes the problem **AVP-Micro** (Agent Verifiable Micropayments) is meant to address, the practical challenges that block today’s systems from solving it, and the current state of the art in standards and products. It complements the normative specifications under [`spec/`](../spec/) — [Delegated Spending Authority](../spec/authority/index.html) and [AVP-Micro Payments](../spec/payments/index.html) — and the narrative draft [`avp-micro.md`](../avp-micro.md).
+This document describes the problem **AVP-Micro** (Agent Verifiable Micropayments) is meant to address, the practical challenges that block today’s systems from solving it, and the current state of the art in standards and products. It complements the normative specifications under [`spec/`](../spec/) — [Delegated Spending Authority](../spec/authority/index.html) and [AVP-Micro Payments](../spec/payments/index.html).
 
 ---
 

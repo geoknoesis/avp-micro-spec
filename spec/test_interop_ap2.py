@@ -78,13 +78,13 @@ def test_intent_import_is_dsa_projection_plus_extras():
     compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(header, claims, user))
     vc = interop.sdjwtvc_intent_to_avp(compact, "proof-preserving")
     assert "SpendingAuthorizationCredential" in vc["type"]
-    # D8: semantic type stays pure -- no carrier/proof markers in type
+    # semantic type stays pure -- no carrier/proof markers in type
     assert all("Embedded" not in t for t in vc["type"])
     assert vc["credentialSubject"]["maxPerTransaction"] == "120.00"
     assert vc["credentialSubject"]["allowedPayees"] == ["did:web:merchant.example"]
     assert vc["requiresPurchaseConfirmation"] is True  # intent extras are semantic, top-level
     assert "proof" not in vc  # proof-preserving projection
-    # D9: everything bridge-related lives in the one securing descriptor
+    # everything bridge-related lives in the one securing descriptor
     sec = vc["securing"]
     assert sec["mode"] == "proof-preserving"
     assert sec["carrier"] == "sd-jwt-vc"
@@ -120,7 +120,7 @@ def test_cart_import_projects_quote_and_binds_hash():
         {"alg": "ES256", "typ": "dc+sd-jwt", "kid": "did:web:merchant.example#key-1"},
         claims, merchant))
     proj = interop.cart_mandate_to_quote(compact, cart, mode="proof-preserving")
-    assert proj["type"] == ["PaymentQuote"]  # semantic type only (D8)
+    assert proj["type"] == ["PaymentQuote"]  # semantic type only
     assert proj["payee"] == "did:web:merchant.example"
     assert proj["amount"] == "24.00"
     assert proj["currency"] == "USD"
@@ -241,21 +241,21 @@ import rdflib as _rdflib
 
 def test_interop_context_defines_securing_and_intent_terms():
     ctx = _json.loads(_Path("spec/interop-sd-jwt-vc/context/v1.jsonld").read_text(encoding="utf-8"))["@context"]
-    # the one securing descriptor (D9), with its scoped terms
+    # the one securing descriptor, with its scoped terms
     assert "securing" in ctx
     scoped = ctx["securing"]["@context"]
     for term in ("mode", "carrier", "embedded", "sourceVct", "attestingBridge",
                  "importAdvisory", "profileVersion"):
         assert term in scoped, f"missing scoped securing term: {term}"
-    # intent extras are semantic claims, top-level (D11)
+    # intent extras are semantic claims, top-level
     for term in ("intentDescription", "itemConstraints", "refundabilityRequired",
                  "requiresPurchaseConfirmation"):
         assert term in ctx, f"missing context term: {term}"
-    # the cross-product types and per-pair carrier fields are gone (D8/D9)
-    for legacy in ("EmbeddedSdJwtVcMandate", "EmbeddedKbJwtAuthorization", "EmbeddedCartQuote",
-                   "EmbeddedCartUserConfirmation", "bridgeMode", "embeddedSdJwtVc",
-                   "embeddedKbJwtPresentation", "embeddedCartMandate", "embeddedCartUserAuth"):
-        assert legacy not in ctx, f"legacy cross-product term still present: {legacy}"
+    # carrier/proof markers never appear in the semantic context
+    for forbidden in ("EmbeddedSdJwtVcMandate", "EmbeddedKbJwtAuthorization", "EmbeddedCartQuote",
+                      "EmbeddedCartUserConfirmation", "bridgeMode", "embeddedSdJwtVc",
+                      "embeddedKbJwtPresentation", "embeddedCartMandate", "embeddedCartUserAuth"):
+        assert forbidden not in ctx, f"carrier/proof marker present: {forbidden}"
 
 
 def test_interop_vocab_parses():

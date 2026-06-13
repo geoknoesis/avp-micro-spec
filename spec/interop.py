@@ -65,7 +65,7 @@ def token_list_to_status(status: dict) -> dict:
     }
 
 
-# ---- securing descriptor: the one securing/bridge axis (D8/D9) ----
+# ---- securing descriptor: the one securing/bridge axis ----
 #
 # Semantic ``type`` stays pure (authorization semantics only); HOW an object's
 # authority is secured when it crosses the stack boundary lives in the single
@@ -99,7 +99,7 @@ def secure(obj: dict, *, mode: str, embedded: str | None = None, carrier: str | 
 
 
 def add_advisories(obj: dict, advisories: list) -> dict:
-    """Append import advisories to an already-secured object (bridge provenance, D9)."""
+    """Append import advisories to an already-secured object (bridge provenance)."""
     sec = obj.setdefault("securing", {})
     sec["importAdvisory"] = list(sec.get("importAdvisory", [])) + list(advisories)
     return obj
@@ -209,7 +209,7 @@ def intent_extras(claims: dict) -> tuple[dict, list]:
 def sdjwtvc_intent_to_avp(compact: str, mode: str = "proof-preserving") -> dict:
     """Import an AP2 IntentMandate (SD-JWT-VC) as a SpendingAuthorizationCredential
     projection plus the carried-but-unenforced intent extras. The extras are semantic
-    claims and stay top-level (D11); the advisories are bridge provenance (D9)."""
+    claims and stay top-level; the advisories are bridge provenance."""
     vc = sdjwtvc_to_avp(compact, mode)
     payload, _ = _effective_claims(compact)
     extras, advisories = intent_extras(payload)

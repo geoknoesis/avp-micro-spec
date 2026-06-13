@@ -1,4 +1,4 @@
-"""Ontology assertions for the authorization capacity/instance axis (design D13-D17).
+"""Ontology assertions for the authorization capacity/instance axis.
 
 These guard the *semantics*, not the wire format: the capacity/instance subclassing,
 the semantic chain relations, the strict separation of those from provenance relations,
@@ -36,7 +36,7 @@ def I(name):
     return URIRef(IOP + name)
 
 
-# ---- D13: capacity / instance are the two authorization kinds ----
+# ---- capacity / instance are the two authorization kinds ----
 
 def test_capacity_and_instance_classes_exist():
     g = _g("authority/vocab/dsa.ttl")
@@ -57,7 +57,7 @@ def test_payment_authorization_and_confirmation_are_instances():
         assert (A(c), RDFS.subClassOf, D("AuthorizationInstance")) in g, f"avp:{c} not an instance"
 
 
-# ---- D14: commitments / facts are NOT authorizations ----
+# ---- commitments / facts are NOT authorizations ----
 
 def test_quote_and_execution_are_not_authorizations():
     g = _g("authority/vocab/dsa.ttl", "payments/vocab/avp.ttl")
@@ -67,7 +67,7 @@ def test_quote_and_execution_are_not_authorizations():
         assert (A(c), RDFS.subClassOf, D("Authorization")) not in g
 
 
-# ---- D15: semantic chain relations exist and are NOT provenance relations ----
+# ---- semantic chain relations exist and are NOT provenance relations ----
 
 def test_semantic_chain_relations_exist_with_domain_range():
     g = _g("authority/vocab/dsa.ttl")
@@ -90,7 +90,7 @@ def test_authorization_chain_never_uses_prov_derivedfrom():
         assert o not in prov_terms and p not in prov_terms, f"provenance relation leaked into DSA: {p} {o}"
 
 
-# ---- D15 (bridge side): provenance relations are the securing layer's ----
+# ---- bridge side: provenance relations are the securing layer's ----
 
 def test_securing_uses_provenance_relations():
     g = _g("interop-sd-jwt-vc/vocab/interop.ttl")
@@ -99,7 +99,7 @@ def test_securing_uses_provenance_relations():
         "interop vocab should align the securing/bridge layer with PROV-O"
 
 
-# ---- D16: intent disambiguation ----
+# ---- intent disambiguation ----
 
 def test_natural_language_intent_is_distinct_and_non_enforced():
     g = _g("interop-sd-jwt-vc/vocab/interop.ttl")

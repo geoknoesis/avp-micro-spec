@@ -51,7 +51,7 @@ What this layer adds over a single network's built-in permissions:
   schemes, so an agent's spending authority is not locked to a single network's
   substrate.
 - **Standards-based, not proprietary.** Built entirely on ratified W3C specs
-  (`eddsa-jcs-2022`, `BitstringStatusList`) with signed test vectors — no
+  (`ecdsa-jcs-2022`, `BitstringStatusList`) with signed test vectors — no
   dependency on a network operator's SDK, tokenization service, or governance.
 
 These schemes use a **different credential stack**, so interoperation requires a
@@ -61,13 +61,12 @@ layer under Agent Pay for Machines, aligned with AP2) is built on **SD-JWT VC**
 identified by `iss`/`sub` URIs and opaque `kid` values. It deliberately does
 **not** conform to the W3C VC Data Model and does **not** use DIDs. AVP-Micro, by
 contrast, secures W3C VC 2.0 / JSON-LD credentials with Data Integrity
-(`eddsa-jcs-2022`) and identifies parties by DID. A `SpendingAuthorizationCredential`
+(`ecdsa-jcs-2022`) and identifies parties by DID. A `SpendingAuthorizationCredential`
 therefore cannot be verified directly by an SD-JWT-VC verifier (or vice versa);
 the authorization *semantics* (caps, allowed payees, time windows, revocation) are
 network-independent and can be mapped across, but the *encoding and proof* must be
-bridged. See the interop design note in
-[`docs/superpowers/specs/`](../docs/superpowers/specs/) for the mapping/profile
-options.
+bridged by the [interop profile](interop-sd-jwt-vc/), which defines the claim mapping
+and the securing descriptor.
 
 ## Validate everything
 
@@ -87,7 +86,7 @@ network access to w3.org.
 
 | File | Purpose |
 |------|---------|
-| `avp_crypto.py` | Ed25519 key derivation, JCS canonicalization, `eddsa-jcs-2022` sign/verify |
+| `avp_crypto.py` | P-256 key derivation, JCS canonicalization, `ecdsa-jcs-2022` sign/verify (deterministic, low-s) |
 | `sdjwt.py` | P-256 keys, ES256/JOSE, JWK, and SD-JWT compact primitives for the interop bundle (uses only `cryptography`) |
 | `interop.py` | AVP-Micro ⇄ SD-JWT-VC translator: claim mapping, both envelopes, cross-stack verification |
 | `generate.py` | Writes deterministic signed test vectors into `authority/`, `payments/`, and `interop-sd-jwt-vc/` `test-vectors/` |
@@ -97,9 +96,9 @@ network access to w3.org.
 ## Securing mechanism
 
 Mandatory-to-implement: W3C Data Integrity `DataIntegrityProof` with cryptosuite
-`eddsa-jcs-2022`; `did:key` (Ed25519 / `Multikey`) is the mandatory-to-implement
-DID method for interoperability testing. See the respective spec "Securing
-mechanisms" sections.
+`ecdsa-jcs-2022` (P-256); `did:key` (P-256 / `Multikey`) is the mandatory-to-implement
+DID method for interoperability testing. `eddsa-jcs-2022` (Ed25519) MAY be supported
+as an optional suite. See the respective spec "Securing mechanisms" sections.
 
 ## Canonical URLs (registration pending)
 

@@ -25,7 +25,7 @@
 # Classes
 #################################################################
 #
-# Authorization axis (design 2026-06-12-authorization-capacity-instance-axis):
+# Authorization axis:
 # the payer/principal-signed authorizations are consumable dsa:AuthorizationInstances;
 # the payee-signed quote/offer/receipt are COMMITMENTS and the wallet-signed execution
 # is a settlement FACT -- neither is an authorization, so neither is placed in the

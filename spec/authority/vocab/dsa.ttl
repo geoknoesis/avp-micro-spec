@@ -28,7 +28,7 @@
 # whereas an INSTANCE is consumed once (a concrete act -- nonce-bound, single-use,
 # liability-bearing). Commitments (a payee-signed quote/receipt/offer) and settlement
 # facts (an execution) are NOT authorizations and are intentionally outside this
-# hierarchy. See design note 2026-06-12-authorization-capacity-instance-axis.
+# hierarchy.
 
 dsa:Authorization a owl:Class ;
   rdfs:label "Authorization"@en ;
