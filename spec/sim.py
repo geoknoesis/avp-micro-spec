@@ -48,6 +48,8 @@ from decimal import Decimal
 from pathlib import Path
 
 import avp_crypto as ac
+import interop
+import sdjwt
 
 ISO = "%Y-%m-%dT%H:%M:%SZ"
 PAY_CTX = ["https://www.w3.org/ns/credentials/v2",
@@ -102,7 +104,16 @@ class Clock:
         return self.t.strftime("%Y-%m-%d")
 
 
-class Ledger:
+class SettlementRail:
+    """The pluggable settlement backend -- the one seam where real money would move.
+    The simulator uses SimulatedLedger (play balances); a deployment swaps in a real
+    rail or testnet adapter exposing the same settle(payer, payee, amount, key) ->
+    (settlementRef, settledAmount). The simulator never instantiates a real rail."""
+    def settle(self, payer, payee, amount, key):
+        raise NotImplementedError
+
+
+class SimulatedLedger(SettlementRail):
     """Simulated settlement rail. Play balances only; never touches real funds.
     settle() is idempotent on the settlement key (retry-safe) and supports partials."""
     def __init__(self, balances: dict):
@@ -144,7 +155,8 @@ class World:
         self.quote_ttl = int(sc.get("quoteTtl", 300))
         self.auth_ttl = int(sc.get("authTtl", 60))
         self._actors: dict = {}
-        self.ledger = Ledger(sc.get("balances", {}))
+        self.ledger = SimulatedLedger(sc.get("balances", {}))
+        self.resolver: dict = {}            # did:web -> P-256 JWK, for bridged authority
         self.ctx: dict = {}                 # last quote/authz/confirmation/session...
         self.nonces: set = set()            # replay protection
         self.executed: set = set()          # one-off single-use (consumed instances)
@@ -159,6 +171,8 @@ class World:
         return self._actors[role]
 
     def _issue_credential(self) -> dict:
+        if self.sc.get("credential", {}).get("source") == "ap2-intent":
+            return self._import_ap2_intent()
         p = self.sc.get("policy", {})
         subj = {"id": self.actor("agent").did, "currency": p.get("currency", "USD")}
         if "maxPerTransaction" in p:
@@ -179,6 +193,37 @@ class World:
             "credentialSubject": subj,
         }
         return self.actor("principal").sign(cred, self.clock.now())
+
+    def _import_ap2_intent(self) -> dict:
+        """The agent's authority is an AP2 IntentMandate (ES256, did:web user issuer),
+        imported proof-preservingly into a SpendingAuthorizationCredential projection.
+        The wallet verifies it via the embedded foreign signature + did:web resolver --
+        authority roots in the user DID, never in the bridge."""
+        p = self.sc.get("policy", {})
+        user, agent = self.actor("user"), self.actor("agent")
+        user_did = "did:web:user.sim"
+        self.resolver[user_did] = sdjwt.p256_public_jwk(user.key.public_key())
+        limits = {}
+        if "maxPerTransaction" in p:
+            limits["per_txn"] = p["maxPerTransaction"]
+        if "dailyLimit" in p:
+            limits["per_day"] = p["dailyLimit"]
+        claims = {
+            "vct": interop.INTENT_VCT, "iss": user_did, "sub": agent.did,
+            "cnf": {"jwk": sdjwt.p256_public_jwk(agent.key.public_key())},
+            "currency": p.get("currency", "USD"), "limits": limits,
+            "nbf": interop.iso_to_numericdate(self.clock.now()),
+            "exp": interop.iso_to_numericdate(self.clock.plus(365 * 24 * 3600)),
+            "jti": "urn:sim:ap2:intent:1",
+        }
+        if "allowedPayees" in p:
+            claims["allowed_payees"] = [self.actor(r).did for r in p["allowedPayees"]]
+        if p.get("requiresConfirmation"):
+            claims["requires_user_confirmation"] = True
+        header = {"alg": "ES256", "typ": "dc+sd-jwt", "kid": user_did + "#k"}
+        compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(header, claims, user.key))
+        self.ctx["intentCompact"] = compact
+        return interop.sdjwtvc_intent_to_avp(compact, "proof-preserving")
 
     # -- policy view from the SIGNED credential (faithful enforcement) --
     @property
@@ -238,7 +283,29 @@ def build_authorization(world: World, step: dict) -> dict:
     return world.actor("agent").sign(authz, world.clock.now())
 
 
+def build_imported_confirmation(world: World, step: dict) -> dict:
+    """An AP2 human-present cart approval (ES256, did:web user) imported as a
+    PurchaseConfirmation projection -- authority is the embedded user signature."""
+    quote = world.ctx["quote"]
+    user = world.actor("user")
+    user_did = "did:web:user.sim"
+    world.resolver[user_did] = sdjwt.p256_public_jwk(user.key.public_key())
+    user_auth = {"iss": user_did, "sub": world.actor("agent").did, "cart_hash": quote["requestHash"],
+                 "iat": interop.iso_to_numericdate(world.clock.now()),
+                 "exp": interop.iso_to_numericdate(world.clock.plus(world.auth_ttl))}
+    compact = sdjwt.sdjwt_compact(sdjwt.es256_sign(
+        {"alg": "ES256", "typ": "dc+sd-jwt", "kid": user_did + "#k"}, user_auth, user.key))
+    clean = {k: v for k, v in quote.items() if not k.startswith("_")}
+    return interop.import_cart_user_confirmation(
+        compact, quote_digest=ac.jcs_digest(clean), agent_did=world.actor("agent").did,
+        payee=quote["payee"], amount=quote["amount"], currency=quote["currency"],
+        request_hash=quote["requestHash"], confirmed_by=user_did, quote=quote["id"],
+        mode="proof-preserving")
+
+
 def build_confirmation(world: World, step: dict) -> dict:
+    if step.get("source") == "ap2-user":
+        return build_imported_confirmation(world, step)
     quote = world.ctx["quote"]
     signer_role = step.get("by", "principal")             # "agent" => forged
     conf = {
@@ -256,14 +323,18 @@ def build_confirmation(world: World, step: dict) -> dict:
 # ---- the wallet: verification + policy enforcement + settlement -------------
 
 def _verify_confirmation(world: World, conf: dict, authz: dict):
-    if _controller(conf) != conf.get("confirmedBy") or conf["confirmedBy"] == conf["payer"]:
-        raise Reject("forgedConfirmation")                # signer MUST be confirmedBy (a principal)
-    if not ac.verify_ecdsa_jcs_2022(conf):
+    if conf.get("confirmedBy") == conf["payer"]:          # must name a principal != the agent
         raise Reject("forgedConfirmation")
+    if "securing" in conf:                                # AP2-imported projection
+        if not interop.verify_purchase_confirmation(conf, world.resolver):
+            raise Reject("forgedConfirmation")
+    else:                                                 # native: signer MUST be confirmedBy
+        if _controller(conf) != conf["confirmedBy"] or not ac.verify_ecdsa_jcs_2022(conf):
+            raise Reject("forgedConfirmation")
     if conf["quoteDigest"] != authz["quoteDigest"] or conf["requestHash"] != authz["requestHash"] \
             or conf["amount"] != authz["amount"] or conf["currency"] != authz["currency"]:
         raise Reject("missingConfirmation")
-    if world.clock.after(conf["expires"]):
+    if "expires" in conf and world.clock.after(conf["expires"]):
         raise Reject("expired")
 
 
@@ -272,9 +343,14 @@ def wallet_process(world: World, authz: dict) -> dict:
     # 1. agent signature
     if not ac.verify_ecdsa_jcs_2022(authz):
         raise Reject("badSignature")
-    # 2. embedded credential + principal signature
+    # 2. embedded credential authority: a native principal proof, or -- when the
+    #    authority is an AP2-bridged (proof-preserving) projection -- the embedded
+    #    foreign signature verified against the issuer's did:web key.
     cred = authz["vp"]["verifiableCredential"][0]
-    if not ac.verify_ecdsa_jcs_2022(cred):
+    if "securing" in cred:
+        if not interop.verify_imported(cred, world.resolver):
+            raise Reject("badCredential")
+    elif not ac.verify_ecdsa_jcs_2022(cred):
         raise Reject("badCredential")
     subj = cred["credentialSubject"]
     # 3. holder binding: the agent that signed is the credential subject and the payer
