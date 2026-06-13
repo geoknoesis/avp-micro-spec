@@ -103,9 +103,9 @@ already required, in [`../sdjwt.py`](../sdjwt.py), mirroring how
 [`../avp_crypto.py`](../avp_crypto.py) implements `ecdsa-jcs-2022`):
 
 ```bash
-python spec/generate.py    # (re)build vectors for all three bundles
+python spec/generate.py    # (re)build vectors for all four bundles
 python spec/verify.py      # crypto round-trip A→V→A and V→A→V + negative-security checks
-python spec/validate.py    # Turtle / JSON-LD expansion / JSON Schema / SHACL for all three
+python spec/validate.py    # Turtle / JSON-LD expansion / JSON Schema / SHACL for all four
 ```
 
 Both `verify.py` and `validate.py` must report `PASS`. The translator

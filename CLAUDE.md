@@ -13,7 +13,7 @@ Four peer bundles live under `spec/`:
 - **`spec/interop-sd-jwt-vc/`** — Bridge/binding between AVP-Micro and SD-JWT-VC credentials (Mastercard/Google Verifiable Intent, Google AP2). Namespace `https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#`.
 - **`spec/disputes/`** — Refunds, Reversals, Chargebacks & Dispute Lifecycles: the reverse value-flow (voluntary refunds + the adversarial dispute lifecycle) converging on a wallet-signed reversal. Built on Payments + DSA. Namespace `https://w3id.org/avp-micro/disputes/v1#`.
 
-Each bundle has: `context/v1.jsonld`, `schemas/*.schema.json`, `shapes/*.ttl`, `vocab/*.ttl`, and signed `test-vectors/`. A shared harness at `spec/` root generates and validates all three.
+Each bundle has: `context/v1.jsonld`, `schemas/*.schema.json`, `shapes/*.ttl`, `vocab/*.ttl`, and signed `test-vectors/`. A shared harness at `spec/` root generates and validates all four.
 
 Start at `spec/README.md`.
 
@@ -33,7 +33,7 @@ python spec/generate.py
 # verify crypto proofs + bindings + policy + interop round-trip (must report PASS)
 python spec/verify.py
 
-# validate Turtle / JSON-LD / JSON Schema / SHACL for all three bundles (must report PASS)
+# validate Turtle / JSON-LD / JSON Schema / SHACL for all four bundles (must report PASS)
 python spec/validate.py
 
 # run the protocol simulator over the declarative use cases (must report PASS)

@@ -4,7 +4,7 @@ Formal W3C specifications and signed test vectors for the AVP-Micro trust and au
 
 ## What's here
 
-Three peer specification bundles, a shared Python harness, and design documents.
+Four peer specification bundles, a shared Python harness, and design documents.
 
 | Bundle | Directory | Namespace |
 |--------|-----------|-----------|
@@ -21,9 +21,9 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-python spec/generate.py   # (re)build signed test vectors for all three bundles
+python spec/generate.py   # (re)build signed test vectors for all four bundles
 python spec/verify.py     # verify proofs, bindings, policy, and interop round-trip
-python spec/validate.py   # Turtle / JSON-LD / JSON Schema / SHACL for all three bundles
+python spec/validate.py   # Turtle / JSON-LD / JSON Schema / SHACL for all four bundles
 ```
 
 All checks must report `PASS`.
@@ -36,7 +36,7 @@ All checks must report `PASS`.
 | `spec/sdjwt.py` | P-256 keys, ES256/JOSE, JWK, SD-JWT primitives for the interop bundle |
 | `spec/interop.py` | AVP-Micro ⇄ SD-JWT-VC translator: claim mapping, both envelopes, cross-stack verification |
 | `spec/pricing.py` | Pricing-model evaluator (flat, per-call, tiered, composite) |
-| `spec/generate.py` | Writes deterministic signed test vectors into all three `test-vectors/` directories |
+| `spec/generate.py` | Writes deterministic signed test vectors into all four `test-vectors/` directories |
 | `spec/verify.py` | Verifies proofs, bindings, policy, and the interop round-trip |
 | `spec/validate.py` | Turtle parse, JSON-LD expansion (offline), JSON Schema, and SHACL validation |
 

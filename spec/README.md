@@ -74,9 +74,9 @@ and the securing descriptor.
 
 ```bash
 pip install cryptography rdflib pyld jsonschema pyshacl requests referencing
-python spec/generate.py    # (re)build the signed vectors for all three bundles
+python spec/generate.py    # (re)build the signed vectors for all four bundles
 python spec/verify.py      # verify proofs + bindings + policy + interop round-trip
-python spec/validate.py    # Turtle / JSON-LD / JSON Schema / SHACL for all three bundles
+python spec/validate.py    # Turtle / JSON-LD / JSON Schema / SHACL for all four bundles
 ```
 
 All checks must report `PASS`. `validate.py` runs **offline**: the stable external W3C
@@ -93,7 +93,7 @@ network access to w3.org.
 | `interop.py` | AVP-Micro ⇄ SD-JWT-VC translator: claim mapping, both envelopes, cross-stack verification |
 | `generate.py` | Writes deterministic signed test vectors into `authority/`, `payments/`, and `interop-sd-jwt-vc/` `test-vectors/` |
 | `verify.py` | Loads all vector bundles and verifies proofs, bindings, policy, and the interop round-trip |
-| `validate.py` | Turtle parse, JSON-LD expansion (local context), JSON Schema, and SHACL validation across all three bundles |
+| `validate.py` | Turtle parse, JSON-LD expansion (local context), JSON Schema, and SHACL validation across all four bundles |
 
 ## Securing mechanism
 
