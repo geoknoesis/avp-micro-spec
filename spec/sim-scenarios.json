@@ -433,5 +433,26 @@
       {"action": "dispute_resolution", "resolverRole": "payee", "outcome": "withdrawn", "resolvedAmount": "0", "expect": "ok"}
     ],
     "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "streaming-metered-session",
+    "description": "a live metered session: usage accrues over time (per-unit pricing), the running total climbs toward the budget cap, and the wallet settles the total at close",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "open_session", "budget": "1.00",
+       "pricingModel": {"type": "PerUnit", "dimension": "dim:Requests", "unit": "qudtu:NUM", "amount": "0.05", "currency": "USD"}},
+      {"action": "budget_authorize", "amount": "1.00"},
+      {"action": "accrue", "amount": "0.15", "expect": "ok"},
+      {"action": "advance_clock", "seconds": 60},
+      {"action": "accrue", "amount": "0.20", "expect": "ok"},
+      {"action": "advance_clock", "seconds": 60},
+      {"action": "accrue", "amount": "0.25", "expect": "ok"},
+      {"action": "advance_clock", "seconds": 60},
+      {"action": "accrue", "amount": "0.30", "expect": "ok"},
+      {"action": "close_session", "expect": {"status": "completed"}}
+    ],
+    "finalBalances": {"agent": "99.10", "payee": "0.90"}
   }
 ]

@@ -727,6 +727,7 @@ def run_traced(sc: dict) -> dict:
             "params": {k: v for k, v in step.items() if k not in ("action", "expect")},
             "expect": step.get("expect", "ok"), "outcome": outcome, "matched": matched,
             "object": obj, "clock": world.clock.now(), "balances": _bal(world.ledger.bal),
+            "session": {"accrued": str(world.session_accrued), "committed": str(world.session_committed)},
         })
     final_ok = all(world.ledger.bal.get(r, Decimal(0)) == _d(v)
                    for r, v in sc.get("finalBalances", {}).items())
