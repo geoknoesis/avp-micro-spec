@@ -64,6 +64,7 @@ REJECTIONS = {
     "amountMismatch", "currencyMismatch", "overCap", "payeeNotAllowed",
     "categoryNotAllowed", "dailyLimitExceeded", "expired", "nonceReuse",
     "doubleSpend", "budgetExceeded", "missingConfirmation", "forgedConfirmation",
+    "overRefund", "noReversalBasis",
 }
 
 
@@ -243,6 +244,7 @@ def _request_hash(request: dict) -> str:
 
 def build_quote(world: World, step: dict) -> dict:
     payee_role = step.get("payee", "payee")
+    world.last_payee_role = payee_role
     request = step.get("request", {"resource": "demo", "n": 1})
     amount = step["amount"]
     payee = world.actor(payee_role)
@@ -485,6 +487,117 @@ def close_session(world: World, step: dict) -> dict:
     return execution
 
 
+# ---- post-settlement: refunds, reversals, and the dispute lifecycle ---------
+#
+# These run AFTER a settled payment (the scenario pays first). On the play ledger,
+# a Refund and a dispute Reversal move money back payee -> agent; the Dispute,
+# DisputeEvidence, and DisputeResolution are signed records/decisions with no
+# direct ledger effect. Object shapes mirror the disputes bundle of the spec.
+
+def _orig_payee_role(world: World) -> str:
+    return getattr(world, "last_payee_role", "payee")
+
+
+def build_refund(world: World, step: dict) -> dict:
+    ex = world.ctx["execution"]
+    amount = step["amount"]
+    refunded = world.ctx.get("_refunded", Decimal(0))
+    if _d(amount) + refunded > _d(ex["amount"]):
+        raise Reject("overRefund")                         # cannot refund more than was settled
+    payee_role = _orig_payee_role(world)
+    world.ledger.settle(payee_role, "agent", amount, "refund:" + str(len(world.ctx)))  # money back
+    world.ctx["_refunded"] = refunded + _d(amount)
+    refund = {
+        "@context": PAY_CTX, "id": "urn:sim:refund:" + str(len(world.ctx)), "type": "Refund",
+        "receipt": (world.ctx.get("receipt") or {}).get("id"),
+        "execution": ex["id"], "executionDigest": ac.jcs_digest(ex),
+        "payer": world.actor("agent").did, "payee": world.actor(payee_role).did,
+        "amount": amount, "currency": ex["currency"],
+        "reason": step.get("reason", "disp:goodwill"), "timestamp": world.clock.now(),
+    }
+    return world.actor(payee_role).sign(refund, world.clock.now())
+
+
+def build_reversal(world: World, step: dict) -> dict:
+    ex = world.ctx["execution"]
+    cause = step.get("cause", "refund")
+    if cause == "dispute":
+        res = world.ctx.get("resolution")
+        if not res or res["outcome"] not in ("upheld", "partial"):
+            raise Reject("noReversalBasis")                # no chargeback unless the dispute was (partly) upheld
+        amount = res["resolvedAmount"]
+        world.ledger.settle(_orig_payee_role(world), "agent", amount, "reversal:" + str(len(world.ctx)))
+        basis = {"cause": "dispute", "resolution": res["id"], "resolutionDigest": ac.jcs_digest(res)}
+    else:                                                  # the refund already moved the money; this records it
+        rf = world.ctx["refund"]
+        amount = rf["amount"]
+        basis = {"cause": "refund", "refund": rf["id"], "refundDigest": ac.jcs_digest(rf)}
+    reversal = {
+        "@context": PAY_CTX, "id": "urn:sim:reversal:" + str(len(world.ctx)), "type": "Reversal",
+        **basis, "execution": ex["id"], "executionDigest": ac.jcs_digest(ex),
+        "payer": world.actor("agent").did, "payee": world.actor(_orig_payee_role(world)).did,
+        "amount": amount, "currency": ex["currency"], "status": "completed",
+        "settlementRef": "sim:reversal:" + str(len(world.ctx)), "timestamp": world.clock.now(),
+    }
+    return world.actor("wallet").sign(reversal, world.clock.now())
+
+
+def build_reversal_ack(world: World, step: dict) -> dict:
+    rv = world.ctx["reversal"]
+    ack = {
+        "@context": PAY_CTX, "id": "urn:sim:reversal-ack:1", "type": "ReversalAcknowledgement",
+        "reversal": rv["id"], "reversalDigest": ac.jcs_digest(rv),
+        "payer": world.actor("agent").did, "payee": rv["payee"],
+        "amount": rv["amount"], "currency": rv["currency"], "receivedAt": world.clock.now(),
+    }
+    return world.actor("agent").sign(ack, world.clock.now())
+
+
+def build_dispute(world: World, step: dict) -> dict:
+    ex = world.ctx["execution"]
+    rc = world.ctx.get("receipt") or {}
+    disp = {
+        "@context": PAY_CTX, "id": "urn:sim:dispute:1", "type": "Dispute",
+        "execution": ex["id"], "executionDigest": ac.jcs_digest(ex),
+        "receipt": rc.get("id"), "payer": world.actor("agent").did,
+        "payee": world.actor(_orig_payee_role(world)).did,
+        "disputedAmount": step.get("disputedAmount", ex["amount"]), "currency": ex["currency"],
+        "reason": step.get("reason", "disp:not-delivered"), "claim": step.get("claim", "Disputed charge."),
+        "timestamp": world.clock.now(),
+    }
+    if step.get("arbiter"):
+        disp["arbiter"] = world.actor("arbiter").did
+    return world.actor("agent").sign(disp, world.clock.now())
+
+
+def build_evidence(world: World, step: dict) -> dict:
+    disp = world.ctx["dispute"]
+    role = step.get("role", "payee")
+    signer = world.actor(role if role != "payer" else "agent")
+    ev = {
+        "@context": PAY_CTX, "id": "urn:sim:evidence:" + str(len(world.ctx)), "type": "DisputeEvidence",
+        "dispute": disp["id"], "disputeDigest": ac.jcs_digest(disp),
+        "submittedBy": signer.did, "role": role, "sequence": step.get("sequence", 1),
+        "evidenceType": step.get("evidenceType", "delivery-log"),
+        "statement": step.get("statement", "Evidence."), "timestamp": world.clock.now(),
+    }
+    return signer.sign(ev, world.clock.now())
+
+
+def build_resolution(world: World, step: dict) -> dict:
+    disp = world.ctx["dispute"]
+    role = step.get("resolverRole", "payee")
+    signer = world.actor(role if role in ("payee", "arbiter") else "payee")
+    res = {
+        "@context": PAY_CTX, "id": "urn:sim:resolution:" + str(len(world.ctx)), "type": "DisputeResolution",
+        "dispute": disp["id"], "disputeDigest": ac.jcs_digest(disp),
+        "resolvedBy": signer.did, "resolverRole": role,
+        "outcome": step["outcome"], "resolvedAmount": step.get("resolvedAmount", "0"),
+        "currency": disp["currency"], "timestamp": world.clock.now(),
+    }
+    return signer.sign(res, world.clock.now())
+
+
 # ---- step handlers + the declarative runner ---------------------------------
 
 def _store(world, key, obj):
@@ -507,6 +620,12 @@ HANDLERS = {
     "accrue": lambda w, s: {"ok": True, "_set": ("accrual", accrue(w, s))},
     "extend": lambda w, s: {"ok": True, "_set": ("session", extend(w, s))},
     "close_session": lambda w, s: {"status": close_session(w, s)["status"]},
+    "refund": lambda w, s: {"ok": True, "_set": ("refund", build_refund(w, s))},
+    "reversal": lambda w, s: {"ok": True, "_set": ("reversal", build_reversal(w, s))},
+    "reversal_ack": lambda w, s: {"ok": True, "_set": ("reversalAck", build_reversal_ack(w, s))},
+    "dispute": lambda w, s: {"ok": True, "_set": ("dispute", build_dispute(w, s))},
+    "dispute_evidence": lambda w, s: {"ok": True, "_set": ("evidence", build_evidence(w, s))},
+    "dispute_resolution": lambda w, s: {"ok": True, "_set": ("resolution", build_resolution(w, s))},
 }
 
 
@@ -539,6 +658,8 @@ _OBJECT_OF = {
     "execute": "execution", "replay": "execution", "receipt": "receipt",
     "open_session": "session", "budget_authorize": "sba", "accrue": "accrual",
     "close_session": "sessionExecution",
+    "refund": "refund", "reversal": "reversal", "reversal_ack": "reversalAck",
+    "dispute": "dispute", "dispute_evidence": "evidence", "dispute_resolution": "resolution",
 }
 
 

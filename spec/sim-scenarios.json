@@ -336,5 +336,102 @@
       {"action": "execute", "expect": {"reject": "missingConfirmation"}}
     ],
     "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "refund-full",
+    "description": "after a settled payment the payee refunds the full amount; a wallet reversal records the settlement and the payer acknowledges it",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "1.00"}},
+      {"action": "receipt"},
+      {"action": "refund", "amount": "1.00", "reason": "disp:incorrect-amount", "expect": "ok"},
+      {"action": "reversal", "cause": "refund", "expect": "ok"},
+      {"action": "reversal_ack", "expect": "ok"}
+    ],
+    "finalBalances": {"agent": "100.00", "payee": "0.00"}
+  },
+  {
+    "name": "refund-partial",
+    "description": "the payee issues a partial goodwill refund; only part of the payment moves back",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "1.00"}},
+      {"action": "refund", "amount": "0.40", "reason": "disp:goodwill", "expect": "ok"}
+    ],
+    "finalBalances": {"agent": "99.40", "payee": "0.60"}
+  },
+  {
+    "name": "over-refund-rejected",
+    "description": "a refund larger than the original settlement is refused",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "1.00"}},
+      {"action": "refund", "amount": "2.00", "expect": {"reject": "overRefund"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "dispute-upheld-chargeback",
+    "description": "payer disputes the charge; evidence is exchanged; the payee offers partial, the arbiter upholds 0.75, and the wallet reverses that amount",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "1.00"}},
+      {"action": "receipt"},
+      {"action": "dispute", "disputedAmount": "1.00", "reason": "disp:not-delivered", "arbiter": true,
+       "claim": "Stream dropped ~75% of samples; charged for undelivered data.", "expect": "ok"},
+      {"action": "dispute_evidence", "role": "payee", "evidenceType": "delivery-log", "expect": "ok"},
+      {"action": "dispute_evidence", "role": "payer", "evidenceType": "client-log", "expect": "ok"},
+      {"action": "dispute_resolution", "resolverRole": "payee", "outcome": "partial", "resolvedAmount": "0.50", "expect": "ok"},
+      {"action": "dispute_resolution", "resolverRole": "arbiter", "outcome": "upheld", "resolvedAmount": "0.75", "expect": "ok"},
+      {"action": "reversal", "cause": "dispute", "expect": "ok"}
+    ],
+    "finalBalances": {"agent": "99.75", "payee": "0.25"}
+  },
+  {
+    "name": "dispute-rejected",
+    "description": "the payee rejects the dispute; with no upheld resolution a chargeback is refused and no money moves back",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "1.00"}},
+      {"action": "dispute", "disputedAmount": "1.00", "reason": "disp:quality", "claim": "Output quality poor.", "expect": "ok"},
+      {"action": "dispute_resolution", "resolverRole": "payee", "outcome": "rejected", "resolvedAmount": "0", "expect": "ok"},
+      {"action": "reversal", "cause": "dispute", "expect": {"reject": "noReversalBasis"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "dispute-withdrawn",
+    "description": "the payer withdraws the dispute; nothing is reversed",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "1.00"}},
+      {"action": "dispute", "disputedAmount": "1.00", "reason": "disp:duplicate", "claim": "Possible duplicate charge.", "expect": "ok"},
+      {"action": "dispute_resolution", "resolverRole": "payee", "outcome": "withdrawn", "resolvedAmount": "0", "expect": "ok"}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
   }
 ]
