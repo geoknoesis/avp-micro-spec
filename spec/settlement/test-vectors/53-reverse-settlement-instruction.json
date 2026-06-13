@@ -21,6 +21,7 @@
   "amountBase": "1000",
   "confirmationThreshold": 12,
   "mode": "direct",
+  "payeeAccountBinding": "urn:avp:payee-binding:agent",
   "nonce": "settle-reverse-1",
   "expires": "2026-03-26T10:00:00Z",
   "proof": {
@@ -29,6 +30,6 @@
     "created": "2026-03-26T09:05:00Z",
     "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z3ru6hCZcY3jdkXEwLAWy8Dz2J8NE5fv42K6jspSguLwCbBh8MeS8ijWWJUYbAoLvjD73XPCNaZESnmztEJB3dHhk"
+    "proofValue": "z3L3F2HNsKvm598ocrcJBZBGiXPXfWxV3AxQGzkevLVtXH5mvqUUH5UJm9G2HypmxYyVKAqfB3YCGaPn7WTcEqAMB"
   }
 }

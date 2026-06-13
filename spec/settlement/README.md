@@ -45,6 +45,7 @@ mandatory `ecdsa-jcs-2022` cryptosuite.
 | 52 | `52-escrow-refund-evm.json` | EscrowRefund | EVM stablecoin |
 | 53 | `53-reverse-settlement-instruction.json` | SettlementInstruction (reverse) | EVM stablecoin |
 | 54 | `54-reverse-settlement-proof.json` | SettlementProof (reverse) | EVM stablecoin |
+| 55 | `55-payee-account-binding-agent.json` | PayeeAccountBinding | — |
 
 Regenerate and check from the repo root (see [`../README.md`](../README.md)):
 

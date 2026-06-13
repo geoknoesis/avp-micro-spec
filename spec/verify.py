@@ -514,6 +514,7 @@ def main() -> int:
     refund_evm = load(SETTLE, "52-escrow-refund-evm.json")
     instr_rev = load(SETTLE, "53-reverse-settlement-instruction.json")
     proof_rev = load(SETTLE, "54-reverse-settlement-proof.json")
+    binding_agent = load(SETTLE, "55-payee-account-binding-agent.json")
 
     settle_objs = [("40 binding", binding), ("41 instr(evm)", instr_evm),
                    ("42 proof(evm)", proof_evm), ("43 instr(x402)", instr_x402),
@@ -522,15 +523,18 @@ def main() -> int:
                    ("48 release(ln)", release_ln), ("49 instr(evm-esc)", instr_evm_esc),
                    ("50 lock(evm)", lock_evm), ("51 proof(evm-refund)", proof_evm_refund),
                    ("52 refund(evm)", refund_evm), ("53 instr(reverse)", instr_rev),
-                   ("54 proof(reverse)", proof_rev)]
+                   ("54 proof(reverse)", proof_rev), ("55 binding(agent)", binding_agent)]
     for label, obj in settle_objs:
         check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
 
-    # signer binding: payee signs the account binding; wallet signs everything else.
+    # signer binding: payee signs the payee account binding; agent signs the agent binding;
+    # wallet signs everything else.
     check("payee-account binding signed by its subject (payee)",
           controller(binding) == binding["subject"] == payee)
+    check("agent-account binding signed by its subject (agent)",
+          controller(binding_agent) == binding_agent["subject"])
     for label, obj in settle_objs:
-        if obj is binding:
+        if obj in (binding, binding_agent):
             continue
         check(f"{label} signed by wallet", controller(obj) == wallet)
 
@@ -550,12 +554,21 @@ def main() -> int:
     check("instr(ln).amountBase == usd_to_msat(amount, rate)",
           instr_ln["amountBase"] == st.usd_to_msat(instr_ln["amount"], instr_ln["rate"]))
 
-    # DID <-> account binding (archetype a for EVM did:pkh; archetype b for x402)
+    # DID <-> account binding (archetype a for EVM did:pkh; archetype b for x402/reverse)
     check("instr(evm) payeeAccount bound via did:pkh", st.account_binding_ok(instr_evm, None))
     check("instr(x402) payeeAccount bound via PayeeAccountBinding",
           st.account_binding_ok(instr_x402, binding))
     check("instr(x402) references the binding it relies on",
           instr_x402.get("payeeAccountBinding") == binding["id"])
+    check("instr(evm-esc) payeeAccount bound via did:pkh", st.account_binding_ok(instr_evm_esc, None))
+    check("instr(reverse) payeeAccount bound via PayeeAccountBinding (agent)",
+          st.account_binding_ok(instr_rev, binding_agent))
+    check("instr(reverse) references the agent binding",
+          instr_rev.get("payeeAccountBinding") == binding_agent["id"])
+    # Lightning destinations are signed BOLT11 invoices, authenticated by the invoice
+    # itself, not by a CAIP-10 DID<->account binding (see Account binding section).
+    check("instr(ln) uses a Lightning destination (exempt from CAIP-10 binding)",
+          instr_ln["rail"] == "stl:rail-lightning" and not instr_ln["payeeAccount"].startswith("eip155:"))
 
     # finality: confirmation rails reach threshold; Lightning via preimage==payment_hash
     for label, proof, thr in [("evm", proof_evm, instr_evm["confirmationThreshold"]),

@@ -286,10 +286,13 @@
       [[AVP-MICRO]] identifies parties by DID; public blockchains identify accounts
       by chain-native addresses. Without a verifiable link between a payee DID and a
       <code>payeeAccount</code>, an attacker could substitute an account and redirect
-      funds while the authorization still verifies. This section mandates a binding.
+      funds while the authorization still verifies. This section mandates a binding
+      for CAIP-10 accounts.
     </p>
     <p>
-      The <code>payeeAccount</code> in a <a>SettlementInstruction</a>
+      When the <code>payeeAccount</code> in a <a>SettlementInstruction</a> is a
+      <a>CAIP-10</a> account (i.e., its namespace identifies an EVM-family or similar
+      chain-account format, such as <code>eip155:*</code>), the account
       <em class="rfc2119">MUST</em> be bound to the payee DID by exactly one of the
       following mechanisms:
     </p>
@@ -302,18 +305,32 @@
         is required.
       </li>
       <li>
-        <strong><a>PayeeAccountBinding</a>.</strong> The payee (or an issuer acting
-        on the payee's behalf) produces a <a>PayeeAccountBinding</a> signed by the
+        <strong><a>PayeeAccountBinding</a>.</strong> The DID named as the
+        <code>payee</code> produces a <a>PayeeAccountBinding</a> signed by its
         <code>subject</code> DID, asserting that it controls the named
         <code>account</code> on the named <code>chain</code>. The
         <a>SettlementInstruction</a> references this binding via the
-        <code>payeeAccountBinding</code> field (its IRI).
+        <code>payeeAccountBinding</code> field (its IRI). The same mechanism applies
+        symmetrically to the recipient in an on-chain reversal: the agent's CAIP-10
+        account <em class="rfc2119">MUST</em> be bound by a
+        <a>PayeeAccountBinding</a> signed by the agent DID (see
+        <code>55-payee-account-binding-agent.json</code>).
       </li>
     </ol>
     <p>
       A verifier <em class="rfc2119">MUST</em> reject a <a>SettlementInstruction</a>
-      whose <code>payeeAccount</code> is not covered by one of the two mechanisms
-      above. Example vector: <code>40-payee-account-binding.json</code>.
+      whose <code>payeeAccount</code> is a CAIP-10 account that is not covered by one
+      of the two mechanisms above. Example vectors:
+      <code>40-payee-account-binding.json</code> (payee binding),
+      <code>55-payee-account-binding-agent.json</code> (agent binding for reversal).
+    </p>
+    <p>
+      A Lightning destination (<a>BOLT11</a> invoice, LNURL endpoint, or node public
+      key) is authenticated by the payee&rsquo;s signed invoice itself and is
+      <em class="rfc2119">NOT</em> subject to the CAIP-10 binding requirement. A
+      verifier <em class="rfc2119">MUST NOT</em> reject a Lightning
+      <a>SettlementInstruction</a> solely because its <code>payeeAccount</code> does
+      not match a CAIP-10 binding.
     </p>
   </section>
 
@@ -618,7 +635,8 @@
       </p>
       <p>
         <strong><code>chain</code></strong>: <em class="rfc2119">MUST</em> be the
-        Lightning network identifier (e.g., <code>lightning:mainnet</code>).
+        CAIP-2 Bitcoin mainnet identifier
+        <code>bip122:000000000019d6689c085ae165831e93</code>.
       </p>
       <p>
         <strong><code>payeeAccount</code></strong>: <em class="rfc2119">MUST</em> be

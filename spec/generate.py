@@ -701,15 +701,17 @@ def main() -> None:
     # Reversal's settlementRef would point at proof 54. Here we generate the swapped
     # instruction + proof; the disputes bundle is NOT modified.
     # 53: reverse SettlementInstruction (payee now pays the agent back).
+    agent_evm_account = "eip155:8453:" + st.fake_address("agent-evm")
     instr_rev = {
         "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:reverse", "type": "SettlementInstruction",
         "authorization": authz["id"], "authorizationDigest": authz_digest,
         "rail": "stl:rail-evm-stablecoin", "chain": "eip155:8453",
-        "payeeAccount": "eip155:8453:" + st.fake_address("agent-evm"), "asset": usdc,
+        "payeeAccount": agent_evm_account, "asset": usdc,
         "payer": evm_payee_did, "payee": DID_AGENT,
         "amount": amount, "currency": currency,
         "amountBase": st.to_base_units(amount, st.decimals_for_asset(usdc)),
         "confirmationThreshold": evm_threshold, "mode": "direct",
+        "payeeAccountBinding": "urn:avp:payee-binding:agent",
         "nonce": "settle-reverse-1", "expires": "2026-03-26T10:00:00Z",
     }
     instr_rev = ac.sign_ecdsa_jcs_2022(instr_rev, wallet, "2026-03-26T09:05:00Z")
@@ -726,6 +728,15 @@ def main() -> None:
     }
     proof_rev = ac.sign_ecdsa_jcs_2022(proof_rev, wallet, "2026-03-26T09:08:00Z")
     write(SETTLE, "54-reverse-settlement-proof.json", proof_rev)
+
+    # 55: PayeeAccountBinding for the agent's EVM account. The on-chain reversal (53/54)
+    # pays the agent back, so the agent DID must be bound to its receiving CAIP-10 account.
+    binding_agent = {
+        "@context": SETTLE_CTX, "id": "urn:avp:payee-binding:agent", "type": "PayeeAccountBinding",
+        "subject": DID_AGENT, "account": agent_evm_account, "chain": "eip155:8453",
+    }
+    binding_agent = ac.sign_ecdsa_jcs_2022(binding_agent, agent, "2026-03-26T09:04:00Z")
+    write(SETTLE, "55-payee-account-binding-agent.json", binding_agent)
 
     # ---- Interop (SD-JWT-VC) bundle ----
     # Two P-256 (ES256) test keys: a bridge that signs export envelopes, and a
