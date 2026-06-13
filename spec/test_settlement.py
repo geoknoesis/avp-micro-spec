@@ -73,3 +73,17 @@ def test_fake_tx_is_deterministic():
     assert st.fake_tx("a") == st.fake_tx("a")
     assert st.fake_tx("a") != st.fake_tx("b")
     assert st.fake_tx("a").startswith("0x") and len(st.fake_tx("a")) == 66
+
+
+def test_parse_caip10_malformed_raises_settlement_error():
+    with pytest.raises(st.SettlementError):
+        st.parse_caip10("eip155:8453")  # missing address segment
+
+
+def test_decimals_for_asset_unknown_raises():
+    with pytest.raises(st.SettlementError):
+        st.decimals_for_asset("eip155:1/erc20:0xUnknown")
+
+
+def test_finality_ok_absent_confirmations_is_not_final():
+    assert st.finality_ok({"finality": "final"}, threshold=0) is False

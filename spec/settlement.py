@@ -30,6 +30,7 @@ _ASSET_DECIMALS = {
 }
 
 # Rail registry: default confirmation threshold + the asset used by each profile.
+# threshold = confirmation depth for finality (Base mainnet fixture default: 12).
 RAILS = {
     "evm-stablecoin": {"threshold": 12,
                        "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"},
@@ -64,7 +65,10 @@ def usd_to_msat(amount_usd: str, rate_usd_per_btc: str) -> str:
 
 def parse_caip10(account: str) -> tuple[str, str]:
     """CAIP-10 'namespace:reference:address' -> (chain_id 'namespace:reference', address)."""
-    ns, ref, addr = account.split(":", 2)
+    try:
+        ns, ref, addr = account.split(":", 2)
+    except ValueError:
+        raise SettlementError(f"invalid CAIP-10 account: {account!r}")
     return f"{ns}:{ref}", addr
 
 
@@ -103,7 +107,7 @@ def finality_ok(proof: dict, threshold: int) -> bool:
     if "preimage" in proof:
         digest = hashlib.sha256(bytes.fromhex(proof["preimage"])).hexdigest()
         return digest == proof.get("transaction")
-    return int(proof.get("confirmations", -1)) >= threshold
+    return int(proof.get("confirmations", -1)) >= threshold  # -1 sentinel: absent == never confirmed
 
 
 # ---- deterministic chain fixtures (never a real chain) ----------------------
