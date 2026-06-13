@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AVP-Micro On-Chain Settlement Binding</title>
+  <style>
+    p.object-summary { font-style: italic; color: #333; margin-bottom: 0.5em; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ccc; padding: 0.4em 0.7em; text-align: left; }
+    th { background: #f5f5f5; }
+  </style>
+  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
+  <script class="remove">
+    // @ts-check
+    const respecConfig = {
+      specStatus: "unofficial",
+      shortName: "avp-micro-settlement",
+      subtitle: "On-chain settlement binding for AVP-Micro payments (EVM stablecoin, x402, Lightning)",
+      editors: [
+        { name: "Stephane Fellah", company: "Geoknoesis LLC", companyURL: "https://geoknoesis.com" },
+      ],
+      github: { repoURL: "https://github.com/geoknoesis/avp-micro", branch: "main" },
+      license: "cc-by",
+      lint: { "no-unused-dfns": false },
+      xref: ["vc-data-model-2.0", "did-core", "INFRA"],
+      localBiblio: {
+        "DSA": { title: "Delegated Spending Authority", href: "../authority/",
+                 publisher: "Geoknoesis LLC (editor's draft)" },
+        "AVP-MICRO": { title: "AVP-Micro Payments", href: "../payments/",
+                       publisher: "Geoknoesis LLC (editor's draft)" },
+        "AVP-DISPUTES": { title: "AVP-Micro Disputes", href: "../disputes/",
+                          publisher: "Geoknoesis LLC (editor's draft)" },
+        "RFC8785": { title: "JSON Canonicalization Scheme (JCS)",
+                     href: "https://www.rfc-editor.org/rfc/rfc8785",
+                     authors: ["A. Rundgren", "B. Jordan", "S. Erdtman"],
+                     date: "June 2020", status: "Informational", publisher: "IETF" },
+        "CAIP-2": { title: "CAIP-2: Blockchain ID Specification",
+                    href: "https://chainagnostic.org/CAIPs/caip-2",
+                    publisher: "Chain Agnostic Standards Alliance" },
+        "CAIP-10": { title: "CAIP-10: Account ID Specification",
+                     href: "https://chainagnostic.org/CAIPs/caip-10",
+                     publisher: "Chain Agnostic Standards Alliance" },
+        "CAIP-19": { title: "CAIP-19: Asset Type and Asset ID Specification",
+                     href: "https://chainagnostic.org/CAIPs/caip-19",
+                     publisher: "Chain Agnostic Standards Alliance" },
+        "SETTLEMENT-DESIGN": { title: "Design: AVP-Micro on-chain settlement binding",
+                               href: "../../docs/superpowers/specs/2026-06-12-onchain-settlement-design.md",
+                               publisher: "Geoknoesis LLC (internal design doc)" },
+      },
+    };
+  </script>
+</head>
+<body>
+  <section id="abstract" class="informative">
+    <p>
+      AVP-Micro On-Chain Settlement Binding &mdash; part of <strong>AVP-Micro</strong>
+      (<em>Agent Verifiable Micropayments</em>) &mdash; covers the one step that the
+      [[AVP-MICRO]] Payments specification deliberately scopes out: the movement of
+      value on a public blockchain. This bundle binds AVP-Micro payments to
+      <strong>three normative rail profiles</strong> &mdash; EVM stablecoin (USDC on
+      an L2), Coinbase x402, and Bitcoin Lightning &mdash; through a
+      <strong>rail-agnostic core</strong> of signed objects
+      (<a>SettlementInstruction</a>, <a>SettlementProof</a>,
+      <a>PayeeAccountBinding</a>) and an optional escrow lifecycle
+      (<a>EscrowLock</a>, <a>EscrowRelease</a>, <a>EscrowRefund</a>). It rides on
+      [[AVP-MICRO]] and [[DSA]] by reference, modifying neither. Every settlement
+      object is secured with the mandatory <code>ecdsa-jcs-2022</code>
+      cryptosuite ([[DSA]]).
+    </p>
+  </section>
+
+  <section id="sotd"></section>
+
+  <section class="informative">
+    <h2>Introduction</h2>
+    <p>
+      [[AVP-MICRO]] is the trust and authorization layer for agent payments.
+      Settlement &mdash; the actual movement of value between parties &mdash; is
+      explicitly scoped out of that specification: it is the one money-touching step.
+      This bundle defines how a public blockchain plugs into the settlement seam that
+      already exists in [[AVP-MICRO]] without modifying any Payments object or its
+      signed vectors. The binding is additive: a <a>SettlementInstruction</a>
+      references a <code>PaymentAuthorization</code> by its IRI and a content
+      digest, and a <a>SettlementProof</a> is referenced by
+      <code>PaymentExecution.settlementRef</code>.
+    </p>
+    <p>
+      Two hard differences from the in-memory simulation ledger motivate the design
+      (see <a data-cite="SETTLEMENT-DESIGN">design document</a>): on-chain finality
+      is <em>asynchronous and probabilistic</em> (block reorganizations can occur),
+      and on-chain settlement is <em>irreversible</em> (there is no clawback). These
+      two realities drive the mandatory finality state machine and the compensating-
+      transfer reversal model described in this specification.
+    </p>
+    <p>
+      The <a data-cite="CAIP-2">CAIP-2</a>, <a data-cite="CAIP-10">CAIP-10</a>, and
+      <a data-cite="CAIP-19">CAIP-19</a> chain-agnostic standards are used throughout
+      to identify chains, accounts, and assets in a rail-neutral way.
+    </p>
+  </section>
+
+  <section>
+    <h2>Conformance</h2>
+    <p>
+      As well as sections marked as non-normative, all authoring guidelines,
+      diagrams, examples, and notes in this specification are non-normative.
+      Everything else is normative.
+    </p>
+    <p>
+      The key words <em class="rfc2119">MUST</em>, <em class="rfc2119">MUST NOT</em>,
+      <em class="rfc2119">SHOULD</em>, <em class="rfc2119">MAY</em>, and
+      <em class="rfc2119">OPTIONAL</em> in this document are to be interpreted as
+      described in [[RFC2119]] [[RFC8174]].
+    </p>
+  </section>
+
+  <section>
+    <h2>Terminology</h2>
+    <dl>
+      <dt><dfn>SettlementInstruction</dfn></dt>
+      <dd>A wallet-signed instruction that binds a <code>PaymentAuthorization</code>
+        to a concrete rail, recipient account, on-chain asset, and base-unit amount.
+        It is the normative bridge between the AVP-Micro authorization layer and the
+        chain.</dd>
+
+      <dt><dfn>SettlementProof</dfn></dt>
+      <dd>A wallet-signed attestation that settlement occurred on-chain, carrying the
+        chain-native transaction reference, the settled base-unit amount, and a
+        <a>finality</a> state. <code>PaymentExecution.settlementRef</code>
+        resolves to this object's <code>id</code>.</dd>
+
+      <dt><dfn>PayeeAccountBinding</dfn></dt>
+      <dd>A payee-signed assertion that a DID controls a specific on-chain account
+        (CAIP-10) on a specific chain (CAIP-2). Used when the payee's DID is not a
+        <code>did:pkh</code> that encodes the account directly.</dd>
+
+      <dt><dfn>EscrowLock</dfn></dt>
+      <dd>A wallet-signed record that funds were locked in an escrow contract (or a
+        Lightning hold-invoice) pending delivery of a service.</dd>
+
+      <dt><dfn>EscrowRelease</dfn></dt>
+      <dd>A wallet-signed record releasing a prior <a>EscrowLock</a> to the payee
+        upon confirmed delivery, carrying the settling <a>SettlementProof</a>.</dd>
+
+      <dt><dfn>EscrowRefund</dfn></dt>
+      <dd>A wallet-signed record refunding a prior <a>EscrowLock</a> to the payer on
+        timeout or dispute, carrying the settling <a>SettlementProof</a>.</dd>
+
+      <dt><dfn>finality</dfn></dt>
+      <dd>The settlement certainty state of a <a>SettlementProof</a>. One of three
+        values: <code>pending</code> (broadcast; not yet included in a block),
+        <code>probabilistic</code> (included but not yet at the confirmation threshold),
+        or <code>final</code> (confirmation threshold reached, or preimage revealed for
+        Lightning).</dd>
+
+      <dt><dfn>CAIP-2</dfn></dt>
+      <dd>Chain Agnostic Improvement Proposal 2: a compact identifier for a blockchain
+        network (e.g., <code>eip155:8453</code> for Base mainnet).</dd>
+
+      <dt><dfn>CAIP-10</dfn></dt>
+      <dd>Chain Agnostic Improvement Proposal 10: a compact identifier for an on-chain
+        account, combining a CAIP-2 chain id with an account address
+        (e.g., <code>eip155:8453:0xd8dA…</code>).</dd>
+
+      <dt><dfn>CAIP-19</dfn></dt>
+      <dd>Chain Agnostic Improvement Proposal 19: a compact identifier for an on-chain
+        asset type (e.g.,
+        <code>eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913</code>
+        for USDC on Base).</dd>
+    </dl>
+  </section>
+
+  <section>
+    <h2>Securing mechanism</h2>
+    <p>
+      Every settlement object defined in this specification
+      <em class="rfc2119">MUST</em> carry an <code>ecdsa-jcs-2022</code>
+      <code>DataIntegrityProof</code> as defined in [[DSA]]. The proof
+      <em class="rfc2119">MUST</em> have <code>proofPurpose</code>
+      <code>assertionMethod</code>.
+    </p>
+    <p>
+      A <a>PayeeAccountBinding</a> <em class="rfc2119">MUST</em> be signed by the
+      DID named in its <code>subject</code> field (the payee), using a verification
+      method controlled by that DID.
+    </p>
+    <p>
+      Every other settlement object (<a>SettlementInstruction</a>,
+      <a>SettlementProof</a>, <a>EscrowLock</a>, <a>EscrowRelease</a>,
+      <a>EscrowRefund</a>) <em class="rfc2119">MUST</em> be signed by the wallet:
+      the same key that signs the <code>PaymentExecution</code> in [[AVP-MICRO]].
+    </p>
+    <p>
+      The chain-native signature (e.g., the EVM transaction signature or the
+      Lightning payment preimage) lives inside the referenced on-chain transaction.
+      The AVP settlement object <em>attests to</em> that transaction; it does not
+      replace the chain-native proof.
+    </p>
+    <p>
+      Settlement objects use a five-entry <code>@context</code> array, in this exact
+      order:
+    </p>
+    <pre class="json">
+[
+  "https://www.w3.org/ns/credentials/v2",
+  "https://w3id.org/security/data-integrity/v2",
+  "https://w3id.org/spending-authority/v1",
+  "https://w3id.org/avp-micro/v1",
+  "https://w3id.org/avp-micro/settlement/v1"
+]
+    </pre>
+    <p>
+      This ordering ensures that credential, data-integrity, [[DSA]], [[AVP-MICRO]],
+      and settlement terms all resolve correctly.
+    </p>
+  </section>
+
+  <section>
+    <h2>Core binding</h2>
+    <p>
+      A <a>SettlementInstruction</a> is the normative bridge from the AVP-Micro
+      authorization layer to a concrete on-chain rail.
+    </p>
+    <p>
+      A <a>SettlementInstruction</a> <em class="rfc2119">MUST</em> reference the
+      <code>PaymentAuthorization</code> being settled via the <code>authorization</code>
+      field (the authorization IRI) and the <code>authorizationDigest</code> field (the
+      JCS content digest of the signed authorization object), pinning it to that exact
+      signed version.
+    </p>
+    <p>
+      The <code>amount</code> and <code>currency</code> fields of a
+      <a>SettlementInstruction</a> <em class="rfc2119">MUST</em> equal the
+      corresponding fields of the referenced <code>PaymentAuthorization</code>. A
+      verifier <em class="rfc2119">MUST</em> reject a
+      <a>SettlementInstruction</a> whose amount or currency diverges from the
+      authorization.
+    </p>
+    <p>
+      The <code>amountBase</code> field <em class="rfc2119">MUST</em> be an integer
+      string expressing the amount in the base (minor) units of the settlement asset.
+      For stablecoin assets it <em class="rfc2119">MUST</em> equal
+      <code>amount &times; 10<sup>decimals</sup></code>, computed exactly; if the
+      decimal amount is not representable in base units the instruction
+      <em class="rfc2119">MUST</em> be rejected (no silent rounding). For rails where
+      the quote <code>currency</code> differs from the settlement asset (e.g., USD
+      quoted but settled in millisatoshi), an explicit <code>rate</code> field
+      <em class="rfc2119">MUST</em> be present recording the agreed conversion, and
+      both the decimal and base-unit figures <em class="rfc2119">MUST</em> be
+      retained.
+    </p>
+    <p>
+      The <code>confirmationThreshold</code> field <em class="rfc2119">MUST</em> be
+      present and specifies the number of block confirmations required for the
+      <a>SettlementProof</a> to reach <code>finality == "final"</code> on
+      confirmation-based rails. For Lightning, <code>confirmationThreshold</code>
+      <em class="rfc2119">MUST</em> be <code>0</code> (finality is achieved by
+      preimage reveal, not by block depth).
+    </p>
+    <p>
+      The <code>mode</code> field <em class="rfc2119">MUST</em> be present and
+      <em class="rfc2119">MUST</em> be one of <code>direct</code> or
+      <code>escrow</code>.
+    </p>
+    <p>
+      The <code>rail</code> field <em class="rfc2119">MUST</em> be a concept IRI in
+      the extensible SKOS scheme <code>stl:RailScheme</code>
+      (see <a href="vocab/rails.ttl"><code>vocab/rails.ttl</code></a>):
+      <code>stl:rail-evm-stablecoin</code>, <code>stl:rail-x402</code>, or
+      <code>stl:rail-lightning</code>. Implementers
+      <em class="rfc2119">MAY</em> mint additional rail concepts in their own scheme.
+    </p>
+    <p>
+      A <a>SettlementInstruction</a> <em class="rfc2119">MUST</em> carry a
+      <code>nonce</code> and an <code>expires</code> timestamp for freshness.
+      Example vector: <code>41-settlement-instruction-evm.json</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Account binding</h2>
+    <p>
+      [[AVP-MICRO]] identifies parties by DID; public blockchains identify accounts
+      by chain-native addresses. Without a verifiable link between a payee DID and a
+      <code>payeeAccount</code>, an attacker could substitute an account and redirect
+      funds while the authorization still verifies. This section mandates a binding.
+    </p>
+    <p>
+      The <code>payeeAccount</code> in a <a>SettlementInstruction</a>
+      <em class="rfc2119">MUST</em> be bound to the payee DID by exactly one of the
+      following mechanisms:
+    </p>
+    <ol>
+      <li>
+        <strong><code>did:pkh</code> identity.</strong> The payee DID is a
+        <code>did:pkh</code> URI encoding the CAIP-10 account directly (e.g.,
+        <code>did:pkh:eip155:8453:0xd8dA…</code>). In this case the binding is
+        tautological: verifying the DID resolves to the account. No additional object
+        is required.
+      </li>
+      <li>
+        <strong><a>PayeeAccountBinding</a>.</strong> The payee (or an issuer acting
+        on the payee's behalf) produces a <a>PayeeAccountBinding</a> signed by the
+        <code>subject</code> DID, asserting that it controls the named
+        <code>account</code> on the named <code>chain</code>. The
+        <a>SettlementInstruction</a> references this binding via the
+        <code>payeeAccountBinding</code> field (its IRI).
+      </li>
+    </ol>
+    <p>
+      A verifier <em class="rfc2119">MUST</em> reject a <a>SettlementInstruction</a>
+      whose <code>payeeAccount</code> is not covered by one of the two mechanisms
+      above. Example vector: <code>40-payee-account-binding.json</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Finality</h2>
+    <p>
+      A <a>SettlementProof</a> carries a <code>finality</code> field whose value
+      <em class="rfc2119">MUST</em> be one of <code>pending</code>,
+      <code>probabilistic</code>, or <code>final</code>.
+    </p>
+    <p>
+      A <code>fulfilled</code> <code>PaymentReceipt</code>
+      <em class="rfc2119">MUST NOT</em> be issued before the associated
+      <a>SettlementProof</a> has reached <code>finality == "final"</code>. Issuing a
+      receipt before finality exposes the payee to reorg risk: a block reorganization
+      could reverse the on-chain transfer after the service has been delivered.
+    </p>
+    <p>
+      The finality transition rules per rail are:
+    </p>
+    <ul>
+      <li>
+        <strong>Confirmation-based rails (EVM stablecoin, x402):</strong> a
+        <a>SettlementProof</a> reaches <code>final</code> when
+        <code>confirmations &ge; confirmationThreshold</code>, where
+        <code>confirmationThreshold</code> is the value declared in the
+        <a>SettlementInstruction</a>. Intermediate proofs with
+        <code>0 &lt; confirmations &lt; confirmationThreshold</code>
+        <em class="rfc2119">SHOULD</em> carry <code>finality == "probabilistic"</code>.
+        A freshly broadcast transaction not yet included in a block
+        <em class="rfc2119">SHOULD</em> carry <code>finality == "pending"</code>.
+      </li>
+      <li>
+        <strong>Bitcoin Lightning:</strong> a <a>SettlementProof</a> reaches
+        <code>final</code> when <code>sha256(preimage) == transaction</code>, where
+        <code>transaction</code> is the Lightning <code>payment_hash</code> and
+        <code>preimage</code> is the revealed payment preimage. Lightning payment is
+        atomic and single-shot; there is no intermediate probabilistic state.
+      </li>
+    </ul>
+    <p>
+      Example vectors advancing finality:
+      <code>42-settlement-proof-evm.json</code> (EVM, final),
+      <code>44-settlement-proof-x402.json</code> (x402, final),
+      <code>47-settlement-proof-lightning.json</code> (Lightning, final with preimage).
+    </p>
+  </section>
+
+  <section>
+    <h2>Escrow profile</h2>
+    <p>
+      The escrow profile is <em class="rfc2119">OPTIONAL</em>. It applies when a
+      <a>SettlementInstruction</a> carries <code>mode == "escrow"</code>.
+    </p>
+    <p>
+      The escrow lifecycle consists of three objects:
+    </p>
+    <ol>
+      <li>
+        An <a>EscrowLock</a> is created first. It <em class="rfc2119">MUST</em>
+        reference the <a>SettlementInstruction</a> via <code>instruction</code> and
+        <code>instructionDigest</code>, carry a <code>lockRef</code> (the
+        chain-specific escrow handle: contract address plus escrow ID for EVM escrow
+        contracts, or the Lightning hold-invoice <code>payment_hash</code>), the
+        <code>lockedAmountBase</code>, and a <code>timeout</code> after which the
+        lock may be refunded.
+      </li>
+      <li>
+        On confirmed delivery of the service, an <a>EscrowRelease</a>
+        <em class="rfc2119">MUST</em> reference the lock via <code>lock</code> and
+        <code>lockDigest</code>, and <em class="rfc2119">MUST</em> carry a final
+        <a>SettlementProof</a> referenced via <code>settlementProof</code> and
+        <code>settlementProofDigest</code>. The referenced
+        <a>SettlementProof</a> <em class="rfc2119">MUST</em> have
+        <code>finality == "final"</code>.
+      </li>
+      <li>
+        On timeout or dispute, an <a>EscrowRefund</a>
+        <em class="rfc2119">MUST</em> reference the lock via <code>lock</code> and
+        <code>lockDigest</code>, carry a final <a>SettlementProof</a> via
+        <code>settlementProof</code> and <code>settlementProofDigest</code>, and
+        include a <code>reason</code> string (e.g., <code>"timeout"</code>).
+        The referenced <a>SettlementProof</a> <em class="rfc2119">MUST</em> have
+        <code>finality == "final"</code>.
+      </li>
+    </ol>
+    <p>
+      Example vectors:
+      <code>46-escrow-lock-lightning.json</code>,
+      <code>48-escrow-release-lightning.json</code>,
+      <code>49-settlement-instruction-evm-escrow.json</code>,
+      <code>50-escrow-lock-evm.json</code>,
+      <code>51-settlement-proof-evm-refund.json</code>,
+      <code>52-escrow-refund-evm.json</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Reversal</h2>
+    <p>
+      On-chain settlement is irreversible: once a transaction is final on the chain
+      there is no mechanism to clawback funds. A reversal in the [[AVP-DISPUTES]]
+      sense <em class="rfc2119">MUST</em> therefore be realized as a new
+      <em>compensating transfer</em> on-chain, with the payer and payee roles
+      swapped (payee sends back to payer), producing its own
+      <a>SettlementInstruction</a> and <a>SettlementProof</a>.
+    </p>
+    <p>
+      A <code>Reversal</code> object in the [[AVP-DISPUTES]] bundle references this
+      compensating settlement via its <code>settlementRef</code> field, which
+      resolves to the reverse <a>SettlementProof</a>'s <code>id</code>. The
+      [[AVP-DISPUTES]] bundle is not modified by this specification: the by-reference
+      discipline applies symmetrically.
+    </p>
+    <p>
+      Example vectors: <code>53-reverse-settlement-instruction.json</code>,
+      <code>54-reverse-settlement-proof.json</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Rail profiles</h2>
+    <p>
+      This section defines three normative rail profiles. Each profile specifies the
+      permitted values for <code>chain</code>, <code>payeeAccount</code>,
+      <code>asset</code>, the <a>SettlementProof</a> transaction evidence, and the
+      finality model. The following table provides an overview; the subsections are
+      authoritative.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>EVM stablecoin</th>
+          <th>Coinbase x402</th>
+          <th>Bitcoin Lightning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>rail</code></td>
+          <td><code>stl:rail-evm-stablecoin</code></td>
+          <td><code>stl:rail-x402</code></td>
+          <td><code>stl:rail-lightning</code></td>
+        </tr>
+        <tr>
+          <td><code>chain</code> (CAIP-2)</td>
+          <td><code>eip155:*</code></td>
+          <td><code>eip155:*</code> (under HTTP 402)</td>
+          <td>LN network id</td>
+        </tr>
+        <tr>
+          <td><code>payeeAccount</code></td>
+          <td>CAIP-10 <code>0x&hellip;</code></td>
+          <td>x402 <code>accepts</code> &rarr; CAIP-10</td>
+          <td>BOLT11 invoice / LNURL / node pubkey</td>
+        </tr>
+        <tr>
+          <td><code>asset</code> / base unit</td>
+          <td>CAIP-19 ERC-20 / minor units</td>
+          <td>CAIP-19 ERC-20 / minor units</td>
+          <td>native / millisatoshi</td>
+        </tr>
+        <tr>
+          <td><code>SettlementProof.transaction</code></td>
+          <td>tx hash + confirmations</td>
+          <td>facilitator settle response (tx hash)</td>
+          <td><code>payment_hash</code> + <code>preimage</code></td>
+        </tr>
+        <tr>
+          <td>Finality</td>
+          <td>block depth / <code>finalized</code> tag</td>
+          <td>same as EVM</td>
+          <td>preimage revealed (single-shot <code>final</code>)</td>
+        </tr>
+        <tr>
+          <td>Escrow</td>
+          <td>reference escrow contract</td>
+          <td>opt-in</td>
+          <td>hold-invoice (native)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <section>
+      <h3>EVM stablecoin</h3>
+      <p>
+        The EVM stablecoin profile is the reference profile and has the broadest
+        tooling support.
+      </p>
+      <p>
+        <strong><code>rail</code></strong>: <em class="rfc2119">MUST</em> be
+        <code>stl:rail-evm-stablecoin</code>.
+      </p>
+      <p>
+        <strong><code>chain</code></strong>: <em class="rfc2119">MUST</em> be a
+        CAIP-2 id with namespace <code>eip155</code> (e.g., <code>eip155:8453</code>
+        for Base mainnet, <code>eip155:137</code> for Polygon).
+      </p>
+      <p>
+        <strong><code>payeeAccount</code></strong>: <em class="rfc2119">MUST</em> be
+        a CAIP-10 account address on the declared <code>chain</code>
+        (e.g., <code>eip155:8453:0xd8dA&hellip;</code>). The account binding
+        requirement from <a href="#account-binding"></a> applies.
+      </p>
+      <p>
+        <strong><code>asset</code></strong>: <em class="rfc2119">MUST</em> be a
+        CAIP-19 ERC-20 asset identifier (e.g.,
+        <code>eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913</code>
+        for USDC on Base). The token's <code>decimals</code> determine the
+        <code>amountBase</code> calculation.
+      </p>
+      <p>
+        <strong><code>SettlementProof</code></strong>: <em class="rfc2119">MUST</em>
+        carry a <code>transaction</code> (the EVM transaction hash, <code>0x&hellip;</code>),
+        a <code>blockHeight</code>, and a <code>confirmations</code> count.
+        <code>finality</code> advances from <code>pending</code> to
+        <code>probabilistic</code> to <code>final</code> as confirmations accumulate.
+        A <code>confirmationThreshold</code> of 6 is the conventional safe default
+        for EVM chains; profiles targeting chains with fast finality tags
+        (<code>safe</code>/<code>finalized</code>) <em class="rfc2119">MAY</em> use
+        <code>confirmationThreshold == 1</code>.
+      </p>
+      <p>
+        <strong>Escrow</strong>: an EVM escrow contract provides the
+        lock/release/refund mechanism. The <code>lockRef</code>
+        <em class="rfc2119">MUST</em> encode the contract address and the per-escrow
+        identifier. The interface is informative; this specification does not mandate
+        a specific contract.
+      </p>
+      <p>
+        Example vectors: <code>41-settlement-instruction-evm.json</code>,
+        <code>42-settlement-proof-evm.json</code>,
+        <code>49-settlement-instruction-evm-escrow.json</code>,
+        <code>50-escrow-lock-evm.json</code>.
+      </p>
+    </section>
+
+    <section>
+      <h3>Coinbase x402</h3>
+      <p>
+        The x402 profile maps the AVP-Micro payment quote to an HTTP 402
+        challenge/response flow. The facilitator's on-chain ERC-20 transfer is the
+        settlement event.
+      </p>
+      <p>
+        <strong><code>rail</code></strong>: <em class="rfc2119">MUST</em> be
+        <code>stl:rail-x402</code>.
+      </p>
+      <p>
+        <strong><code>chain</code></strong>: <em class="rfc2119">MUST</em> be a
+        CAIP-2 id with namespace <code>eip155</code>, consistent with the x402
+        <code>accepts</code> object returned by the payee server.
+      </p>
+      <p>
+        <strong><code>payeeAccount</code></strong>: <em class="rfc2119">MUST</em> be
+        the CAIP-10 account from the x402 <code>accepts</code> response
+        (<code>payTo</code> field). The account binding requirement from
+        <a href="#account-binding"></a> applies.
+      </p>
+      <p>
+        <strong><code>asset</code></strong>: <em class="rfc2119">MUST</em> be the
+        CAIP-19 ERC-20 asset from the x402 <code>accepts</code> response, consistent
+        with the [[AVP-MICRO]] quote <code>currency</code>.
+      </p>
+      <p>
+        <strong><code>SettlementProof</code></strong>: <em class="rfc2119">MUST</em>
+        carry the facilitator's on-chain settle transaction hash as
+        <code>transaction</code>, and a <code>blockHeight</code> and
+        <code>confirmations</code> count. The finality model is identical to the EVM
+        stablecoin profile.
+      </p>
+      <p>
+        <strong>Escrow</strong>: x402 is pay-then-serve by design; escrow is
+        opt-in and follows the EVM escrow contract mechanism when used.
+      </p>
+      <p>
+        Example vectors: <code>43-settlement-instruction-x402.json</code>,
+        <code>44-settlement-proof-x402.json</code>.
+      </p>
+    </section>
+
+    <section>
+      <h3>Bitcoin Lightning</h3>
+      <p>
+        The Lightning profile settles in millisatoshi. Because the quote
+        <code>currency</code> is typically USD and the settlement asset is native
+        Bitcoin, the <code>rate</code> field is mandatory in this profile.
+      </p>
+      <p>
+        <strong><code>rail</code></strong>: <em class="rfc2119">MUST</em> be
+        <code>stl:rail-lightning</code>.
+      </p>
+      <p>
+        <strong><code>chain</code></strong>: <em class="rfc2119">MUST</em> be the
+        Lightning network identifier (e.g., <code>lightning:mainnet</code>).
+      </p>
+      <p>
+        <strong><code>payeeAccount</code></strong>: <em class="rfc2119">MUST</em> be
+        a BOLT11 invoice, an LNURL endpoint, or a node public key, as appropriate to
+        the payment flow. Note: a BOLT11 invoice is single-use; implementations
+        <em class="rfc2119">SHOULD</em> use LNURL-pay or a node key for reusable
+        endpoints.
+      </p>
+      <p>
+        <strong><code>asset</code></strong>: native Bitcoin; base unit is
+        millisatoshi. <code>amountBase</code> <em class="rfc2119">MUST</em> be the
+        amount in millisatoshi. A 1:1 USD&harr;USDC assumption is not applicable
+        here; the <code>rate</code> field (USD per BTC, or USD per msat)
+        <em class="rfc2119">MUST</em> be present.
+      </p>
+      <p>
+        <strong><code>confirmationThreshold</code></strong>:
+        <em class="rfc2119">MUST</em> be <code>0</code>. Lightning finality is not
+        confirmation-based.
+      </p>
+      <p>
+        <strong><code>SettlementProof</code></strong>: <em class="rfc2119">MUST</em>
+        carry the <code>payment_hash</code> as <code>transaction</code> and the
+        payment <code>preimage</code>. A verifier
+        <em class="rfc2119">MUST</em> confirm
+        <code>sha256(preimage) == transaction</code> and set
+        <code>finality == "final"</code> upon this check passing. The
+        <code>blockHeight</code> and <code>confirmations</code> fields
+        <em class="rfc2119">MUST NOT</em> be present (Lightning has no blocks).
+      </p>
+      <p>
+        <strong>Escrow</strong>: Lightning hold-invoices are the native escrow
+        mechanism. The <code>lockRef</code> in an <a>EscrowLock</a>
+        <em class="rfc2119">MUST</em> be the hold-invoice
+        <code>payment_hash</code>. Revealing the preimage (settling the hold invoice)
+        constitutes both the <a>EscrowRelease</a> trigger and the finality event.
+      </p>
+      <p>
+        Example vectors: <code>45-settlement-instruction-lightning.json</code>,
+        <code>46-escrow-lock-lightning.json</code>,
+        <code>47-settlement-proof-lightning.json</code>,
+        <code>48-escrow-release-lightning.json</code>.
+      </p>
+    </section>
+  </section>
+
+  <section class="informative">
+    <h2>Security considerations</h2>
+
+    <section>
+      <h3>Payment redirection</h3>
+      <p>
+        Without a verifiable binding between the payee DID and the
+        <code>payeeAccount</code>, an attacker who can modify a
+        <a>SettlementInstruction</a> in transit could substitute an account they
+        control. The proof on the <a>SettlementInstruction</a> binds its content
+        (including <code>payeeAccount</code>) to the wallet's key, preventing
+        post-signing substitution. The account binding requirement in
+        <a href="#account-binding"></a> ensures that even a freshly constructed
+        instruction cannot name an arbitrary account: the account must either be
+        encoded in the payee DID (did:pkh) or covered by a payee-signed
+        <a>PayeeAccountBinding</a>.
+      </p>
+    </section>
+
+    <section>
+      <h3>Reorg and finality risk</h3>
+      <p>
+        Block reorganizations can reverse confirmed transactions on EVM chains. The
+        finality state machine in <a href="#finality"></a> mitigates this by
+        prohibiting a <code>fulfilled</code> receipt until the
+        <a>SettlementProof</a> reaches <code>finality == "final"</code>. Choosing a
+        sufficiently large <code>confirmationThreshold</code> reduces reorg risk;
+        chains that expose a cryptographic finality tag (e.g., the Ethereum
+        <code>finalized</code> checkpoint) provide stronger guarantees than count-
+        based thresholds. Lightning payments do not have reorg risk.
+      </p>
+    </section>
+
+    <section>
+      <h3>Amount precision and FX</h3>
+      <p>
+        Silent rounding of the <code>amountBase</code> field can cause the payer to
+        pay a slightly different amount than the quoted decimal. The prohibition on
+        silent rounding in <a href="#core-binding"></a> prevents this. When an
+        explicit <code>rate</code> is used (e.g., for Lightning), both parties
+        <em class="rfc2119">SHOULD</em> agree on the rate before signing, and
+        verifiers <em class="rfc2119">MUST</em> check the consistency of
+        <code>amount</code>, <code>rate</code>, and <code>amountBase</code>.
+      </p>
+    </section>
+
+    <section>
+      <h3>Irreversibility and reversal</h3>
+      <p>
+        On-chain settlement cannot be clawbacked. A reversal (whether triggered by a
+        voluntary refund or an upheld dispute) must be realized as a new compensating
+        transfer, as described in <a href="#reversal"></a>. Implementations
+        <em class="rfc2119">MUST NOT</em> treat on-chain settlement as undoable; any
+        system expecting reversibility must use the escrow profile and refund path.
+      </p>
+    </section>
+
+    <section>
+      <h3>Context protection and term reuse</h3>
+      <p>
+        Both the [[DSA]] context and this settlement context are declared with
+        <code>@protected: true</code>. Settlement objects reuse [[DSA]] and
+        [[AVP-MICRO]] terms (<code>asset</code>, <code>account</code>,
+        <code>amount</code>, <code>currency</code>, <code>payer</code>,
+        <code>payee</code>, <code>authorization</code>, <code>execution</code>,
+        <code>timestamp</code>) rather than redefining them; those terms resolve to
+        their upstream namespaces (<code>avp:</code> or <code>dsa:</code>). New
+        terms introduced by this bundle expand to <code>stl:</code>
+        (<code>https://w3id.org/avp-micro/settlement/v1#</code>).
+      </p>
+      <p>
+        Implementers composing settlement objects with [[AVP-DISPUTES]] objects in a
+        single JSON-LD document <em class="rfc2119">SHOULD</em> be aware that both
+        bundles define a <code>reason</code> term and an
+        <code>authorizationDigest</code> term. In the five-entry context array
+        prescribed by this specification, <code>reason</code> resolves to
+        <code>stl:reason</code> and <code>authorizationDigest</code> resolves to
+        <code>stl:authorizationDigest</code>; in a disputes context the same term
+        names resolve differently. Avoid merging the two context arrays into a single
+        document; reference each bundle's objects by IRI instead.
+      </p>
+    </section>
+  </section>
+</body>
+</html>
