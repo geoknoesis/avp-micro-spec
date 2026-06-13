@@ -1345,6 +1345,38 @@
     </section>
   </section>
 
+  <section id="verification">
+    <h2>Verification</h2>
+    <p>
+      A conformant verifier presented with a credential defined by this specification
+      <em class="rfc2119">MUST</em> perform the following checks before relying on it.
+      These are normative; the reference implementation
+      (<code>spec/verify.py</code>) exercises them.
+    </p>
+    <ul>
+      <li><strong>Proof.</strong> The <code>proof</code>
+        <em class="rfc2119">MUST</em> verify under <code>ecdsa-jcs-2022</code>, and its
+        <code>verificationMethod</code> <em class="rfc2119">MUST</em> be controlled by
+        the credential's <code>issuer</code>.</li>
+      <li><strong>Validity window.</strong> The current time
+        <em class="rfc2119">MUST</em> fall within
+        [<code>validFrom</code>, <code>validUntil</code>], and <code>validFrom</code>
+        <em class="rfc2119">MUST</em> precede <code>validUntil</code>.</li>
+      <li><strong>Revocation.</strong> A verifier <em class="rfc2119">MUST</em>
+        resolve the <code>credentialStatus</code> [[[BITSTRING-STATUS-LIST]]] entry and
+        reject a revoked credential. (Status-list resolution is performed out of band
+        and is not exercised by the offline reference harness.)</li>
+      <li><strong>Trust.</strong> For a <a>SpendingAuthorizationCredential</a>, the
+        <code>issuer</code> <em class="rfc2119">MUST</em> be on the verifier's
+        trusted-issuer list, and the <strong>more restrictive</strong> of the
+        credential's limits and the issuer's <code>issuerScope</code>
+        <em class="rfc2119">MUST</em> apply.</li>
+      <li><strong>Well-formed limits.</strong> Where present,
+        <code>maxPerTransaction</code> <em class="rfc2119">MUST NOT</em> exceed
+        <code>dailyLimit</code>.</li>
+    </ul>
+  </section>
+
   <section id="security">
     <h2>Security considerations</h2>
 

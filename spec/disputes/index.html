@@ -254,6 +254,44 @@ Adversarial: Dispute (payer)
     </p>
   </section>
 
+  <section id="verification">
+    <h2>Verification</h2>
+    <p>
+      A conformant verifier of a refund / dispute chain
+      <em class="rfc2119">MUST</em> perform the integrity, accounting, and state checks
+      below. They are normative and exercised by the reference implementation
+      (<code>spec/verify.py</code>).
+    </p>
+    <ul>
+      <li><strong>Proofs &amp; signers.</strong> Every object's <code>proof</code>
+        <em class="rfc2119">MUST</em> verify, signed by the expected party:
+        <a>Refund</a> by the payee; <a>Dispute</a> by the payer;
+        <a>DisputeEvidence</a> by its <code>submittedBy</code> (matching
+        <code>role</code>); <a>DisputeResolution</a> by <code>resolvedBy</code> per
+        <code>resolverRole</code> (an <code>arbiter</code> resolution by the dispute's
+        <code>arbiter</code>); <a>Reversal</a> by the wallet;
+        <a>ReversalAcknowledgement</a> by the payer.</li>
+      <li><strong>Binding.</strong> Every <code>*Digest</code>
+        <em class="rfc2119">MUST</em> equal the JCS content digest of the referenced
+        object, and <code>payer</code> / <code>payee</code> / <code>currency</code>
+        <em class="rfc2119">MUST</em> match the contested original.</li>
+      <li><strong>Accounting.</strong> A return <code>amount</code> /
+        <code>resolvedAmount</code> <em class="rfc2119">MUST</em> lie within the
+        original (with <code>resolvedAmount</code> ≤ <code>disputedAmount</code>); a
+        <a>Reversal</a>'s <code>amount</code> <em class="rfc2119">MUST</em> equal its
+        trigger; and the cumulative settled value returned against one original
+        execution <em class="rfc2119">MUST NOT</em> exceed that original's
+        <code>amount</code>.</li>
+      <li><strong>State.</strong> A dispute-caused <a>Reversal</a>
+        <em class="rfc2119">MUST</em> reference a resolution with <code>outcome</code>
+        <code>upheld</code> or <code>partial</code>; an <code>arbiter</code>
+        resolution <em class="rfc2119">MUST</em> <code>supersede</code> a prior payee
+        resolution; and <code>rejected</code> / <code>withdrawn</code> resolutions
+        <em class="rfc2119">MUST</em> carry a zero <code>resolvedAmount</code> and have
+        no <a>Reversal</a>.</li>
+    </ul>
+  </section>
+
   <section class="informative">
     <h2>Security and Privacy</h2>
     <p>

@@ -2078,6 +2078,55 @@
     </p>
   </section>
 
+  <section id="verification">
+    <h2>Verification</h2>
+    <p>
+      Beyond per-object structural validity, a conformant verifier
+      <em class="rfc2119">MUST</em> perform the following cross-object, policy, and
+      temporal checks. These are normative and are exercised by the reference
+      implementation (<code>spec/verify.py</code>).
+    </p>
+    <ul>
+      <li><strong>Proofs &amp; signer roles.</strong> Every object's
+        <code>proof</code> <em class="rfc2119">MUST</em> verify, and its signer
+        <em class="rfc2119">MUST</em> be the expected role: <a>PaymentQuote</a> and
+        <a>PaymentReceipt</a> by the <a>payee</a>, <a>PaymentAuthorization</a> by the
+        <a>payer</a>, <a>PaymentExecution</a> by the <a>wallet</a> named in the
+        authorization.</li>
+      <li><strong>Quote binding.</strong> A <a>PaymentAuthorization</a>'s
+        <code>quoteDigest</code> <em class="rfc2119">MUST</em> equal the JCS content
+        digest of the referenced <a>PaymentQuote</a>; the economic terms
+        (<code>amount</code>, <code>currency</code>, <code>settlementMethod</code>,
+        <code>settlementTarget</code>, <code>requestHash</code>)
+        <em class="rfc2119">MUST</em> match; and the authorization's
+        <code>timestamp</code> <em class="rfc2119">MUST</em> precede the quote's
+        <code>expires</code>.</li>
+      <li><strong>Spending policy.</strong> The embedded Spending Authorization
+        Credential <em class="rfc2119">MUST</em> verify per [[DSA]] (proof, validity
+        window, revocation); its subject <em class="rfc2119">MUST</em> be the
+        <a>payer</a>; and <code>amount</code> ≤ <code>maxPerTransaction</code>,
+        <code>payee</code> ∈ <code>allowedPayees</code>, and <code>currency</code>
+        <em class="rfc2119">MUST</em> satisfy the credential.</li>
+      <li><strong>Settlement &amp; delivery.</strong> A <a>PaymentExecution</a>'s
+        <code>authorization</code> <em class="rfc2119">MUST</em> reference the
+        authorization and be signed by its <code>wallet</code>; a
+        <a>PaymentReceipt</a>'s <code>amount</code> <em class="rfc2119">MUST</em>
+        equal the execution's <code>amount</code>.</li>
+      <li><strong>Replay.</strong> A verifier <em class="rfc2119">MUST</em> reject a
+        reused (<code>payer</code>, <code>nonce</code>) pair within an authorization's
+        validity window.</li>
+      <li><strong>Streaming.</strong> <code>committedAmount</code> ≤ the session's
+        <code>maxAmount</code>; each <a>UsageAccrual</a> ≤ the session cap; a
+        <a>UsageSessionExtension</a> <em class="rfc2119">MUST</em> only raise the cap
+        or extend expiry; and <code>sessionDigest</code> <em class="rfc2119">MUST</em>
+        bind the referenced session.</li>
+      <li><strong>Human-present.</strong> A <a>PurchaseConfirmation</a>
+        <em class="rfc2119">MUST</em> be signed by <code>confirmedBy</code> (the
+        principal), which <em class="rfc2119">MUST NOT</em> be the <a>payer</a>
+        agent.</li>
+    </ul>
+  </section>
+
   <section id="security">
     <h2>Security considerations</h2>
 
