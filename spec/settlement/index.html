@@ -125,7 +125,10 @@
 
       <dt><dfn>SettlementProof</dfn></dt>
       <dd>A wallet-signed attestation that settlement occurred on-chain, carrying the
-        chain-native transaction reference, the settled base-unit amount, and a
+        chain-native transaction reference, the <code>settledAmountBase</code> (the
+        integer base-unit amount actually settled on-chain — which <em class="rfc2119">MAY</em>
+        differ from the instruction's <code>amountBase</code> on a partial settlement),
+        the <code>observedAt</code> timestamp at which settlement was observed, and a
         <a>finality</a> state. <code>PaymentExecution.settlementRef</code>
         resolves to this object's <code>id</code>.</dd>
 
@@ -320,6 +323,12 @@
       A <a>SettlementProof</a> carries a <code>finality</code> field whose value
       <em class="rfc2119">MUST</em> be one of <code>pending</code>,
       <code>probabilistic</code>, or <code>final</code>.
+      A <a>SettlementProof</a> <em class="rfc2119">MUST</em> carry
+      <code>settledAmountBase</code> (integer base units actually settled) and
+      <code>observedAt</code> (an <code>xsd:dateTime</code> observation timestamp),
+      in addition to <code>instruction</code>, <code>instructionDigest</code>,
+      <code>chain</code>, <code>transaction</code>, <code>asset</code>, and
+      <code>finality</code>.
     </p>
     <p>
       A <code>fulfilled</code> <code>PaymentReceipt</code>
@@ -526,7 +535,9 @@
       <p>
         <strong><code>SettlementProof</code></strong>: <em class="rfc2119">MUST</em>
         carry a <code>transaction</code> (the EVM transaction hash, <code>0x&hellip;</code>),
-        a <code>blockHeight</code>, and a <code>confirmations</code> count.
+        a <code>blockHeight</code>, and a <code>confirmations</code> count;
+        <code>settledAmountBase</code> and <code>observedAt</code> are also
+        required per <a href="#finality"></a>.
         <code>finality</code> advances from <code>pending</code> to
         <code>probabilistic</code> to <code>final</code> as confirmations accumulate.
         A <code>confirmationThreshold</code> of 6 is the conventional safe default
@@ -580,8 +591,9 @@
         <strong><code>SettlementProof</code></strong>: <em class="rfc2119">MUST</em>
         carry the facilitator's on-chain settle transaction hash as
         <code>transaction</code>, and a <code>blockHeight</code> and
-        <code>confirmations</code> count. The finality model is identical to the EVM
-        stablecoin profile.
+        <code>confirmations</code> count; <code>settledAmountBase</code> and
+        <code>observedAt</code> are also required per <a href="#finality"></a>.
+        The finality model is identical to the EVM stablecoin profile.
       </p>
       <p>
         <strong>Escrow</strong>: x402 is pay-then-serve by design; escrow is
@@ -630,8 +642,9 @@
       <p>
         <strong><code>SettlementProof</code></strong>: <em class="rfc2119">MUST</em>
         carry the <code>payment_hash</code> as <code>transaction</code> and the
-        payment <code>preimage</code>. A verifier
-        <em class="rfc2119">MUST</em> confirm
+        payment <code>preimage</code>; <code>settledAmountBase</code> (in millisatoshi)
+        and <code>observedAt</code> are also required per <a href="#finality"></a>.
+        A verifier <em class="rfc2119">MUST</em> confirm
         <code>sha256(preimage) == transaction</code> and set
         <code>finality == "final"</code> upon this check passing. The
         <code>blockHeight</code> and <code>confirmations</code> fields
