@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/avp-micro/settlement/schemas/settlement.schema.json",
+  "title": "AVP-Micro Settlement data objects",
+  "description": "JSON Schema for AVP-Micro on-chain settlement-binding messages. Validate an instance against the relevant $def, e.g. #/$defs/SettlementInstruction. Schemas are lenient about extra members (the @protected JSON-LD context governs semantics); they enforce required members, types, and value formats.",
+
+  "$defs": {
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+" },
+    "idValue": { "type": "string", "minLength": 1 },
+    "decimal": { "type": "string", "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$" },
+    "positiveDecimal": { "type": "string", "pattern": "^(0\\.[0-9]*[1-9][0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$" },
+    "baseUnits": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+    "dateTime": { "type": "string", "format": "date-time" },
+    "contentDigest": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[A-Za-z0-9_-]+$" },
+    "caip2": { "type": "string", "pattern": "^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$" },
+    "proof": {
+      "type": "object",
+      "required": ["type", "cryptosuite", "created", "verificationMethod", "proofPurpose", "proofValue"],
+      "properties": {
+        "type": { "const": "DataIntegrityProof" },
+        "cryptosuite": { "const": "ecdsa-jcs-2022" },
+        "created": { "$ref": "#/$defs/dateTime" },
+        "verificationMethod": { "type": "string", "minLength": 1 },
+        "proofPurpose": { "const": "assertionMethod" },
+        "proofValue": { "type": "string", "pattern": "^z[1-9A-HJ-NP-Za-km-z]+$" }
+      }
+    },
+    "signedContext": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://www.w3.org/ns/credentials/v2" },
+        { "const": "https://w3id.org/security/data-integrity/v2" },
+        { "const": "https://w3id.org/spending-authority/v1" },
+        { "const": "https://w3id.org/avp-micro/v1" },
+        { "const": "https://w3id.org/avp-micro/settlement/v1" }
+      ],
+      "minItems": 5,
+      "maxItems": 5
+    },
+
+    "PayeeAccountBinding": {
+      "type": "object",
+      "required": ["@context", "id", "type", "subject", "account", "chain", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "PayeeAccountBinding" }, { "type": "array", "contains": { "const": "PayeeAccountBinding" } } ] },
+        "subject": { "$ref": "#/$defs/did" },
+        "account": { "type": "string", "minLength": 1 },
+        "chain": { "$ref": "#/$defs/caip2" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "SettlementInstruction": {
+      "type": "object",
+      "required": ["@context", "id", "type", "authorization", "authorizationDigest", "rail", "chain", "payeeAccount", "asset", "payer", "payee", "amount", "currency", "amountBase", "confirmationThreshold", "mode", "nonce", "expires", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "SettlementInstruction" }, { "type": "array", "contains": { "const": "SettlementInstruction" } } ] },
+        "authorization": { "$ref": "#/$defs/idValue" },
+        "authorizationDigest": { "$ref": "#/$defs/contentDigest" },
+        "rail": { "type": "string", "minLength": 1 },
+        "chain": { "$ref": "#/$defs/caip2" },
+        "payeeAccount": { "type": "string", "minLength": 1 },
+        "asset": { "type": "string", "minLength": 1 },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "amountBase": { "$ref": "#/$defs/baseUnits" },
+        "rate": { "$ref": "#/$defs/positiveDecimal" },
+        "confirmationThreshold": { "type": "integer", "minimum": 0 },
+        "mode": { "enum": ["direct", "escrow"] },
+        "payeeAccountBinding": { "$ref": "#/$defs/idValue" },
+        "nonce": { "type": "string", "minLength": 1 },
+        "expires": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "SettlementProof": {
+      "type": "object",
+      "required": ["@context", "id", "type", "instruction", "instructionDigest", "chain", "transaction", "settledAmountBase", "asset", "finality", "observedAt", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "SettlementProof" }, { "type": "array", "contains": { "const": "SettlementProof" } } ] },
+        "instruction": { "$ref": "#/$defs/idValue" },
+        "instructionDigest": { "$ref": "#/$defs/contentDigest" },
+        "execution": { "$ref": "#/$defs/idValue" },
+        "chain": { "$ref": "#/$defs/caip2" },
+        "transaction": { "type": "string", "minLength": 1 },
+        "preimage": { "type": "string", "minLength": 1 },
+        "settledAmountBase": { "$ref": "#/$defs/baseUnits" },
+        "asset": { "type": "string", "minLength": 1 },
+        "blockHeight": { "type": "integer", "minimum": 0 },
+        "confirmations": { "type": "integer", "minimum": 0 },
+        "finality": { "enum": ["pending", "probabilistic", "final"] },
+        "observedAt": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "EscrowLock": {
+      "type": "object",
+      "required": ["@context", "id", "type", "instruction", "instructionDigest", "lockRef", "lockedAmountBase", "asset", "timeout", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "EscrowLock" }, { "type": "array", "contains": { "const": "EscrowLock" } } ] },
+        "instruction": { "$ref": "#/$defs/idValue" },
+        "instructionDigest": { "$ref": "#/$defs/contentDigest" },
+        "lockRef": { "type": "string", "minLength": 1 },
+        "lockedAmountBase": { "$ref": "#/$defs/baseUnits" },
+        "asset": { "type": "string", "minLength": 1 },
+        "timeout": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "EscrowRelease": {
+      "type": "object",
+      "required": ["@context", "id", "type", "lock", "lockDigest", "settlementProof", "settlementProofDigest", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "EscrowRelease" }, { "type": "array", "contains": { "const": "EscrowRelease" } } ] },
+        "lock": { "$ref": "#/$defs/idValue" },
+        "lockDigest": { "$ref": "#/$defs/contentDigest" },
+        "settlementProof": { "$ref": "#/$defs/idValue" },
+        "settlementProofDigest": { "$ref": "#/$defs/contentDigest" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "EscrowRefund": {
+      "type": "object",
+      "required": ["@context", "id", "type", "lock", "lockDigest", "settlementProof", "settlementProofDigest", "reason", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "EscrowRefund" }, { "type": "array", "contains": { "const": "EscrowRefund" } } ] },
+        "lock": { "$ref": "#/$defs/idValue" },
+        "lockDigest": { "$ref": "#/$defs/contentDigest" },
+        "settlementProof": { "$ref": "#/$defs/idValue" },
+        "settlementProofDigest": { "$ref": "#/$defs/contentDigest" },
+        "reason": { "type": "string", "minLength": 1 },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    }
+  }
+}
