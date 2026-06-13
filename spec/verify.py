@@ -428,6 +428,12 @@ def main() -> int:
     check("reversal-ack.reversalDigest matches reversal",
           rev_ack["reversalDigest"] == ac.jcs_digest(rev_refund))
 
+    # B3 extra: secondary disputes' digest bindings
+    check("rejected resolution binds its dispute digest",
+          res_rej["disputeDigest"] == ac.jcs_digest(dispute_r))
+    check("withdrawn resolution binds its dispute digest",
+          res_wd["disputeDigest"] == ac.jcs_digest(dispute_w))
+
     # B4 + B5: party / currency consistency with the original
     check("refund parties match original receipt",
           refund["payer"] == session_receipt["payer"] and refund["payee"] == session_receipt["payee"])
@@ -435,6 +441,21 @@ def main() -> int:
           dispute["payer"] == session_receipt["payer"] and dispute["payee"] == session_receipt["payee"])
     check("refund currency matches original", refund["currency"] == session_receipt["currency"])
     check("dispute currency matches original", dispute["currency"] == session_receipt["currency"])
+
+    # B4 extra: party consistency for the secondary disputes/refund
+    check("refund2 parties match original receipt",
+          refund2["payer"] == session_receipt["payer"] and refund2["payee"] == session_receipt["payee"])
+    check("rejected dispute parties match original receipt",
+          dispute_r["payer"] == receipt["payer"] and dispute_r["payee"] == receipt["payee"])
+    check("withdrawn dispute parties match original receipt",
+          dispute_w["payer"] == receipt["payer"] and dispute_w["payee"] == receipt["payee"])
+
+    # B5 extra: currency consistency along the resolution/reversal chain
+    check("refund2 currency matches original", refund2["currency"] == session_receipt["currency"])
+    check("payee resolution currency matches dispute", res_payee["currency"] == dispute["currency"])
+    check("arbiter resolution currency matches dispute", res_arb["currency"] == dispute["currency"])
+    check("dispute reversal currency matches dispute", rev_dispute["currency"] == dispute["currency"])
+    check("refund reversal currency matches refund", rev_refund["currency"] == refund["currency"])
 
     # A1 + A4: amount bounds
     orig08 = Decimal(session_exec["amount"])  # 0.048
