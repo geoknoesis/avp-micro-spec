@@ -475,5 +475,81 @@
       {"action": "close_session", "expect": {"status": "completed"}}
     ],
     "finalBalances": {"agent": "99.10", "payee": "0.90"}
+  },
+  {
+    "name": "issue-delegate-authority",
+    "description": "the principal issues a bounded SpendingAuthorizationCredential to the agent, which then spends within it",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "dailyLimit": "20.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "issue", "expect": "ok"},
+      {"action": "quote", "amount": "2.00", "request": {"resource": "tool-api/run", "input": "doc-7"}},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "2.00"}},
+      {"action": "receipt", "expect": "ok"}
+    ],
+    "finalBalances": {"agent": "98.00", "payee": "2.00"}
+  },
+  {
+    "name": "issue-wrong-subject",
+    "description": "the credential is issued to a key the agent does not control; the wallet rejects the agent's authorization as a holder mismatch",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "issue", "subject": "outsider", "expect": "ok"},
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"reject": "holderMismatch"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "issue-expired-credential",
+    "description": "the principal issues a credential whose validity window has already passed; the wallet refuses to honor it",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "issue", "expired": true, "expect": "ok"},
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"reject": "credentialExpired"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "issue-then-revoked",
+    "description": "the agent spends once under a freshly issued credential; the principal then revokes it and the next charge is refused",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "dailyLimit": "50.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "issue", "expect": "ok"},
+      {"action": "quote", "amount": "2.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "2.00"}},
+      {"action": "revoke", "expect": "ok"},
+      {"action": "quote", "amount": "2.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"reject": "credentialRevoked"}}
+    ],
+    "finalBalances": {"agent": "98.00", "payee": "2.00"}
+  },
+  {
+    "name": "issue-ap2-intent",
+    "description": "cross-ecosystem delegation: the user issues an AP2 IntentMandate (SD-JWT-VC, did:web) to the agent, which imports it and spends -- authority roots in the user DID, not the bridge",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "credential": {"source": "ap2-intent"},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "issue", "expect": "ok"},
+      {"action": "quote", "amount": "3.00", "request": {"resource": "data-api/query", "input": "q-1"}},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "3.00"}}
+    ],
+    "finalBalances": {"agent": "97.00", "payee": "3.00"}
   }
 ]

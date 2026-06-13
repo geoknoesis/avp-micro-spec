@@ -37,8 +37,17 @@ def test_simulator_covers_the_documented_use_cases():
     covered = {code for group in rejections for code in group}
     for code in ("overCap", "payeeNotAllowed", "dailyLimitExceeded", "expired",
                  "nonceReuse", "quoteMismatch", "amountMismatch", "currencyMismatch",
-                 "badSignature", "budgetExceeded", "missingConfirmation", "forgedConfirmation"):
+                 "badSignature", "budgetExceeded", "missingConfirmation", "forgedConfirmation",
+                 "holderMismatch", "credentialExpired", "credentialRevoked"):
         assert code in covered, f"no scenario exercises rejection {code}"
+
+
+def test_simulator_walks_credential_issuance():
+    # delegation is a first-class, walked step (not just a precondition), and the
+    # wallet enforces the credential's own lifecycle (wrong subject / expired / revoked).
+    names = {s["name"] for s in _SCENARIOS}
+    assert {"issue-delegate-authority", "issue-wrong-subject", "issue-expired-credential",
+            "issue-then-revoked", "issue-ap2-intent"} <= names
 
 
 def test_emitted_messages_are_schema_conformant():

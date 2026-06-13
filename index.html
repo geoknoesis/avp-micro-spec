@@ -411,9 +411,10 @@
   <section id="simulator">
     <h3>Protocol simulator &amp; interactive demo</h3>
     <p>
-      <code>spec/sim.py</code> runs the full signed-message flow end to end — quote → authorize
-      → execute → receipt, plus streaming/metered sessions, human-present approval, AP2-bridged
-      imported authority, and the refund/reversal/dispute lifecycle — with real
+      <code>spec/sim.py</code> runs the full signed-message flow end to end — credential
+      issuance/delegation (and revocation), quote → authorize → execute → receipt, plus
+      streaming/metered sessions, human-present approval, AP2-bridged imported authority, and
+      the refund/reversal/dispute lifecycle — with real
       <code>ecdsa-jcs-2022</code> proofs and complete wallet-side policy enforcement, settled on a
       <strong>simulated play-money ledger</strong>. Settlement is the only money-touching step and
       is the one part the protocol scopes out, so it is stubbed: <strong>no real funds move</strong>.

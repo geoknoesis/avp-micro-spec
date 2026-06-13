@@ -34,10 +34,16 @@ gets a deterministic P-256 key + did:key):
       "finalBalances": {"agent": "99.00", "payee": "1.00"}   # optional assertion
     }
 
-Step actions: quote, authorize, execute, receipt, confirm, replay, advance_clock,
-corrupt_authz, tamper_quote, open_session, budget_authorize, accrue, extend,
-close_session. Each step's ``expect`` is "ok", {"reject": code}, or
-{"status": s, "settled": amount}. Rejection codes are listed in REJECTIONS below.
+Step actions: issue, revoke, quote, authorize, execute, receipt, confirm, replay,
+advance_clock, corrupt_authz, tamper_quote, open_session, budget_authorize, accrue,
+extend, close_session. ``issue`` (re)mints the SpendingAuthorizationCredential the
+agent holds -- it accepts ``subject`` (the role whose key the credential is bound to;
+a non-agent role models a wrong-key delegation), ``expired`` (a credential whose
+validity window has already passed), ``validFor`` seconds, ``revoked``, or
+``source: "ap2-intent"`` (the user issues an AP2 IntentMandate the agent imports).
+``revoke`` adds the standing credential to the wallet's revocation set. Each step's
+``expect`` is "ok", {"reject": code}, or {"status": s, "settled": amount}. Rejection
+codes are listed in REJECTIONS below.
 """
 from __future__ import annotations
 
@@ -60,7 +66,8 @@ DSA_CTX = PAY_CTX[:3]
 
 # every wallet rejection the simulator can emit (the runtime-enforcement vocabulary)
 REJECTIONS = {
-    "badSignature", "badCredential", "holderMismatch", "quoteMismatch",
+    "badSignature", "badCredential", "credentialExpired", "credentialRevoked",
+    "holderMismatch", "quoteMismatch",
     "amountMismatch", "currencyMismatch", "overCap", "payeeNotAllowed",
     "categoryNotAllowed", "dailyLimitExceeded", "expired", "nonceReuse",
     "doubleSpend", "budgetExceeded", "missingConfirmation", "forgedConfirmation",
@@ -165,36 +172,13 @@ class World:
         self.session_committed = Decimal(0)
         self.session_accrued = Decimal(0)
         self.session_units = Decimal(0)
-        self.credential = self._issue_credential()
+        self.revoked: set = set()           # credential ids the principal has revoked
+        self.credential = build_credential(self, {})   # the standing authority (precondition)
 
     def actor(self, role: str) -> Actor:
         if role not in self._actors:
             self._actors[role] = Actor(role)
         return self._actors[role]
-
-    def _issue_credential(self) -> dict:
-        if self.sc.get("credential", {}).get("source") == "ap2-intent":
-            return self._import_ap2_intent()
-        p = self.sc.get("policy", {})
-        subj = {"id": self.actor("agent").did, "currency": p.get("currency", "USD")}
-        if "maxPerTransaction" in p:
-            subj["maxPerTransaction"] = p["maxPerTransaction"]
-        if "dailyLimit" in p:
-            subj["dailyLimit"] = p["dailyLimit"]
-        if "allowedPayees" in p:
-            subj["allowedPayees"] = [self.actor(r).did for r in p["allowedPayees"]]
-        if "allowedCategories" in p:
-            subj["allowedServiceCategories"] = list(p["allowedCategories"])
-        cred = {
-            "@context": DSA_CTX,
-            "id": "urn:sim:vc:spendauth",
-            "type": ["VerifiableCredential", "SpendingAuthorizationCredential"],
-            "issuer": self.actor("principal").did,
-            "validFrom": self.clock.now(),
-            "validUntil": self.clock.plus(365 * 24 * 3600),
-            "credentialSubject": subj,
-        }
-        return self.actor("principal").sign(cred, self.clock.now())
 
     def _import_ap2_intent(self) -> dict:
         """The agent's authority is an AP2 IntentMandate (ES256, did:web user issuer),
@@ -235,6 +219,44 @@ class World:
     @property
     def requires_confirmation(self) -> bool:
         return bool(self.sc.get("policy", {}).get("requiresConfirmation"))
+
+
+# ---- credential issuance ----------------------------------------------------
+
+def build_credential(world: World, step: dict) -> dict:
+    """Issue the SpendingAuthorizationCredential the agent holds. Default issuance
+    mirrors the scenario policy and binds the credential to the agent's key. An
+    ``issue`` step may override the ``subject`` (a non-agent role models a wrong-key
+    delegation), force an already-``expired`` validity window or a custom ``validFor``,
+    or select ``source: "ap2-intent"`` -- the user issues an AP2 IntentMandate that is
+    imported proof-preservingly. The principal is always the issuer; authority roots in
+    the principal (native) or the user DID (AP2), never in any intermediary."""
+    if (step.get("source") or world.sc.get("credential", {}).get("source")) == "ap2-intent":
+        return world._import_ap2_intent()
+    p = world.sc.get("policy", {})
+    subj = {"id": world.actor(step.get("subject", "agent")).did, "currency": p.get("currency", "USD")}
+    if "maxPerTransaction" in p:
+        subj["maxPerTransaction"] = p["maxPerTransaction"]
+    if "dailyLimit" in p:
+        subj["dailyLimit"] = p["dailyLimit"]
+    if "allowedPayees" in p:
+        subj["allowedPayees"] = [world.actor(r).did for r in p["allowedPayees"]]
+    if "allowedCategories" in p:
+        subj["allowedServiceCategories"] = list(p["allowedCategories"])
+    if step.get("expired"):
+        valid_from, valid_until = world.clock.plus(-7200), world.clock.plus(-1)
+    else:
+        valid_from = world.clock.now()
+        valid_until = world.clock.plus(int(step.get("validFor", 365 * 24 * 3600)))
+    cred = {
+        "@context": DSA_CTX,
+        "id": "urn:sim:vc:spendauth",
+        "type": ["VerifiableCredential", "SpendingAuthorizationCredential"],
+        "issuer": world.actor("principal").did,
+        "validFrom": valid_from, "validUntil": valid_until,
+        "credentialSubject": subj,
+    }
+    return world.actor("principal").sign(cred, world.clock.now())
 
 
 # ---- object builders --------------------------------------------------------
@@ -355,6 +377,11 @@ def wallet_process(world: World, authz: dict) -> dict:
             raise Reject("badCredential")
     elif not ac.verify_ecdsa_jcs_2022(cred):
         raise Reject("badCredential")
+    # 2b. credential lifecycle: not revoked by the principal, and within its validity window
+    if cred.get("id") in world.revoked:
+        raise Reject("credentialRevoked")
+    if "validUntil" in cred and world.clock.after(cred["validUntil"]):
+        raise Reject("credentialExpired")
     subj = cred["credentialSubject"]
     # 3. holder binding: the agent that signed is the credential subject and the payer
     if subj["id"] != authz["payer"] or _controller(authz) != authz["payer"]:
@@ -615,6 +642,8 @@ def _store(world, key, obj):
 
 
 HANDLERS = {
+    "issue": lambda w, s: _do_issue(w, s),
+    "revoke": lambda w, s: _do_revoke(w, s),
     "quote": lambda w, s: {"ok": True, "_set": ("quote", build_quote(w, s))},
     "authorize": lambda w, s: {"ok": True, "_set": ("authz", build_authorization(w, s))},
     "confirm": lambda w, s: {"ok": True, "_set": ("confirmation", build_confirmation(w, s))},
@@ -636,6 +665,23 @@ HANDLERS = {
     "dispute_evidence": lambda w, s: {"ok": True, "_set": ("evidence", build_evidence(w, s))},
     "dispute_resolution": lambda w, s: {"ok": True, "_set": ("resolution", build_resolution(w, s))},
 }
+
+
+def _do_issue(world, step):
+    """The principal (or, for AP2, the user) issues the credential to the agent. This
+    makes delegation a first-class, walked step; the wallet's checks on it surface
+    downstream (holderMismatch, credentialExpired, credentialRevoked)."""
+    world.credential = build_credential(world, step)
+    world.ctx["issued"] = world.credential
+    if step.get("revoked"):
+        world.revoked.add(world.credential.get("id"))
+    return {"ok": True}
+
+
+def _do_revoke(world, step):
+    """The principal revokes the standing credential; later charges under it are refused."""
+    world.revoked.add(world.credential.get("id"))
+    return {"ok": True}
 
 
 def _build_receipt(world):
@@ -663,6 +709,7 @@ def _do_execute(world, step):
 
 
 _OBJECT_OF = {
+    "issue": "issued",
     "quote": "quote", "authorize": "authz", "confirm": "confirmation",
     "execute": "execution", "replay": "execution", "receipt": "receipt",
     "open_session": "session", "budget_authorize": "sba", "accrue": "accrual",
