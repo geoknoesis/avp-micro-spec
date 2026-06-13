@@ -111,7 +111,7 @@
         "disputeDigest": { "$ref": "#/$defs/contentDigest" },
         "submittedBy": { "$ref": "#/$defs/did" },
         "role": { "enum": ["payer", "payee"] },
-        "sequence": { "type": "integer", "minimum": 0 },
+        "sequence": { "type": "integer", "minimum": 1 },
         "evidenceType": { "type": "string" },
         "contentDigest": { "$ref": "#/$defs/contentDigest" },
         "uri": { "$ref": "#/$defs/iri" },
@@ -149,6 +149,14 @@
         {
           "if": { "properties": { "resolverRole": { "const": "arbiter" } }, "required": ["resolverRole"] },
           "then": { "required": ["supersedes", "supersedesDigest"] }
+        },
+        {
+          "if": { "properties": { "outcome": { "enum": ["rejected", "withdrawn"] } }, "required": ["outcome"] },
+          "then": { "properties": { "resolvedAmount": { "pattern": "^0([.]0+)?$" } } }
+        },
+        {
+          "if": { "properties": { "outcome": { "enum": ["upheld", "partial"] } }, "required": ["outcome"] },
+          "then": { "properties": { "resolvedAmount": { "$ref": "#/$defs/positiveDecimal" } } }
         }
       ]
     },
@@ -159,6 +167,16 @@
       "oneOf": [
         { "required": ["refund", "refundDigest"] },
         { "required": ["resolution", "resolutionDigest"] }
+      ],
+      "allOf": [
+        {
+          "if": { "properties": { "cause": { "const": "refund" } }, "required": ["cause"] },
+          "then": { "required": ["refund", "refundDigest"] }
+        },
+        {
+          "if": { "properties": { "cause": { "const": "dispute" } }, "required": ["cause"] },
+          "then": { "required": ["resolution", "resolutionDigest"] }
+        }
       ],
       "properties": {
         "@context": { "$ref": "#/$defs/signedContext" },

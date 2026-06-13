@@ -363,6 +363,16 @@ def main():
          lambda obj: (obj.__setitem__("resolverRole", "payee") or obj)),
         ("arbiter resolution without supersedes", "34-dispute-resolution-arbiter.json", "DisputeResolution",
          lambda obj: (obj.pop("supersedes", None), obj.pop("supersedesDigest", None), obj)[2]),
+        ("Reversal cause/branch mismatch (cause=dispute, refund branch)", "21-reversal-refund.json", "Reversal",
+         lambda obj: (obj.__setitem__("cause", "dispute") or obj)),
+        ("rejected with nonzero resolvedAmount", "37-dispute-resolution-rejected.json", "DisputeResolution",
+         lambda obj: (obj.__setitem__("resolvedAmount", "5.00") or obj)),
+        ("withdrawn with nonzero resolvedAmount", "39-dispute-resolution-withdrawn.json", "DisputeResolution",
+         lambda obj: (obj.__setitem__("resolvedAmount", "5.00") or obj)),
+        ("upheld with zero resolvedAmount", "34-dispute-resolution-arbiter.json", "DisputeResolution",
+         lambda obj: (obj.__setitem__("resolvedAmount", "0") or obj)),
+        ("DisputeEvidence sequence below 1", "31-dispute-evidence-payee.json", "DisputeEvidence",
+         lambda obj: (obj.__setitem__("sequence", 0) or obj)),
     ])
     negative_schema_check(SETTLE, "settlement.schema.json", [
         ("instruction missing amountBase", "41-settlement-instruction-evm.json", "SettlementInstruction",

@@ -68,14 +68,14 @@ disp:DisputeResolutionShape a sh:NodeShape ;
 disp:ReversalShape a sh:NodeShape ;
   sh:targetClass disp:Reversal ;
   sh:property [ sh:path disp:cause ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
-  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
-  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path avp:amount ; sh:node disp:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path avp:status ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] ;
-  sh:or (
+  sh:xone (
     [ sh:property [ sh:path disp:refund ; sh:minCount 1 ] ]
     [ sh:property [ sh:path disp:resolution ; sh:minCount 1 ] ]
   ) .
@@ -84,9 +84,9 @@ disp:ReversalAcknowledgementShape a sh:NodeShape ;
   sh:targetClass disp:ReversalAcknowledgement ;
   sh:property [ sh:path disp:reversal ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
   sh:property [ sh:path disp:reversalDigest ; sh:node disp:ContentDigest ; sh:minCount 1 ] ;
-  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
-  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
-  sh:property [ sh:path avp:amount ; sh:node disp:PositiveDecimalAmount ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:amount ; sh:node disp:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path disp:receivedAt ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] .

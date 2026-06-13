@@ -481,8 +481,11 @@ def main() -> int:
     check("evidence binds dispute digest", ev_payee["disputeDigest"] == ac.jcs_digest(dispute))
     check("payer evidence binds dispute digest", ev_payer["disputeDigest"] == ac.jcs_digest(dispute))
     check("payee resolution binds dispute digest", res_payee["disputeDigest"] == ac.jcs_digest(dispute))
+    check("arbiter resolution binds dispute digest", res_arb["disputeDigest"] == ac.jcs_digest(dispute))
     check("arbiter supersedesDigest matches payee resolution",
           res_arb["supersedesDigest"] == ac.jcs_digest(res_payee))
+    check("disputes do not use the refund-only 'goodwill' reason",
+          all(d.get("reason") != "disp:goodwill" for d in (dispute, dispute_r, dispute_w)))
     check("reversal(refund).refundDigest matches refund",
           rev_refund["refundDigest"] == ac.jcs_digest(refund))
     check("reversal(dispute).resolutionDigest matches arbiter resolution",
