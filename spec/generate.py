@@ -88,6 +88,15 @@ def main() -> None:
         "id": "urn:dsa:vc:merchant:001",
         "type": ["VerifiableCredential", "MerchantCredential"],
         "issuer": DID_ISSUER,
+        "validFrom": "2026-03-25T20:00:00Z",
+        "validUntil": "2026-09-25T20:00:00Z",
+        "credentialStatus": {
+            "id": "https://issuer.example/status/3#1042",
+            "type": "BitstringStatusListEntry",
+            "statusPurpose": "revocation",
+            "statusListIndex": "1042",
+            "statusListCredential": "https://issuer.example/status/3",
+        },
         "credentialSubject": {"id": DID_PAYEE, "merchantName": "Tool API Inc.",
                                "categories": ["cat:ChatCompletionApi"]},
     }
@@ -99,6 +108,15 @@ def main() -> None:
         "id": "urn:dsa:vc:capability:001",
         "type": ["VerifiableCredential", "PaymentCapabilityCredential"],
         "issuer": DID_WALLET,
+        "validFrom": "2026-03-25T20:00:00Z",
+        "validUntil": "2026-09-25T20:00:00Z",
+        "credentialStatus": {
+            "id": "https://wallet.example.com/status/1#77",
+            "type": "BitstringStatusListEntry",
+            "statusPurpose": "revocation",
+            "statusListIndex": "77",
+            "statusListCredential": "https://wallet.example.com/status/1",
+        },
         "credentialSubject": {"id": DID_AGENT, "account": "https://wallet.example.com/alice",
                                "currency": "USD"},
     }
