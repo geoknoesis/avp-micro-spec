@@ -1609,17 +1609,25 @@ Expected:
 - `validate.py` ends with `PASS: all artifact checks passed.`
 - `verify.py` ends with `PASS: all checks passed.`
 
-- [ ] **Step 2: Confirm the working tree is clean (vectors are deterministic)**
+- [ ] **Step 2: Confirm the disputes vectors are deterministic**
 
-Run: `git status --porcelain`
-Expected: no output (regeneration produced byte-identical vectors; everything already committed).
+Run: `git status --porcelain spec/disputes/test-vectors/`
+Expected: **no output** — the disputes vectors are signed with the deterministic `ecdsa-jcs-2022` cryptosuite (RFC 6979), so regeneration is byte-identical.
 
-- [ ] **Step 3: Final commit (only if Step 2 showed changes)**
+> **Pre-existing note (NOT a regression):** running `generate.py` also rewrites all
+> `spec/interop-sd-jwt-vc/test-vectors/*.json` with fresh signatures every time —
+> the interop bundle's SD-JWT envelopes use randomized ES256 (not RFC 6979), so that
+> churn is inherent to the existing generator and is unrelated to this feature. The
+> harnesses still PASS against the freshly-signed interop vectors. Discard that churn
+> so it is not committed: `git checkout -- spec/interop-sd-jwt-vc/test-vectors/`.
+
+- [ ] **Step 3: Discard the pre-existing interop churn and confirm a clean tree**
 
 ```bash
-git add -A
-git commit -m "chore(disputes): regenerate vectors; verify + validate PASS"
+git checkout -- spec/interop-sd-jwt-vc/test-vectors/
+git status --porcelain
 ```
+Expected: no output. (All disputes work is already committed in Tasks 1–8; this task is verification only and should produce no new commit.)
 
 ---
 
