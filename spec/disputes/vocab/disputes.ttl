@@ -5,6 +5,14 @@
 # Dispute lifecycle, converging on a wallet-signed Reversal settlement fact.
 #
 # Namespace: https://w3id.org/avp-micro/disputes/v1#  (prefix disp:)
+#
+# Term scoping (intentional): generic-sounding members defined here -- disp:note,
+# disp:statement, disp:claim, disp:contentDigest, disp:uri -- are deliberately
+# bundle-scoped under disp: rather than promoted to a shared avp: term. Because every
+# bundle context is @protected, a term defined in two stacked contexts must be defined
+# IDENTICALLY; minting these under disp: guarantees the disputes context can be layered
+# with the others without a protected-term redefinition error, even if a future
+# payments revision adds its own (differently-typed) avp:note or avp:uri.
 @prefix disp: <https://w3id.org/avp-micro/disputes/v1#> .
 @prefix avp:  <https://w3id.org/avp-micro/v1#> .
 @prefix dsa:  <https://w3id.org/spending-authority/v1#> .

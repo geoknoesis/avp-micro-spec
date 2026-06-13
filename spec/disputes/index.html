@@ -252,6 +252,12 @@ Adversarial: Dispute (payer)
       chargeback families, ISO 20022 returns) are non-normative. Implementers
       <em class="rfc2119">MAY</em> mint additional concepts in their own scheme.
     </p>
+    <p>
+      <code>disp:goodwill</code> is refund-only and <em class="rfc2119">MUST NOT</em>
+      be used as a <a>Dispute</a> <code>reason</code>. When <code>reason</code> is
+      <code>disp:other</code>, a free-text <code>note</code>
+      <em class="rfc2119">SHOULD</em> be provided to explain it.
+    </p>
   </section>
 
   <section id="verification">

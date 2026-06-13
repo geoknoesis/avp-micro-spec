@@ -17,14 +17,15 @@ consumes spending authority.
 
 ## Artifacts
 
-| Artifact | File |
-|---|---|
-| JSON-LD context | [`context/v1.jsonld`](context/v1.jsonld) |
-| Ontology (RDFS/OWL) | [`vocab/disputes.ttl`](vocab/disputes.ttl) |
-| Reason codes (SKOS) | [`vocab/reasons.ttl`](vocab/reasons.ttl) |
-| JSON Schema | [`schemas/disputes.schema.json`](schemas/disputes.schema.json) |
-| SHACL shapes | [`shapes/disputes-shapes.ttl`](shapes/disputes-shapes.ttl) |
-| Prose specification | [`index.html`](index.html) |
+| Artifact | File | Status |
+|---|---|---|
+| JSON-LD context | [`context/v1.jsonld`](context/v1.jsonld) | normative |
+| Prose specification | [`index.html`](index.html) | normative |
+| JSON Schema | [`schemas/disputes.schema.json`](schemas/disputes.schema.json) | conformance aid |
+| SHACL shapes | [`shapes/disputes-shapes.ttl`](shapes/disputes-shapes.ttl) | conformance aid |
+| Ontology (RDFS/OWL) | [`vocab/disputes.ttl`](vocab/disputes.ttl) | conformance aid |
+| Reason codes (SKOS) | [`vocab/reasons.ttl`](vocab/reasons.ttl) | conformance aid |
+| Test vectors | [`test-vectors/`](test-vectors/) | informative |
 
 ## Test vectors
 
