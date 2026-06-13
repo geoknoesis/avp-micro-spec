@@ -34,6 +34,9 @@ python spec/verify.py
 
 # validate Turtle / JSON-LD / JSON Schema / SHACL for all three bundles (must report PASS)
 python spec/validate.py
+
+# run the protocol simulator over the declarative use cases (must report PASS)
+python spec/sim.py
 ```
 
 `validate.py` is **fully offline**: stable external W3C contexts are vendored under `spec/contexts/` and served by the local document loader.
@@ -46,6 +49,7 @@ python spec/validate.py
 - **`sdjwt.py`**: P-256 key derivation (`seed_p256`), ES256 sign/verify (raw R‖S) — also used for the agent key-binding JWT (L3) — JWK encode/decode, `sdjwt_compact`, `sdjwt_jws`, `make_disclosure`, `disclosure_digest`, `sd_hash`. Used only by the interop bundle.
 - **`interop.py`**: AVP-Micro ⇄ SD-JWT-VC translator. Claim mapping, three bridge modes (proof-preserving / co-issued / attested), cross-stack verification, lossy-case `importAdvisory` surfacing, L3 key-binding JWT.
 - **`pricing.py`**: Pricing-model evaluator (flat, per-call, tiered, composite) used by the Payments bundle.
+- **`sim.py`** + **`sim-scenarios.json`**: protocol simulator. Runs the full signed-message flow (quote → authorize → execute → receipt, plus streaming and human-present) with real `ecdsa-jcs-2022` proofs and wallet-side policy enforcement against a **simulated settlement ledger** (play balances; settlement is the only money-touching step and is the one part the spec scopes out). Use cases are declarative in `sim-scenarios.json`; the engine emits spec-schema-conformant messages. This is the behavioural/runtime-enforcement layer (single-use consumption, replay, caps, budget, `requestHash`/`quoteDigest` binding) that the static vectors don't exercise.
 
 ## Key invariants
 

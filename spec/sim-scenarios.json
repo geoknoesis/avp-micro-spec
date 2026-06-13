@@ -1,0 +1,282 @@
+[
+  {
+    "name": "one-off-happy-path",
+    "description": "offer-free one-off: quote -> authorize -> simulated execution -> receipt; funds move on the play ledger",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "dailyLimit": "20.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00", "request": {"resource": "tool-api/run", "input": "doc-42"}},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "1.00"}},
+      {"action": "receipt", "expect": "ok"}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "over-per-transaction-cap",
+    "description": "a quote above maxPerTransaction is refused before settlement",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "10.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"reject": "overCap"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "payee-not-allowed",
+    "description": "a quote from a payee outside allowedPayees is refused",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00", "payee": "payee2"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"reject": "payeeNotAllowed"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "category-not-allowed",
+    "description": "an authorization for a category outside allowedCategories is refused",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"], "allowedCategories": ["cat:Compute"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00", "category": "cat:Storage"},
+      {"action": "authorize", "category": "cat:Storage"},
+      {"action": "execute", "expect": {"reject": "categoryNotAllowed"}}
+    ]
+  },
+  {
+    "name": "daily-limit-exceeded",
+    "description": "two same-day payments whose total exceeds dailyLimit: the second is refused",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "dailyLimit": "8.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "5.00"},
+      {"action": "authorize", "nonce": "n-a"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "5.00"}},
+      {"action": "quote", "amount": "5.00"},
+      {"action": "authorize", "nonce": "n-b"},
+      {"action": "execute", "expect": {"reject": "dailyLimitExceeded"}}
+    ],
+    "finalBalances": {"agent": "95.00", "payee": "5.00"}
+  },
+  {
+    "name": "daily-limit-resets-next-day",
+    "description": "the daily window resets: the same spend succeeds after advancing the clock a day",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "dailyLimit": "8.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "5.00"},
+      {"action": "authorize", "nonce": "n-a"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "5.00"}},
+      {"action": "advance_clock", "seconds": 86400},
+      {"action": "quote", "amount": "5.00"},
+      {"action": "authorize", "nonce": "n-b"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "5.00"}}
+    ],
+    "finalBalances": {"agent": "90.00", "payee": "10.00"}
+  },
+  {
+    "name": "authorization-expired",
+    "description": "an authorization presented after its expiry window is refused",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "authTtl": 60,
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "advance_clock", "seconds": 120},
+      {"action": "execute", "expect": {"reject": "expired"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "replayed-authorization",
+    "description": "re-presenting a consumed authorization (same nonce) is refused -- single-use instance",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize", "nonce": "n-once"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "1.00"}},
+      {"action": "replay", "expect": {"reject": "nonceReuse"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "tampered-quote",
+    "description": "mutating the quote after the authorization committed its digest is detected",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "tamper_quote", "set": {"amount": "0.10"}},
+      {"action": "execute", "expect": {"reject": "quoteMismatch"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "amount-mismatch",
+    "description": "an authorization whose amount differs from the quote it cites is refused",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize", "tamper": {"amount": "2.00"}},
+      {"action": "execute", "expect": {"reject": "amountMismatch"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "currency-mismatch",
+    "description": "a quote in a currency the credential does not authorize is refused",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00", "currency": "EUR"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"reject": "currencyMismatch"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "corrupted-signature",
+    "description": "a corrupted authorization proof fails verification before any policy check",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "corrupt_authz"},
+      {"action": "execute", "expect": {"reject": "badSignature"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "insufficient-funds",
+    "description": "the simulated rail cannot settle: the wallet records a failed execution",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "0.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "failed", "settled": "0"}}
+    ],
+    "finalBalances": {"agent": "0.00", "payee": "0"}
+  },
+  {
+    "name": "partial-settlement",
+    "description": "the rail settles less than the authorized amount: status partial",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "0.50"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"status": "partial", "settled": "0.50"}}
+    ],
+    "finalBalances": {"agent": "0.00", "payee": "0.50"}
+  },
+  {
+    "name": "human-present-confirmed",
+    "description": "a flow that demands fresh human approval succeeds with a valid PurchaseConfirmation",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"], "requiresConfirmation": true},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "confirm", "by": "principal"},
+      {"action": "execute", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "human-present-missing",
+    "description": "fresh human approval is demanded but no PurchaseConfirmation is present: refused",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"], "requiresConfirmation": true},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "execute", "expect": {"reject": "missingConfirmation"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "human-present-forged",
+    "description": "a confirmation signed by the agent (not the principal/confirmedBy) is rejected",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"], "requiresConfirmation": true},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "confirm", "by": "agent"},
+      {"action": "execute", "expect": {"reject": "forgedConfirmation"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "streaming-happy",
+    "description": "a metered session: open, budget-authorize, accrue within the cap, close and settle the total",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "open_session", "budget": "1.00"},
+      {"action": "budget_authorize", "amount": "1.00"},
+      {"action": "accrue", "amount": "0.30", "expect": "ok"},
+      {"action": "accrue", "amount": "0.40", "expect": "ok"},
+      {"action": "close_session", "expect": {"status": "completed"}}
+    ],
+    "finalBalances": {"agent": "99.30", "payee": "0.70"}
+  },
+  {
+    "name": "streaming-budget-exceeded",
+    "description": "metering halts when cumulative accrual would exceed the committed budget",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "open_session", "budget": "1.00"},
+      {"action": "budget_authorize", "amount": "1.00"},
+      {"action": "accrue", "amount": "0.60", "expect": "ok"},
+      {"action": "accrue", "amount": "0.60", "expect": {"reject": "budgetExceeded"}}
+    ]
+  },
+  {
+    "name": "streaming-extend-budget",
+    "description": "raising the cap mid-session via an extension + fresh budget authorization admits more accrual",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "open_session", "budget": "1.00"},
+      {"action": "budget_authorize", "amount": "1.00"},
+      {"action": "accrue", "amount": "0.80", "expect": "ok"},
+      {"action": "extend", "newBudget": "2.00"},
+      {"action": "budget_authorize", "amount": "2.00"},
+      {"action": "accrue", "amount": "0.40", "expect": "ok"},
+      {"action": "close_session", "expect": {"status": "completed"}}
+    ],
+    "finalBalances": {"agent": "98.80", "payee": "1.20"}
+  }
+]
