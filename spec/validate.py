@@ -1,8 +1,8 @@
-"""AVP-Micro artifact validation harness for both peer specs.
+"""AVP-Micro artifact validation harness for all four spec bundles.
 
 Checks (exit non-zero on any failure):
-  1. Turtle parse (both ontologies, SKOS vocab, both SHACL shape files).
-  2. JSON-LD expansion of every vector (DSA + Payments contexts served locally).
+  1. Turtle parse (all four ontologies, SKOS vocab, all four SHACL shape files).
+  2. JSON-LD expansion of every vector (all four contexts served locally).
   3. JSON Schema validation against the relevant $def.
   4. SHACL validation against the relevant shapes file.
 """
@@ -71,7 +71,7 @@ INTEROP_VECTORS = {
     "15-human-present-confirmation.json": "PurchaseConfirmation",
     "16-autonomous-no-confirmation.json": "SpendingAuthorizationCredential",
 }
-DISPUTE_VECTORS = {
+DISP_VECTORS = {
     "20-refund.json": "Refund",
     "21-reversal-refund.json": "Reversal",
     "22-reversal-ack.json": "ReversalAcknowledgement",
@@ -250,7 +250,7 @@ def main():
         "14-imported-cart-quote.json": [(IOP_NS + "embedded", "iop:embedded")],
         "15-human-present-confirmation.json": [(IOP_NS + "embedded", "iop:embedded")],
     }, require_proof=False)  # proof-preserving objects are unsigned projections
-    expand_check(DISP, DISPUTE_VECTORS, {
+    expand_check(DISP, DISP_VECTORS, {
         "20-refund.json": [(DISP_NS + "reason", "disp:reason"),
                            (DISP_NS + "receiptDigest", "disp:receiptDigest")],
         "30-dispute.json": [(DISP_NS + "disputedAmount", "disp:disputedAmount"),
@@ -265,7 +265,7 @@ def main():
     schema_check(AUTH, AUTH_VECTORS, "dsa.schema.json")
     schema_check(PAY, PAY_VECTORS, "avp-micro.schema.json")
     schema_check(INTEROP, INTEROP_VECTORS, "interop.schema.json")
-    schema_check(DISP, DISPUTE_VECTORS, "disputes.schema.json")
+    schema_check(DISP, DISP_VECTORS, "disputes.schema.json")
     negative_schema_check(AUTH, "dsa.schema.json", [
         ("DSA proof type", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
          lambda obj: (obj["proof"].__setitem__("type", "NotDataIntegrityProof") or obj)),
@@ -334,7 +334,7 @@ def main():
     shacl_check(AUTH, AUTH_VECTORS, "dsa-shapes.ttl")
     shacl_check(PAY, PAY_VECTORS, "avp-shapes.ttl")
     shacl_check(INTEROP, INTEROP_VECTORS, "interop-shapes.ttl")
-    shacl_check(DISP, DISPUTE_VECTORS, "disputes-shapes.ttl")
+    shacl_check(DISP, DISP_VECTORS, "disputes-shapes.ttl")
 
     print()
     if failures:
