@@ -59,6 +59,12 @@
           status: "REC",
           publisher: "W3C",
         },
+        "VC-DI-ECDSA": {
+          title: "Verifiable Credential Data Integrity ECDSA Cryptosuites v1.0",
+          href: "https://www.w3.org/TR/vc-di-ecdsa/",
+          status: "REC",
+          publisher: "W3C",
+        },
         "VC-DI-EDDSA": {
           title: "Verifiable Credential Data Integrity EdDSA Cryptosuites v1.0",
           href: "https://www.w3.org/TR/vc-di-eddsa/",
@@ -153,7 +159,7 @@
         trusting any specific network's ledger, token format, or settlement guarantee.</dd>
       <dt>Open standards only</dt>
       <dd>All securing mechanisms are built on ratified W3C specifications:
-        [[VC-DATA-MODEL-2.0]], [[DID-CORE]], [[VC-DATA-INTEGRITY]], [[VC-DI-EDDSA]],
+        [[VC-DATA-MODEL-2.0]], [[DID-CORE]], [[VC-DATA-INTEGRITY]], [[VC-DI-ECDSA]],
         [[BITSTRING-STATUS-LIST]], and [[JSON-LD11]].</dd>
       <dt>Interoperable with SD-JWT-VC networks</dt>
       <dd>The interop profile ([[AVP-INTEROP]]) provides a normative, bidirectional mapping to
@@ -219,8 +225,8 @@
       <li>The <strong>MerchantCredential</strong> and <strong>PaymentCapabilityCredential</strong>
         for payee and wallet endorsement.</li>
       <li>The mandatory-to-implement securing mechanism: <code>DataIntegrityProof</code> with
-        cryptosuite <code>eddsa-jcs-2022</code> and DID method <code>did:key</code>
-        (Ed25519 / Multikey).</li>
+        cryptosuite <code>ecdsa-jcs-2022</code> and DID method <code>did:key</code>
+        (P-256 / Multikey, multicodec <code>p256-pub</code>).</li>
       <li>Revocation via [[BITSTRING-STATUS-LIST]].</li>
       <li>An <strong>Agent Service Category</strong> SKOS vocabulary for scoping spending
         authority by domain.</li>
@@ -355,8 +361,9 @@
     <h3>Harness modules</h3>
     <dl>
       <dt><code>spec/avp_crypto.py</code></dt>
-      <dd>Ed25519 key derivation, JCS canonicalization ([[RFC8785]]),
-        <code>eddsa-jcs-2022</code> sign/verify. The mandatory-to-implement cryptosuite.</dd>
+      <dd>P-256 key derivation, JCS canonicalization ([[RFC8785]]),
+        <code>ecdsa-jcs-2022</code> sign/verify (deterministic RFC 6979, canonical
+        low-s). The mandatory-to-implement cryptosuite.</dd>
       <dt><code>spec/sdjwt.py</code></dt>
       <dd>P-256 key derivation, ES256/JOSE sign/verify, JWK encode/decode, SD-JWT compact
         serialization, <code>make_disclosure</code>, <code>sd_hash</code>, and key-binding

@@ -49,8 +49,10 @@ context is served locally by the shared validation harness.
 ## Test vectors
 
 `test-vectors/` contains a discovery offer (`00`), the one-off flow (`01`–`04`),
-the streaming flow (`05`–`11`), and a bare service-request. Rich-pricing offers
+the streaming flow (`05`–`11`), and a bare request example. Rich-pricing offers
 (`12`–`13`) and `pricing-conformance.json` exercise the pricing-model vocabulary.
+The optional human-present `PurchaseConfirmation` and an authorization that
+carries one are vectored as `14b` and `18`.
 
 | File | Type |
 |------|------|
@@ -70,6 +72,8 @@ the streaming flow (`05`–`11`), and a bare service-request. Rich-pricing offer
 | `09-payment-receipt-session.json` | `PaymentReceipt` (session) |
 | `10-usage-session-extension.json` | `UsageSessionExtension` |
 | `11-session-budget-authorization-2.json` | `SessionBudgetAuthorization` (re-authorization after extension) |
+| `14b-purchase-confirmation.json` | `PurchaseConfirmation` (OPTIONAL, principal-signed fresh human approval of a quote) |
+| `18-payment-authorization-confirmed.json` | `PaymentAuthorization` carrying an embedded `PurchaseConfirmation` (human-present) |
 
 ## Dependency on DSA
 

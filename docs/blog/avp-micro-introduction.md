@@ -68,7 +68,7 @@ When the agent's workload is continuous rather than one-shot — streaming senso
 
 Trust here isn't a promise; it's a property of the artifacts. A few design choices make it hold up:
 
-- **Everything is signed.** Messages and credentials use W3C Data Integrity proofs with the `eddsa-jcs-2022` cryptosuite over `did:key` identities — a concrete, interoperable, mandatory-to-implement baseline, not a hand-wave.
+- **Everything is signed.** Messages and credentials use W3C Data Integrity proofs with the `ecdsa-jcs-2022` cryptosuite (P-256) over `did:key` identities — a concrete, interoperable, mandatory-to-implement baseline, not a hand-wave.
 - **Everything is bound.** A nonce and a short expiry stop replay attacks. A request hash ties each authorization to one exact purchase, so a stale or tampered quote simply fails verification.
 - **Everything is auditable.** Because each quote, authorization, execution, and receipt is a self-contained, cryptographically signed object, the full chain can be replayed and verified after the fact — by the principal, an auditor, or a regulator — without trusting any intermediary's database.
 

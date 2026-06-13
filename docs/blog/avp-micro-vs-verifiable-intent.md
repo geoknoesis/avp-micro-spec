@@ -34,7 +34,7 @@ Here's where they diverge — and it's not a detail, it's the whole substrate.
 | | **AVP-Micro** | **Verifiable Intent / AP2** |
 |---|---|---|
 | Credential format | W3C VC Data Model 2.0, JSON-LD | SD-JWT VC (IETF), three-layer `KB-SD-JWT` chain |
-| Proof / signing | Data Integrity, `eddsa-jcs-2022` (Ed25519) | `ES256` (ECDSA P-256), JOSE, `sd_hash` layer binding |
+| Proof / signing | Data Integrity, `ecdsa-jcs-2022` (P-256) | `ES256` (ECDSA P-256), JOSE, `sd_hash` layer binding |
 | Credential typing | JSON-LD `@context` + `type` | `vct` claim (SD-JWT-VC profile) |
 | Identity | DIDs (`did:key` mandatory-to-implement) | `iss` / `sub` URIs, opaque `kid` — **no DIDs** |
 | Selective disclosure | Whole-credential proof (no native SD) | **Native** (`_sd` digests) |
@@ -45,7 +45,7 @@ Here's where they diverge — and it's not a detail, it's the whole substrate.
 
 This is the old fault line in the credentials world, surfacing in a new place: **JSON-LD + Data Integrity** versus **JOSE + SD-JWT**. AVP-Micro sits squarely in the first camp; VI and AP2 in the second. The well-funded corner of agentic commerce has, for now, planted its flag on the JOSE side.
 
-The practical consequence is blunt: **a `SpendingAuthorizationCredential` cannot be verified by an SD-JWT-VC verifier, and a VI L1/L2/L3 chain cannot be verified by an `eddsa-jcs-2022` verifier.** They share a concept and nothing else on the wire. Interop between them requires a bridge — a translator that maps policy semantics across and reconciles two different identity models — not a shared library.
+The practical consequence is blunt: **a `SpendingAuthorizationCredential` cannot be verified by an SD-JWT-VC verifier, and a VI L1/L2/L3 chain cannot be verified by an `ecdsa-jcs-2022` verifier.** They share a concept and nothing else on the wire. Interop between them requires a bridge — a translator that maps policy semantics across and reconciles two different identity models — not a shared library.
 
 ## Where each one is genuinely stronger
 

@@ -366,7 +366,7 @@ def main() -> None:
         "payload": sdjwt.jws_payload(sdjwt.sdjwt_jws(export_compact)),
     })
 
-    # A->V->A: re-import the export back into an EmbeddedSdJwtVcMandate.
+    # A->V->A: re-import the export back into a SpendingAuthorizationCredential projection (+ securing).
     imported = interop.sdjwtvc_to_avp(export_compact, "proof-preserving")
     write(INTEROP, "02-imported-mandate.json", imported)
 
@@ -399,7 +399,7 @@ def main() -> None:
     write(INTEROP, "04-imported-from-foreign.json", imported_foreign)
 
     # Co-issued: the same principal signs both forms with the SAME P-256 key. The outer
-    # EmbeddedSdJwtVcMandate carries a native ecdsa-jcs-2022 proof (P-256 did:key issuer)
+    # The outer credential carries a native ecdsa-jcs-2022 proof (P-256 did:key issuer)
     # AND an embedded SD-JWT-VC the issuer signed in ES256 with that same key (did:web).
     # Authority is the outer proof; the embedded form is a parallel representation.
     ci_claims = {
@@ -519,7 +519,7 @@ def main() -> None:
         "_note": "A foreign AP2 IntentMandate (ES256, did:web user issuer; item-level intent).",
         "compact": intent_compact, "payload": intent_claims})
 
-    # 12: V->A import of the IntentMandate -> EmbeddedSdJwtVcMandate + intent extras + advisory
+    # 12: V->A import of the IntentMandate -> SpendingAuthorizationCredential projection + intent extras + advisory
     imported_intent = interop.sdjwtvc_intent_to_avp(intent_compact, "proof-preserving")
     write(INTEROP, "12-imported-intent-mandate.json", imported_intent)
 
@@ -538,11 +538,11 @@ def main() -> None:
         "_note": "A foreign AP2 CartMandate (ES256, did:web merchant; itemized cart).",
         "compact": cart_compact, "cart": cart, "payload": cart_claims})
 
-    # 14: V->A import of the CartMandate -> EmbeddedCartQuote projection
+    # 14: V->A import of the CartMandate -> PaymentQuote projection (+ securing)
     imported_cart = interop.cart_mandate_to_quote(cart_compact, cart, mode="proof-preserving")
     write(INTEROP, "14-imported-cart-quote.json", imported_cart)
 
-    # 15: human-present approval imported -> EmbeddedCartUserConfirmation projection
+    # 15: human-present approval imported -> PurchaseConfirmation projection (+ securing)
     crh = interop.cart_request_hash(cart)
     user_auth_claims = {"iss": DID_AP2_USER, "sub": DID_AGENT, "cart_hash": crh,
                         "iat": interop.iso_to_numericdate("2026-06-12T11:00:00Z"),
