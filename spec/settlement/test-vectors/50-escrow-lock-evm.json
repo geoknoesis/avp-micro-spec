@@ -1,0 +1,25 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:escrow-lock:evm",
+  "type": "EscrowLock",
+  "instruction": "urn:avp:settle-instr:evm-escrow",
+  "instructionDigest": "sha-256:kUkuvPYG_GBfqRnKW1Qfy1d7MvQzz0eZqZXF1BmU22M",
+  "lockRef": "0x181238ce58162c4457d1f0002a6f3d8a86f3afce:42",
+  "lockedAmountBase": "1000",
+  "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "timeout": "2026-03-25T21:45:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:31:00Z",
+    "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "zQNPBzie5P8GcweBQbcZZVyAeRTG1kS34UN5HfVaPH2WUrbF9owcemxr9Fnf7gBSLLjBpuu4Xi3R7q9xkWa4fK9a"
+  }
+}

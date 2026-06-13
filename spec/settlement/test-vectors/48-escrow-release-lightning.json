@@ -1,0 +1,23 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:escrow-release:ln",
+  "type": "EscrowRelease",
+  "lock": "urn:avp:escrow-lock:ln",
+  "lockDigest": "sha-256:xFqbbJf25cQl42WgTiL9w5POPzOA4UA5k9E3hP4kNOs",
+  "settlementProof": "urn:avp:settle-proof:ln",
+  "settlementProofDigest": "sha-256:AfhU4EnGYIXXC2AD77Vsmj9fCWXYeZuUKEIeQDs3Eq0",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:34:10Z",
+    "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "zxyT2QAzm7G5g2Gd4kCJNH7gAxWVTJcEZPdUADASbbQLdSwr66VPN66MjahoSivfGSA4qBuoWG3gG44677VYKh6T"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:settle-proof:evm-refund",
+  "type": "SettlementProof",
+  "instruction": "urn:avp:settle-instr:evm-escrow",
+  "instructionDigest": "sha-256:kUkuvPYG_GBfqRnKW1Qfy1d7MvQzz0eZqZXF1BmU22M",
+  "chain": "eip155:8453",
+  "transaction": "0xfded1c5e03e00aad3f01279e6ef86b72168e7e665ada27d10390d985e38eaaea",
+  "settledAmountBase": "1000",
+  "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "blockHeight": 19000100,
+  "confirmations": 12,
+  "finality": "final",
+  "observedAt": "2026-03-25T21:46:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:46:00Z",
+    "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z5hRt8Spg93UAKrPEj4yMcJ7BDQ2tN6xbv65Y1jYh1EgYuH71GDVzKyWhLDRjpYpV6uM2aGbMFYyLhMqWfpducg2p"
+  }
+}

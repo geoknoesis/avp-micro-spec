@@ -1,0 +1,35 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:settle-instr:x402",
+  "type": "SettlementInstruction",
+  "authorization": "urn:avp:authz:999",
+  "authorizationDigest": "sha-256:A7Rd5gGcJ5qHLPtGg3NXCi9fd1G3QO4I29W6g6xq_jQ",
+  "rail": "stl:rail-x402",
+  "chain": "eip155:8453",
+  "payeeAccount": "eip155:8453:0xb3525f29e2b6cd40d05f6cbbb2c8c4fb0b7ce604",
+  "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "amount": "0.001",
+  "currency": "USD",
+  "amountBase": "1000",
+  "confirmationThreshold": 12,
+  "mode": "direct",
+  "payeeAccountBinding": "urn:avp:payee-binding:x402",
+  "nonce": "settle-x402-1",
+  "expires": "2026-03-25T22:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:30:11Z",
+    "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z4qmmAf9woDojsgV3xbSzTNVnbZngFkawEhz8GbsuLQAayDSLxBg92qMdwWfktD3RV2YETVi7V6TPhjSJoYWJ2Tsm"
+  }
+}

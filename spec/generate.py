@@ -12,6 +12,7 @@ from pathlib import Path
 
 import avp_crypto as ac
 import interop
+import settlement as st
 import sdjwt
 
 SPEC = Path(__file__).parent
@@ -28,6 +29,9 @@ DSA_CTX = [VC2, DI, DSA]
 PAY_CTX = [VC2, DI, DSA, AVP]
 DISP_URL = "https://w3id.org/avp-micro/disputes/v1"
 DISP_CTX = [VC2, DI, DSA, AVP, DISP_URL]
+SETTLE_URL = "https://w3id.org/avp-micro/settlement/v1"
+SETTLE_CTX = [VC2, DI, DSA, AVP, SETTLE_URL]
+SETTLE = SPEC / "settlement" / "test-vectors"
 
 issuer = ac.seed_key("issuer-acme-corp")
 agent = ac.seed_key("agent-buyer-01")
@@ -504,6 +508,224 @@ def main() -> None:
     }
     res_withdrawn = ac.sign_ecdsa_jcs_2022(res_withdrawn, agent, "2026-03-27T15:00:00Z")
     write(DISP, "39-dispute-resolution-withdrawn.json", res_withdrawn)
+
+    # ---- Settlement bundle (on-chain settlement binding) ----
+    # Rides on Payments by reference: a SettlementInstruction binds the existing
+    # PaymentAuthorization (urn:avp:authz:999, 0.001 USD) to a concrete rail; a
+    # SettlementProof carries the chain-native transaction + finality. Chain data
+    # (tx hashes, heights, preimages) are DETERMINISTIC FIXTURES -- nothing is broadcast.
+    authz_digest = ac.jcs_digest(authz)
+    usdc = st.RAILS["evm-stablecoin"]["asset"]
+    evm_threshold = st.RAILS["evm-stablecoin"]["threshold"]
+
+    # EVM payee identified by did:pkh (binding archetype (a): the DID *is* the account).
+    evm_addr = st.fake_address("payee-evm")
+    evm_account = "eip155:8453:" + evm_addr
+    evm_payee_did = "did:pkh:eip155:8453:" + evm_addr
+
+    # 41: EVM stablecoin SettlementInstruction (direct), did:pkh payee.
+    instr_evm = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:evm", "type": "SettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": authz_digest,
+        "rail": "stl:rail-evm-stablecoin", "chain": "eip155:8453",
+        "payeeAccount": evm_account, "asset": usdc,
+        "payer": DID_AGENT, "payee": evm_payee_did,
+        "amount": amount, "currency": currency,
+        "amountBase": st.to_base_units(amount, st.decimals_for_asset(usdc)),
+        "confirmationThreshold": evm_threshold, "mode": "direct",
+        "nonce": "settle-evm-1", "expires": "2026-03-25T22:00:00Z",
+    }
+    instr_evm = ac.sign_ecdsa_jcs_2022(instr_evm, wallet, "2026-03-25T21:30:10Z")
+    write(SETTLE, "41-settlement-instruction-evm.json", instr_evm)
+
+    # 42: EVM SettlementProof (final at >= threshold confirmations).
+    proof_evm = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:evm", "type": "SettlementProof",
+        "instruction": instr_evm["id"], "instructionDigest": ac.jcs_digest(instr_evm),
+        "execution": execution["id"], "chain": "eip155:8453",
+        "transaction": st.fake_tx("evm-direct"),
+        "settledAmountBase": instr_evm["amountBase"], "asset": usdc,
+        "blockHeight": 19000000, "confirmations": evm_threshold, "finality": "final",
+        "observedAt": "2026-03-25T21:33:00Z",
+    }
+    proof_evm = ac.sign_ecdsa_jcs_2022(proof_evm, wallet, "2026-03-25T21:33:00Z")
+    write(SETTLE, "42-settlement-proof-evm.json", proof_evm)
+
+    # x402 uses a did:key payee (the existing DID_PAYEE) + a PayeeAccountBinding
+    # (binding archetype (b)): the payee signs that it controls a CAIP-10 account.
+    x402_addr = st.fake_address("payee-x402")
+    x402_account = "eip155:8453:" + x402_addr
+
+    # 40: PayeeAccountBinding (payee-signed).
+    binding = {
+        "@context": SETTLE_CTX, "id": "urn:avp:payee-binding:x402", "type": "PayeeAccountBinding",
+        "subject": DID_PAYEE, "account": x402_account, "chain": "eip155:8453",
+    }
+    binding = ac.sign_ecdsa_jcs_2022(binding, payee, "2026-03-25T21:29:30Z")
+    write(SETTLE, "40-payee-account-binding.json", binding)
+
+    # 43: x402 SettlementInstruction (direct) referencing the binding.
+    instr_x402 = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:x402", "type": "SettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": authz_digest,
+        "rail": "stl:rail-x402", "chain": "eip155:8453",
+        "payeeAccount": x402_account, "asset": usdc,
+        "payer": DID_AGENT, "payee": DID_PAYEE,
+        "amount": amount, "currency": currency,
+        "amountBase": st.to_base_units(amount, st.decimals_for_asset(usdc)),
+        "confirmationThreshold": st.RAILS["x402"]["threshold"], "mode": "direct",
+        "payeeAccountBinding": binding["id"],
+        "nonce": "settle-x402-1", "expires": "2026-03-25T22:00:00Z",
+    }
+    instr_x402 = ac.sign_ecdsa_jcs_2022(instr_x402, wallet, "2026-03-25T21:30:11Z")
+    write(SETTLE, "43-settlement-instruction-x402.json", instr_x402)
+
+    # 44: x402 SettlementProof (final).
+    proof_x402 = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:x402", "type": "SettlementProof",
+        "instruction": instr_x402["id"], "instructionDigest": ac.jcs_digest(instr_x402),
+        "execution": execution["id"], "chain": "eip155:8453",
+        "transaction": st.fake_tx("x402-direct"),
+        "settledAmountBase": instr_x402["amountBase"], "asset": usdc,
+        "blockHeight": 19000005, "confirmations": st.RAILS["x402"]["threshold"], "finality": "final",
+        "observedAt": "2026-03-25T21:33:30Z",
+    }
+    proof_x402 = ac.sign_ecdsa_jcs_2022(proof_x402, wallet, "2026-03-25T21:33:30Z")
+    write(SETTLE, "44-settlement-proof-x402.json", proof_x402)
+
+    # Lightning: USD quote settled in msat at an agreed USD/BTC rate; escrow is the
+    # native hold-invoice. payee is the did:key DID_PAYEE bound to a node pubkey.
+    ln_asset = st.RAILS["lightning"]["asset"]
+    ln_chain = "bip122:000000000019d6689c085ae165831e93"
+    ln_rate = "100000"  # USD per BTC (fixture)
+    ln_base = st.usd_to_msat(amount, ln_rate)  # 0.001 USD @ 100000 -> 1000 msat
+    ln_node = "02" + st.fake_address("payee-ln-node")[2:]  # 33-byte-ish pubkey fixture
+    ln_invoice = "lnbc10n1p" + st.fake_preimage("ln-invoice")[:40]
+    ln_payment_hash = st.fake_payment_hash("ln-hold")
+    ln_preimage = st.fake_preimage("ln-hold")
+
+    # 45: Lightning SettlementInstruction (escrow / hold-invoice).
+    instr_ln = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:ln", "type": "SettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": authz_digest,
+        "rail": "stl:rail-lightning", "chain": ln_chain,
+        "payeeAccount": ln_invoice, "asset": ln_asset,
+        "payer": DID_AGENT, "payee": DID_PAYEE,
+        "amount": amount, "currency": currency, "amountBase": ln_base, "rate": ln_rate,
+        "confirmationThreshold": st.RAILS["lightning"]["threshold"], "mode": "escrow",
+        "nonce": "settle-ln-1", "expires": "2026-03-25T22:00:00Z",
+    }
+    instr_ln = ac.sign_ecdsa_jcs_2022(instr_ln, wallet, "2026-03-25T21:30:12Z")
+    write(SETTLE, "45-settlement-instruction-lightning.json", instr_ln)
+
+    # 46: EscrowLock (hold-invoice held).
+    lock_ln = {
+        "@context": SETTLE_CTX, "id": "urn:avp:escrow-lock:ln", "type": "EscrowLock",
+        "instruction": instr_ln["id"], "instructionDigest": ac.jcs_digest(instr_ln),
+        "lockRef": "ln-hold:" + ln_payment_hash, "lockedAmountBase": ln_base, "asset": ln_asset,
+        "timeout": "2026-03-25T22:30:00Z",
+    }
+    lock_ln = ac.sign_ecdsa_jcs_2022(lock_ln, wallet, "2026-03-25T21:30:40Z")
+    write(SETTLE, "46-escrow-lock-lightning.json", lock_ln)
+
+    # 47: Lightning SettlementProof (preimage reveal == finality; no confirmations).
+    proof_ln = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:ln", "type": "SettlementProof",
+        "instruction": instr_ln["id"], "instructionDigest": ac.jcs_digest(instr_ln),
+        "execution": execution["id"], "chain": ln_chain,
+        "transaction": ln_payment_hash, "preimage": ln_preimage,
+        "settledAmountBase": ln_base, "asset": ln_asset, "finality": "final",
+        "observedAt": "2026-03-25T21:34:00Z",
+    }
+    proof_ln = ac.sign_ecdsa_jcs_2022(proof_ln, wallet, "2026-03-25T21:34:00Z")
+    write(SETTLE, "47-settlement-proof-lightning.json", proof_ln)
+
+    # 48: EscrowRelease (settles the hold-invoice to the payee, carrying the proof).
+    release_ln = {
+        "@context": SETTLE_CTX, "id": "urn:avp:escrow-release:ln", "type": "EscrowRelease",
+        "lock": lock_ln["id"], "lockDigest": ac.jcs_digest(lock_ln),
+        "settlementProof": proof_ln["id"], "settlementProofDigest": ac.jcs_digest(proof_ln),
+    }
+    release_ln = ac.sign_ecdsa_jcs_2022(release_ln, wallet, "2026-03-25T21:34:10Z")
+    write(SETTLE, "48-escrow-release-lightning.json", release_ln)
+
+    # EVM escrow with a TIMEOUT -> refund to the payer (the EscrowRefund path).
+    # 49: EVM escrow SettlementInstruction.
+    instr_evm_esc = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:evm-escrow", "type": "SettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": authz_digest,
+        "rail": "stl:rail-evm-stablecoin", "chain": "eip155:8453",
+        "payeeAccount": evm_account, "asset": usdc,
+        "payer": DID_AGENT, "payee": evm_payee_did,
+        "amount": amount, "currency": currency,
+        "amountBase": st.to_base_units(amount, st.decimals_for_asset(usdc)),
+        "confirmationThreshold": evm_threshold, "mode": "escrow",
+        "nonce": "settle-evm-esc-1", "expires": "2026-03-25T22:00:00Z",
+    }
+    instr_evm_esc = ac.sign_ecdsa_jcs_2022(instr_evm_esc, wallet, "2026-03-25T21:30:13Z")
+    write(SETTLE, "49-settlement-instruction-evm-escrow.json", instr_evm_esc)
+
+    # 50: EscrowLock (escrow contract holds the funds).
+    lock_evm = {
+        "@context": SETTLE_CTX, "id": "urn:avp:escrow-lock:evm", "type": "EscrowLock",
+        "instruction": instr_evm_esc["id"], "instructionDigest": ac.jcs_digest(instr_evm_esc),
+        "lockRef": st.fake_address("escrow-contract") + ":42", "lockedAmountBase": instr_evm_esc["amountBase"],
+        "asset": usdc, "timeout": "2026-03-25T21:45:00Z",
+    }
+    lock_evm = ac.sign_ecdsa_jcs_2022(lock_evm, wallet, "2026-03-25T21:31:00Z")
+    write(SETTLE, "50-escrow-lock-evm.json", lock_evm)
+
+    # 51: SettlementProof for the refund transaction (funds returned to payer; final).
+    proof_evm_refund = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:evm-refund", "type": "SettlementProof",
+        "instruction": instr_evm_esc["id"], "instructionDigest": ac.jcs_digest(instr_evm_esc),
+        "chain": "eip155:8453", "transaction": st.fake_tx("evm-refund"),
+        "settledAmountBase": instr_evm_esc["amountBase"], "asset": usdc,
+        "blockHeight": 19000100, "confirmations": evm_threshold, "finality": "final",
+        "observedAt": "2026-03-25T21:46:00Z",
+    }
+    proof_evm_refund = ac.sign_ecdsa_jcs_2022(proof_evm_refund, wallet, "2026-03-25T21:46:00Z")
+    write(SETTLE, "51-settlement-proof-evm-refund.json", proof_evm_refund)
+
+    # 52: EscrowRefund (timeout -> refund to payer), carrying the refund proof.
+    refund_evm = {
+        "@context": SETTLE_CTX, "id": "urn:avp:escrow-refund:evm", "type": "EscrowRefund",
+        "lock": lock_evm["id"], "lockDigest": ac.jcs_digest(lock_evm),
+        "settlementProof": proof_evm_refund["id"], "settlementProofDigest": ac.jcs_digest(proof_evm_refund),
+        "reason": "timeout",
+    }
+    refund_evm = ac.sign_ecdsa_jcs_2022(refund_evm, wallet, "2026-03-25T21:46:10Z")
+    write(SETTLE, "52-escrow-refund-evm.json", refund_evm)
+
+    # On-chain REVERSAL = a compensating transfer (payer<->payee swapped). A disputes
+    # Reversal's settlementRef would point at proof 54. Here we generate the swapped
+    # instruction + proof; the disputes bundle is NOT modified.
+    # 53: reverse SettlementInstruction (payee now pays the agent back).
+    instr_rev = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:reverse", "type": "SettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": authz_digest,
+        "rail": "stl:rail-evm-stablecoin", "chain": "eip155:8453",
+        "payeeAccount": "eip155:8453:" + st.fake_address("agent-evm"), "asset": usdc,
+        "payer": evm_payee_did, "payee": DID_AGENT,
+        "amount": amount, "currency": currency,
+        "amountBase": st.to_base_units(amount, st.decimals_for_asset(usdc)),
+        "confirmationThreshold": evm_threshold, "mode": "direct",
+        "nonce": "settle-reverse-1", "expires": "2026-03-26T10:00:00Z",
+    }
+    instr_rev = ac.sign_ecdsa_jcs_2022(instr_rev, wallet, "2026-03-26T09:05:00Z")
+    write(SETTLE, "53-reverse-settlement-instruction.json", instr_rev)
+
+    # 54: reverse SettlementProof.
+    proof_rev = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:reverse", "type": "SettlementProof",
+        "instruction": instr_rev["id"], "instructionDigest": ac.jcs_digest(instr_rev),
+        "chain": "eip155:8453", "transaction": st.fake_tx("evm-reverse"),
+        "settledAmountBase": instr_rev["amountBase"], "asset": usdc,
+        "blockHeight": 19000200, "confirmations": evm_threshold, "finality": "final",
+        "observedAt": "2026-03-26T09:08:00Z",
+    }
+    proof_rev = ac.sign_ecdsa_jcs_2022(proof_rev, wallet, "2026-03-26T09:08:00Z")
+    write(SETTLE, "54-reverse-settlement-proof.json", proof_rev)
 
     # ---- Interop (SD-JWT-VC) bundle ----
     # Two P-256 (ES256) test keys: a bridge that signs export envelopes, and a
