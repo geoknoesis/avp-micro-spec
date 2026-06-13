@@ -9,22 +9,46 @@ dsa:DecimalAmount
   sh:nodeKind sh:Literal ;
   sh:pattern "^(0|[1-9][0-9]*)([.][0-9]+)?$" .
 
+dsa:PositiveDecimalAmount
+  a sh:NodeShape ;
+  sh:nodeKind sh:Literal ;
+  sh:pattern "^(0[.][0-9]*[1-9][0-9]*|[1-9][0-9]*([.][0-9]+)?)$" .
+
 dsa:ContentDigest
   a sh:NodeShape ;
   sh:nodeKind sh:Literal ;
   sh:pattern "^[a-z0-9][a-z0-9-]*:[A-Za-z0-9_-]+$" .
 
+# credentialSubject is the W3C VC predicate (VCDM); the subject node carries the
+# DSA-namespaced policy fields. Cardinality mirrors the JSON Schema (limits optional),
+# so the two layers do not drift.
 dsa:SpendingAuthorizationCredentialShape
   a sh:NodeShape ;
   sh:targetClass dsa:SpendingAuthorizationCredential ;
-  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] ;
+  sh:property [
+    sh:path <https://www.w3.org/2018/credentials#credentialSubject> ;
+    sh:minCount 1 ; sh:maxCount 1 ;
+    sh:node [
+      a sh:NodeShape ;
+      sh:nodeKind sh:IRI ;
+      sh:property [ sh:path dsa:maxPerTransaction ; sh:node dsa:PositiveDecimalAmount ; sh:maxCount 1 ] ;
+      sh:property [ sh:path dsa:dailyLimit ; sh:node dsa:PositiveDecimalAmount ; sh:maxCount 1 ] ;
+      sh:property [ sh:path dsa:requiresApprovalAbove ; sh:node dsa:PositiveDecimalAmount ; sh:maxCount 1 ] ;
+      sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:maxCount 1 ] ;
+    ] ;
+  ] .
 
 dsa:MerchantCredentialShape
   a sh:NodeShape ;
   sh:targetClass dsa:MerchantCredential ;
-  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] ;
+  sh:property [ sh:path <https://www.w3.org/2018/credentials#credentialSubject> ;
+               sh:minCount 1 ; sh:node [ a sh:NodeShape ; sh:nodeKind sh:IRI ] ] .
 
 dsa:PaymentCapabilityCredentialShape
   a sh:NodeShape ;
   sh:targetClass dsa:PaymentCapabilityCredential ;
-  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] ;
+  sh:property [ sh:path <https://www.w3.org/2018/credentials#credentialSubject> ;
+               sh:minCount 1 ; sh:node [ a sh:NodeShape ; sh:nodeKind sh:IRI ] ] .
