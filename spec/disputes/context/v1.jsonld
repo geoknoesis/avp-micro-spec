@@ -1,0 +1,52 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "id": "@id",
+    "type": "@type",
+    "disp": "https://w3id.org/avp-micro/disputes/v1#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "Refund": "disp:Refund",
+    "Dispute": "disp:Dispute",
+    "DisputeEvidence": "disp:DisputeEvidence",
+    "DisputeResolution": "disp:DisputeResolution",
+    "Reversal": "disp:Reversal",
+    "ReversalAcknowledgement": "disp:ReversalAcknowledgement",
+
+    "receipt": { "@id": "disp:receipt", "@type": "@id" },
+    "dispute": { "@id": "disp:dispute", "@type": "@id" },
+    "refund": { "@id": "disp:refund", "@type": "@id" },
+    "resolution": { "@id": "disp:resolution", "@type": "@id" },
+    "reversal": { "@id": "disp:reversal", "@type": "@id" },
+    "supersedes": { "@id": "disp:supersedes", "@type": "@id" },
+    "submittedBy": { "@id": "disp:submittedBy", "@type": "@id" },
+    "arbiter": { "@id": "disp:arbiter", "@type": "@id" },
+    "resolvedBy": { "@id": "disp:resolvedBy", "@type": "@id" },
+    "reason": { "@id": "disp:reason", "@type": "@id" },
+
+    "receiptDigest": { "@id": "disp:receiptDigest" },
+    "executionDigest": { "@id": "disp:executionDigest" },
+    "authorizationDigest": { "@id": "disp:authorizationDigest" },
+    "disputeDigest": { "@id": "disp:disputeDigest" },
+    "refundDigest": { "@id": "disp:refundDigest" },
+    "resolutionDigest": { "@id": "disp:resolutionDigest" },
+    "reversalDigest": { "@id": "disp:reversalDigest" },
+    "supersedesDigest": { "@id": "disp:supersedesDigest" },
+
+    "disputedAmount": { "@id": "disp:disputedAmount" },
+    "resolvedAmount": { "@id": "disp:resolvedAmount" },
+    "cause": { "@id": "disp:cause" },
+    "outcome": { "@id": "disp:outcome" },
+    "resolverRole": { "@id": "disp:resolverRole" },
+    "role": { "@id": "disp:role" },
+    "evidenceType": { "@id": "disp:evidenceType" },
+    "claim": { "@id": "disp:claim" },
+    "note": { "@id": "disp:note" },
+    "statement": { "@id": "disp:statement" },
+    "contentDigest": { "@id": "disp:contentDigest" },
+    "uri": { "@id": "disp:uri", "@type": "xsd:anyURI" },
+    "respondBy": { "@id": "disp:respondBy", "@type": "xsd:dateTime" },
+    "receivedAt": { "@id": "disp:receivedAt", "@type": "xsd:dateTime" }
+  }
+}
