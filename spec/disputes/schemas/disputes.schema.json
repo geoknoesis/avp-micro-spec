@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/avp-micro/disputes/schemas/disputes.schema.json",
+  "title": "AVP-Micro Disputes data objects",
+  "description": "JSON Schema for AVP-Micro refund/reversal/dispute messages. Validate an instance against the relevant $def, e.g. #/$defs/Refund. Schemas are lenient about extra members (the @protected JSON-LD context governs semantics); they enforce required members, types, and value formats.",
+
+  "$defs": {
+    "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+" },
+    "idValue": { "type": "string", "minLength": 1 },
+    "iri": { "type": "string", "minLength": 1, "format": "uri" },
+    "decimal": {
+      "type": "string",
+      "description": "Non-negative decimal amount as a string.",
+      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+    },
+    "positiveDecimal": {
+      "type": "string",
+      "description": "Strictly positive decimal amount as a string.",
+      "pattern": "^(0\\.[0-9]*[1-9][0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$"
+    },
+    "dateTime": { "type": "string", "format": "date-time" },
+    "contentDigest": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[A-Za-z0-9_-]+$" },
+    "reasonRef": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:.+" },
+    "proof": {
+      "type": "object",
+      "required": ["type", "cryptosuite", "created", "verificationMethod", "proofPurpose", "proofValue"],
+      "properties": {
+        "type": { "const": "DataIntegrityProof" },
+        "cryptosuite": { "const": "ecdsa-jcs-2022" },
+        "created": { "$ref": "#/$defs/dateTime" },
+        "verificationMethod": { "type": "string", "minLength": 1 },
+        "proofPurpose": { "const": "assertionMethod" },
+        "proofValue": { "type": "string", "pattern": "^z[1-9A-HJ-NP-Za-km-z]+$" }
+      }
+    },
+    "signedContext": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://www.w3.org/ns/credentials/v2" },
+        { "const": "https://w3id.org/security/data-integrity/v2" },
+        { "const": "https://w3id.org/spending-authority/v1" },
+        { "const": "https://w3id.org/avp-micro/v1" },
+        { "const": "https://w3id.org/avp-micro/disputes/v1" }
+      ],
+      "minItems": 5,
+      "maxItems": 5
+    },
+
+    "Refund": {
+      "type": "object",
+      "required": ["@context", "id", "type", "receipt", "receiptDigest", "payer", "payee", "amount", "currency", "reason", "timestamp", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "Refund" }, { "type": "array", "contains": { "const": "Refund" } } ] },
+        "receipt": { "$ref": "#/$defs/idValue" },
+        "receiptDigest": { "$ref": "#/$defs/contentDigest" },
+        "execution": { "$ref": "#/$defs/idValue" },
+        "executionDigest": { "$ref": "#/$defs/contentDigest" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "reason": { "$ref": "#/$defs/reasonRef" },
+        "note": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "expires": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "Dispute": {
+      "type": "object",
+      "required": ["@context", "id", "type", "payer", "payee", "disputedAmount", "currency", "reason", "timestamp", "proof"],
+      "anyOf": [
+        { "required": ["receipt", "receiptDigest"] },
+        { "required": ["execution", "executionDigest"] },
+        { "required": ["authorization", "authorizationDigest"] }
+      ],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "Dispute" }, { "type": "array", "contains": { "const": "Dispute" } } ] },
+        "receipt": { "$ref": "#/$defs/idValue" },
+        "receiptDigest": { "$ref": "#/$defs/contentDigest" },
+        "execution": { "$ref": "#/$defs/idValue" },
+        "executionDigest": { "$ref": "#/$defs/contentDigest" },
+        "authorization": { "$ref": "#/$defs/idValue" },
+        "authorizationDigest": { "$ref": "#/$defs/contentDigest" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "disputedAmount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "reason": { "$ref": "#/$defs/reasonRef" },
+        "claim": { "type": "string" },
+        "arbiter": { "$ref": "#/$defs/did" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "respondBy": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "DisputeEvidence": {
+      "type": "object",
+      "required": ["@context", "id", "type", "dispute", "disputeDigest", "submittedBy", "role", "sequence", "timestamp", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "DisputeEvidence" }, { "type": "array", "contains": { "const": "DisputeEvidence" } } ] },
+        "dispute": { "$ref": "#/$defs/idValue" },
+        "disputeDigest": { "$ref": "#/$defs/contentDigest" },
+        "submittedBy": { "$ref": "#/$defs/did" },
+        "role": { "enum": ["payer", "payee"] },
+        "sequence": { "type": "integer", "minimum": 0 },
+        "evidenceType": { "type": "string" },
+        "contentDigest": { "$ref": "#/$defs/contentDigest" },
+        "uri": { "$ref": "#/$defs/iri" },
+        "statement": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "DisputeResolution": {
+      "type": "object",
+      "required": ["@context", "id", "type", "dispute", "disputeDigest", "resolvedBy", "resolverRole", "outcome", "resolvedAmount", "currency", "timestamp", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "DisputeResolution" }, { "type": "array", "contains": { "const": "DisputeResolution" } } ] },
+        "dispute": { "$ref": "#/$defs/idValue" },
+        "disputeDigest": { "$ref": "#/$defs/contentDigest" },
+        "resolvedBy": { "$ref": "#/$defs/did" },
+        "resolverRole": { "enum": ["payer", "payee", "arbiter"] },
+        "outcome": { "enum": ["upheld", "rejected", "partial", "withdrawn"] },
+        "resolvedAmount": { "$ref": "#/$defs/decimal" },
+        "currency": { "type": "string" },
+        "note": { "type": "string" },
+        "supersedes": { "$ref": "#/$defs/idValue" },
+        "supersedesDigest": { "$ref": "#/$defs/contentDigest" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "outcome": { "const": "withdrawn" } }, "required": ["outcome"] },
+          "then": { "properties": { "resolverRole": { "const": "payer" } } }
+        },
+        {
+          "if": { "properties": { "resolverRole": { "const": "arbiter" } }, "required": ["resolverRole"] },
+          "then": { "required": ["supersedes", "supersedesDigest"] }
+        }
+      ]
+    },
+
+    "Reversal": {
+      "type": "object",
+      "required": ["@context", "id", "type", "cause", "payer", "payee", "amount", "currency", "status", "timestamp", "proof"],
+      "oneOf": [
+        { "required": ["refund", "refundDigest"] },
+        { "required": ["resolution", "resolutionDigest"] }
+      ],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "Reversal" }, { "type": "array", "contains": { "const": "Reversal" } } ] },
+        "cause": { "enum": ["refund", "dispute"] },
+        "refund": { "$ref": "#/$defs/idValue" },
+        "refundDigest": { "$ref": "#/$defs/contentDigest" },
+        "resolution": { "$ref": "#/$defs/idValue" },
+        "resolutionDigest": { "$ref": "#/$defs/contentDigest" },
+        "execution": { "$ref": "#/$defs/idValue" },
+        "executionDigest": { "$ref": "#/$defs/contentDigest" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "status": { "enum": ["pending", "completed", "partial", "failed"] },
+        "settlementRef": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "ReversalAcknowledgement": {
+      "type": "object",
+      "required": ["@context", "id", "type", "reversal", "reversalDigest", "payer", "payee", "amount", "currency", "receivedAt", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "ReversalAcknowledgement" }, { "type": "array", "contains": { "const": "ReversalAcknowledgement" } } ] },
+        "reversal": { "$ref": "#/$defs/idValue" },
+        "reversalDigest": { "$ref": "#/$defs/contentDigest" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "receivedAt": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    }
+  }
+}
