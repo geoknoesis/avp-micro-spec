@@ -38,8 +38,8 @@ stl:SettlementInstructionShape a sh:NodeShape ;
   sh:property [ sh:path stl:amountBase ; sh:node stl:BaseUnits ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path stl:confirmationThreshold ; sh:datatype xsd:integer ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:mode ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
-  sh:property [ sh:path dsa:nonce ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
-  sh:property [ sh:path dsa:expires ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:nonce ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
 
 stl:SettlementProofShape a sh:NodeShape ;
