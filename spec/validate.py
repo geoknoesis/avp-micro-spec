@@ -222,6 +222,38 @@ def shacl_check(base, vectors, shapes_file):
             ok(f"{name} conforms to shapes", False, str(e))
 
 
+# Each bundle's JSON Schema is intentionally self-contained (own $id, independently
+# consumable), so the primitive helper $defs are duplicated rather than $ref'd across
+# files. This guard keeps that duplication honest: it fails if a shared primitive ever
+# drifts functionally between bundles (the `description` doc field is ignored).
+_SHARED_DEFS = ("did", "iri", "idValue", "decimal", "positiveDecimal",
+                "dateTime", "contentDigest", "proof")
+_SCHEMA_FILES = {
+    "authority": AUTH / "schemas" / "dsa.schema.json",
+    "payments": PAY / "schemas" / "avp-micro.schema.json",
+    "interop": INTEROP / "schemas" / "interop.schema.json",
+    "disputes": DISP / "schemas" / "disputes.schema.json",
+    "settlement": SETTLE / "schemas" / "settlement.schema.json",
+}
+
+
+def shared_defs_check():
+    def _norm(d):  # functional identity: ignore the non-normative description text
+        return json.dumps({k: v for k, v in d.items() if k != "description"}, sort_keys=True)
+    loaded = {name: json.loads(p.read_text(encoding="utf-8")).get("$defs", {})
+              for name, p in _SCHEMA_FILES.items() if p.exists()}
+    for prim in _SHARED_DEFS:
+        variants = {}
+        for name, defs in loaded.items():
+            if prim in defs:
+                variants.setdefault(_norm(defs[prim]), []).append(name)
+        n = sum(len(v) for v in variants.values())
+        if n == 0:
+            continue
+        ok(f"shared $def '{prim}' consistent across {n} bundle(s)", len(variants) == 1,
+           " | ".join(f"{names}" for names in variants.values()))
+
+
 def main():
     section("Turtle parse")
     for ttl in [AUTH / "vocab" / "dsa.ttl", AUTH / "vocab" / "agent-service-categories.ttl",
@@ -301,6 +333,8 @@ def main():
     schema_check(INTEROP, INTEROP_VECTORS, "interop.schema.json")
     schema_check(DISP, DISP_VECTORS, "disputes.schema.json")
     schema_check(SETTLE, SETTLEMENT_VECTORS, "settlement.schema.json")
+    section("Shared $def consistency (no cross-bundle drift)")
+    shared_defs_check()
     negative_schema_check(AUTH, "dsa.schema.json", [
         ("DSA proof type", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
          lambda obj: (obj["proof"].__setitem__("type", "NotDataIntegrityProof") or obj)),

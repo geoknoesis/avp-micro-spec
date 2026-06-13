@@ -7,7 +7,7 @@
   "$defs": {
     "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+" },
     "idValue": { "type": "string", "minLength": 1 },
-    "iri": { "type": "string", "minLength": 1, "format": "uri" },
+    "iri": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z][A-Za-z0-9+.\\-]*:.+" },
     "decimal": {
       "type": "string",
       "description": "Non-negative decimal amount as a string.",
