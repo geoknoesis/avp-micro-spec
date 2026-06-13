@@ -80,6 +80,8 @@ def main() -> int:
     for term in ("amount", "currency", "settlementMethod", "settlementTarget"):
         check(f"authz.{term} == quote.{term}", authz[term] == quote[term])
     check("requestHash byte-equal", authz["requestHash"] == quote["requestHash"])
+    check("authz.timestamp before quote.expires (quote not expired at authorization)",
+          authz["timestamp"] < quote["expires"])
 
     print("Credential / policy:")
     subj = spendauth["credentialSubject"]
@@ -88,6 +90,12 @@ def main() -> int:
     check("amount <= maxPerTransaction", Decimal(authz["amount"]) <= Decimal(subj["maxPerTransaction"]))
     check("payee in allowedPayees", authz["payee"] in subj.get("allowedPayees", []))
     check("currency matches credential", authz["currency"] == subj.get("currency"))
+    check("maxPerTransaction <= dailyLimit (well-formed limits)",
+          Decimal(subj["maxPerTransaction"]) <= Decimal(subj["dailyLimit"]))
+    check("credential validity window well-formed (validFrom < validUntil)",
+          spendauth["validFrom"] < spendauth["validUntil"])
+    check("credential active at authorization (validFrom <= timestamp <= validUntil)",
+          spendauth["validFrom"] <= authz["timestamp"] <= spendauth["validUntil"])
 
     print("Execution & receipt linkage:")
     check("execution.authorization == authz.id", execution.get("authorization") == authz["id"])
@@ -98,6 +106,8 @@ def main() -> int:
     check("receipt.quote == quote.id", receipt.get("quote") == quote["id"])
     check("receipt.execution == execution.id", receipt.get("execution") == execution["id"])
     check("receipt.amount == authz.amount", receipt["amount"] == authz["amount"])
+    check("receipt.amount == execution.amount (delivery matches settlement)",
+          receipt["amount"] == execution["amount"])
     check("receipt.status fulfilled", receipt["status"] == "fulfilled")
 
     print("Streaming / session metering:")
@@ -156,6 +166,10 @@ def main() -> int:
     check("re-auth committedAmount <= newMaxAmount",
           Decimal(session_budget2["committedAmount"]) <= Decimal(extension["newMaxAmount"]))
     check("re-auth references same session", session_budget2["usageSession"] == session["id"])
+    # replay prevention: payer-signed authorization nonces MUST be unique
+    _authz_nonces = [authz["nonce"], session_budget["nonce"], session_budget2["nonce"]]
+    check("authorization nonces are unique (no replay)",
+          len(_authz_nonces) == len(set(_authz_nonces)))
 
     print("Pricing-model evaluation conformance:")
     conformance = load(PAY, "pricing-conformance.json")
