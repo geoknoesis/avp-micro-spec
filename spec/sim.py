@@ -164,6 +164,7 @@ class World:
         self.daily: list = []               # (date, settled) for dailyLimit windows
         self.session_committed = Decimal(0)
         self.session_accrued = Decimal(0)
+        self.session_units = Decimal(0)
         self.credential = self._issue_credential()
 
     def actor(self, role: str) -> Actor:
@@ -425,6 +426,7 @@ def open_session(world: World, step: dict) -> dict:
         "_payeeRole": step.get("payee", "payee"),
     }
     world.session_accrued = Decimal(0)
+    world.session_units = Decimal(0)
     return payee.sign(session, world.clock.now())
 
 
@@ -460,6 +462,13 @@ def accrue(world: World, step: dict) -> dict:
         "amountAccrued": step["amount"], "currency": session["currency"],
         "timestamp": world.clock.now(),
     }
+    if "units" in step:                                   # metered units (e.g. tokens) for this batch
+        world.session_units += _d(step["units"])
+        accrual["meterReading"] = str(step["units"])
+        accrual["totalMeterReading"] = str(world.session_units)
+        dim = (session.get("pricingModel") or {}).get("dimension")
+        if dim:
+            accrual["dimension"] = dim
     return payee.sign(accrual, world.clock.now())
 
 
@@ -727,7 +736,8 @@ def run_traced(sc: dict) -> dict:
             "params": {k: v for k, v in step.items() if k not in ("action", "expect")},
             "expect": step.get("expect", "ok"), "outcome": outcome, "matched": matched,
             "object": obj, "clock": world.clock.now(), "balances": _bal(world.ledger.bal),
-            "session": {"accrued": str(world.session_accrued), "committed": str(world.session_committed)},
+            "session": {"accrued": str(world.session_accrued), "committed": str(world.session_committed),
+                        "units": str(world.session_units), "dimension": (world.ctx.get("session") or {}).get("pricingModel", {}).get("dimension")},
         })
     final_ok = all(world.ledger.bal.get(r, Decimal(0)) == _d(v)
                    for r, v in sc.get("finalBalances", {}).items())

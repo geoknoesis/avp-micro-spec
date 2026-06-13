@@ -176,9 +176,10 @@
 <section id="suite">
   <h2>Specification suite</h2>
   <p>
-    The suite comprises three peer documents. Each ships a normative ReSpec specification,
+    The suite comprises four peer documents. Each ships a normative ReSpec specification,
     a JSON-LD 1.1 context, a JSON Schema, SHACL shapes, an OWL/RDFS vocabulary, and signed
-    conformance test vectors.
+    conformance test vectors. A reference <a href="#simulator">protocol simulator</a> exercises
+    the full message flow end to end against a play-money ledger.
   </p>
 
   <table class="spec-table">
@@ -207,6 +208,12 @@
         <td><a href="spec/interop-sd-jwt-vc/"><strong>SD-JWT-VC Interop Profile</strong></a></td>
         <td class="namespace">https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#</td>
         <td><a href="spec/authority/">DSA</a>, <a href="spec/payments/">Payments</a>, [[SD-JWT-VC]]</td>
+        <td class="status-unofficial">Unofficial Draft</td>
+      </tr>
+      <tr>
+        <td><a href="spec/disputes/"><strong>Refunds, Reversals &amp; Disputes</strong></a></td>
+        <td class="namespace">https://w3id.org/avp-micro/disputes/v1#</td>
+        <td><a href="spec/payments/">Payments</a>, <a href="spec/authority/">DSA</a></td>
         <td class="status-unofficial">Unofficial Draft</td>
       </tr>
     </tbody>
@@ -290,6 +297,27 @@
     </table>
     <p>Namespace: <code>https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#</code></p>
   </section>
+
+  <section id="disputes-overview">
+    <h3>Refunds, Reversals &amp; Disputes</h3>
+    <p>
+      The <a href="spec/disputes/">Refunds, Reversals &amp; Disputes specification</a> defines the
+      <em>reverse</em> value-flow on top of Payments — the voluntary path and the adversarial
+      path, both converging on a wallet-signed reversal:
+    </p>
+    <ul>
+      <li><strong>Refund</strong> — a payee-signed return of value (full or partial) against a
+        receipt/execution.</li>
+      <li><strong>Reversal</strong> and <strong>ReversalAcknowledgement</strong> — the
+        wallet-signed settlement that undoes a charge (caused by a refund or an upheld dispute),
+        and the payer's acknowledgement of it.</li>
+      <li><strong>Dispute</strong>, <strong>DisputeEvidence</strong>, and
+        <strong>DisputeResolution</strong> — the adversarial lifecycle: a payer raises a dispute,
+        both sides submit evidence, and the payee or a named arbiter resolves it (upheld /
+        partial / rejected / withdrawn).</li>
+    </ul>
+    <p>Namespace: <code>https://w3id.org/avp-micro/disputes/v1#</code></p>
+  </section>
 </section>
 
 <!-- ═══════════════════ ARTIFACTS ═══════════════════ -->
@@ -349,6 +377,7 @@
     <pre class="example" title="Regenerate all test vectors">python spec/generate.py</pre>
     <pre class="example" title="Verify proofs, bindings, policy, and interop round-trip">python spec/verify.py    # must report PASS</pre>
     <pre class="example" title="Validate Turtle, JSON-LD expansion, JSON Schema, and SHACL">python spec/validate.py  # must report PASS</pre>
+    <pre class="example" title="Run the protocol simulator over the declarative use cases">python spec/sim.py       # must report PASS</pre>
     <p>
       <code>validate.py</code> is fully offline: the stable external W3C contexts
       (<code>credentials/v2</code>, <code>data-integrity/v2</code>) are vendored under
@@ -374,7 +403,30 @@
       <dt><code>spec/pricing.py</code></dt>
       <dd>Normative pricing-model evaluator: flat, per-call, tiered, and composite models.
         Used by the Payments bundle conformance vectors.</dd>
+      <dt><code>spec/sim.py</code> + <code>spec/sim-scenarios.json</code></dt>
+      <dd>Reference <a href="#simulator">protocol simulator</a> and its declarative use cases.</dd>
     </dl>
+  </section>
+
+  <section id="simulator">
+    <h3>Protocol simulator &amp; interactive demo</h3>
+    <p>
+      <code>spec/sim.py</code> runs the full signed-message flow end to end — quote → authorize
+      → execute → receipt, plus streaming/metered sessions, human-present approval, AP2-bridged
+      imported authority, and the refund/reversal/dispute lifecycle — with real
+      <code>ecdsa-jcs-2022</code> proofs and complete wallet-side policy enforcement, settled on a
+      <strong>simulated play-money ledger</strong>. Settlement is the only money-touching step and
+      is the one part the protocol scopes out, so it is stubbed: <strong>no real funds move</strong>.
+    </p>
+    <p>
+      The use cases are defined declaratively in <code>spec/sim-scenarios.json</code> and cover
+      the happy paths plus the full rejection vocabulary (caps, replay, expiry, quote-binding,
+      budget, forged approval, over-refund, …). An interactive
+      <strong>Streamlit demo</strong> (separate <code>avp-micro-sim-demo</code> repository)
+      visualises each use case: a plain-language outcome, a flow diagram of who signs what, the
+      money moving on the ledger, and a per-participant view.
+    </p>
+    <pre class="example" title="Run the simulator headless">python spec/sim.py    # PASS/FAIL per declarative use case</pre>
   </section>
 </section>
 

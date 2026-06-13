@@ -11,6 +11,7 @@ Four peer specification bundles, a shared Python harness, and design documents.
 | Delegated Spending Authority (DSA) | `spec/authority/` | `https://w3id.org/spending-authority/v1#` |
 | AVP-Micro Payments | `spec/payments/` | `https://w3id.org/avp-micro/v1#` |
 | AVP-Micro ⇄ SD-JWT-VC interop profile | `spec/interop-sd-jwt-vc/` | `https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#` |
+| Refunds, Reversals & Disputes | `spec/disputes/` | `https://w3id.org/avp-micro/disputes/v1#` |
 
 See [`spec/README.md`](spec/README.md) for the full bundle overview.
 
@@ -24,9 +25,13 @@ pip install -r requirements.txt
 python spec/generate.py   # (re)build signed test vectors for all four bundles
 python spec/verify.py     # verify proofs, bindings, policy, and interop round-trip
 python spec/validate.py   # Turtle / JSON-LD / JSON Schema / SHACL for all four bundles
+python spec/sim.py        # run the protocol simulator over the declarative use cases
 ```
 
 All checks must report `PASS`.
+
+An interactive **Streamlit demo** of the simulator lives in the separate
+`avp-micro-sim-demo` repository (`streamlit run app.py`).
 
 ## Harness files (`spec/` root)
 
@@ -39,6 +44,7 @@ All checks must report `PASS`.
 | `spec/generate.py` | Writes deterministic signed test vectors into all four `test-vectors/` directories |
 | `spec/verify.py` | Verifies proofs, bindings, policy, and the interop round-trip |
 | `spec/validate.py` | Turtle parse, JSON-LD expansion (offline), JSON Schema, and SHACL validation |
+| `spec/sim.py` + `spec/sim-scenarios.json` | Protocol simulator: full message flow + wallet policy enforcement against a simulated play-money ledger; declarative use cases |
 
 ## Design documents
 

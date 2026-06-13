@@ -435,6 +435,27 @@
     "finalBalances": {"agent": "99.00", "payee": "1.00"}
   },
   {
+    "name": "streaming-token-usage",
+    "description": "an agent streams from an LLM and pays per output token: usage accrues as token batches over time, the running cost climbs toward the budget, and the wallet settles the metered total at close",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "open_session", "budget": "1.00",
+       "pricingModel": {"type": "PerUnit", "dimension": "dim:OutputTokens", "unit": "qudtu:NUM", "amount": "0.00001", "currency": "USD"}},
+      {"action": "budget_authorize", "amount": "1.00"},
+      {"action": "accrue", "amount": "0.18", "units": 18000, "expect": "ok"},
+      {"action": "advance_clock", "seconds": 2},
+      {"action": "accrue", "amount": "0.22", "units": 22000, "expect": "ok"},
+      {"action": "advance_clock", "seconds": 2},
+      {"action": "accrue", "amount": "0.30", "units": 30000, "expect": "ok"},
+      {"action": "advance_clock", "seconds": 2},
+      {"action": "accrue", "amount": "0.25", "units": 25000, "expect": "ok"},
+      {"action": "close_session", "expect": {"status": "completed"}}
+    ],
+    "finalBalances": {"agent": "99.05", "payee": "0.95"}
+  },
+  {
     "name": "streaming-metered-session",
     "description": "a live metered session: usage accrues over time (per-unit pricing), the running total climbs toward the budget cap, and the wallet settles the total at close",
     "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
