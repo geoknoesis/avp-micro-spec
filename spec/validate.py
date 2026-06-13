@@ -26,11 +26,13 @@ AUTH = SPEC / "authority"
 PAY = SPEC / "payments"
 INTEROP = SPEC / "interop-sd-jwt-vc"
 DISP = SPEC / "disputes"
+SETTLE = SPEC / "settlement"
 SEC_PROOF = "https://w3id.org/security#proof"
 DSA_NS = "https://w3id.org/spending-authority/v1#"
 AVP_NS = "https://w3id.org/avp-micro/v1#"
 IOP_NS = "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#"
 DISP_NS = "https://w3id.org/avp-micro/disputes/v1#"
+SETTLE_NS = "https://w3id.org/avp-micro/settlement/v1#"
 
 # vector file -> ($def name, schema bundle path, shapes path, namespace, dir)
 AUTH_VECTORS = {
@@ -87,6 +89,23 @@ DISP_VECTORS = {
     "38-dispute-withdrawn.json": "Dispute",
     "39-dispute-resolution-withdrawn.json": "DisputeResolution",
 }
+SETTLEMENT_VECTORS = {
+    "40-payee-account-binding.json": "PayeeAccountBinding",
+    "41-settlement-instruction-evm.json": "SettlementInstruction",
+    "42-settlement-proof-evm.json": "SettlementProof",
+    "43-settlement-instruction-x402.json": "SettlementInstruction",
+    "44-settlement-proof-x402.json": "SettlementProof",
+    "45-settlement-instruction-lightning.json": "SettlementInstruction",
+    "46-escrow-lock-lightning.json": "EscrowLock",
+    "47-settlement-proof-lightning.json": "SettlementProof",
+    "48-escrow-release-lightning.json": "EscrowRelease",
+    "49-settlement-instruction-evm-escrow.json": "SettlementInstruction",
+    "50-escrow-lock-evm.json": "EscrowLock",
+    "51-settlement-proof-evm-refund.json": "SettlementProof",
+    "52-escrow-refund-evm.json": "EscrowRefund",
+    "53-reverse-settlement-instruction.json": "SettlementInstruction",
+    "54-reverse-settlement-proof.json": "SettlementProof",
+}
 
 failures = []
 
@@ -102,6 +121,7 @@ _dsa_ctx = json.loads((AUTH / "context" / "v1.jsonld").read_text(encoding="utf-8
 _avp_ctx = json.loads((PAY / "context" / "v1.jsonld").read_text(encoding="utf-8"))
 _iop_ctx = json.loads((INTEROP / "context" / "v1.jsonld").read_text(encoding="utf-8"))
 _disp_ctx = json.loads((DISP / "context" / "v1.jsonld").read_text(encoding="utf-8"))
+_settle_ctx = json.loads((SETTLE / "context" / "v1.jsonld").read_text(encoding="utf-8"))
 _ctx_dir = SPEC / "contexts"
 # Stable external W3C contexts are vendored locally so validation is offline and
 # deterministic (w3.org content-negotiation via the pyld requests loader is flaky --
@@ -111,6 +131,7 @@ _LOCAL = {
     "https://w3id.org/avp-micro/v1": _avp_ctx,
     "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1": _iop_ctx,
     "https://w3id.org/avp-micro/disputes/v1": _disp_ctx,
+    "https://w3id.org/avp-micro/settlement/v1": _settle_ctx,
     "https://www.w3.org/ns/credentials/v2":
         json.loads((_ctx_dir / "credentials-v2.jsonld").read_text(encoding="utf-8")),
     "https://w3id.org/security/data-integrity/v2":
@@ -208,7 +229,9 @@ def main():
                 PAY / "shapes" / "avp-shapes.ttl",
                 INTEROP / "vocab" / "interop.ttl", INTEROP / "shapes" / "interop-shapes.ttl",
                 DISP / "vocab" / "disputes.ttl", DISP / "vocab" / "reasons.ttl",
-                DISP / "shapes" / "disputes-shapes.ttl"]:
+                DISP / "shapes" / "disputes-shapes.ttl",
+                SETTLE / "vocab" / "settlement.ttl", SETTLE / "vocab" / "rails.ttl",
+                SETTLE / "shapes" / "settlement-shapes.ttl"]:
         try:
             g = rdflib.Graph().parse(ttl.as_posix(), format="turtle")
             ok(f"{ttl.parent.parent.name}/{ttl.name} parses", True)
@@ -260,12 +283,23 @@ def main():
         "35-reversal-dispute.json": [(DISP_NS + "cause", "disp:cause"),
                                      (DISP_NS + "resolution", "disp:resolution")],
     })
+    expand_check(SETTLE, SETTLEMENT_VECTORS, {
+        "41-settlement-instruction-evm.json": [(SETTLE_NS + "amountBase", "stl:amountBase"),
+                                               (SETTLE_NS + "rail", "stl:rail"),
+                                               (SETTLE_NS + "mode", "stl:mode")],
+        "42-settlement-proof-evm.json": [(SETTLE_NS + "finality", "stl:finality"),
+                                         (SETTLE_NS + "transaction", "stl:transaction")],
+        "47-settlement-proof-lightning.json": [(SETTLE_NS + "preimage", "stl:preimage")],
+        "48-escrow-release-lightning.json": [(SETTLE_NS + "settlementProof", "stl:settlementProof")],
+        "52-escrow-refund-evm.json": [(SETTLE_NS + "reason", "stl:reason")],
+    })
 
     section("JSON Schema validation")
     schema_check(AUTH, AUTH_VECTORS, "dsa.schema.json")
     schema_check(PAY, PAY_VECTORS, "avp-micro.schema.json")
     schema_check(INTEROP, INTEROP_VECTORS, "interop.schema.json")
     schema_check(DISP, DISP_VECTORS, "disputes.schema.json")
+    schema_check(SETTLE, SETTLEMENT_VECTORS, "settlement.schema.json")
     negative_schema_check(AUTH, "dsa.schema.json", [
         ("DSA proof type", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
          lambda obj: (obj["proof"].__setitem__("type", "NotDataIntegrityProof") or obj)),
@@ -329,12 +363,31 @@ def main():
         ("arbiter resolution without supersedes", "34-dispute-resolution-arbiter.json", "DisputeResolution",
          lambda obj: (obj.pop("supersedes", None), obj.pop("supersedesDigest", None), obj)[2]),
     ])
+    negative_schema_check(SETTLE, "settlement.schema.json", [
+        ("instruction missing amountBase", "41-settlement-instruction-evm.json", "SettlementInstruction",
+         lambda obj: (obj.pop("amountBase", None), obj)[1]),
+        ("instruction bad mode", "41-settlement-instruction-evm.json", "SettlementInstruction",
+         lambda obj: (obj.__setitem__("mode", "frobnicate") or obj)),
+        ("instruction non-integer amountBase", "41-settlement-instruction-evm.json", "SettlementInstruction",
+         lambda obj: (obj.__setitem__("amountBase", "10.5") or obj)),
+        ("instruction context order", "41-settlement-instruction-evm.json", "SettlementInstruction",
+         lambda obj: (obj.__setitem__("@context", list(reversed(obj["@context"]))) or obj)),
+        ("proof missing finality", "42-settlement-proof-evm.json", "SettlementProof",
+         lambda obj: (obj.pop("finality", None), obj)[1]),
+        ("proof bad finality value", "42-settlement-proof-evm.json", "SettlementProof",
+         lambda obj: (obj.__setitem__("finality", "kinda-final") or obj)),
+        ("escrow refund missing settlementProof", "52-escrow-refund-evm.json", "EscrowRefund",
+         lambda obj: (obj.pop("settlementProof", None), obj)[1]),
+        ("binding missing subject", "40-payee-account-binding.json", "PayeeAccountBinding",
+         lambda obj: (obj.pop("subject", None), obj)[1]),
+    ])
 
     section("SHACL validation")
     shacl_check(AUTH, AUTH_VECTORS, "dsa-shapes.ttl")
     shacl_check(PAY, PAY_VECTORS, "avp-shapes.ttl")
     shacl_check(INTEROP, INTEROP_VECTORS, "interop-shapes.ttl")
     shacl_check(DISP, DISP_VECTORS, "disputes-shapes.ttl")
+    shacl_check(SETTLE, SETTLEMENT_VECTORS, "settlement-shapes.ttl")
 
     print()
     if failures:
