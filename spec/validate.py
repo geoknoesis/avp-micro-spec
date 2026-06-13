@@ -306,6 +306,12 @@ def main():
          lambda obj: (obj["proof"].__setitem__("type", "NotDataIntegrityProof") or obj)),
         ("DSA context order", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
          lambda obj: (obj.__setitem__("@context", list(reversed(obj["@context"]))) or obj)),
+        ("DSA zero maxPerTransaction", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
+         lambda obj: (obj["credentialSubject"].__setitem__("maxPerTransaction", "0") or obj)),
+        ("DSA zero dailyLimit", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
+         lambda obj: (obj["credentialSubject"].__setitem__("dailyLimit", "0") or obj)),
+        ("DSA non-URI allowedCategory", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
+         lambda obj: (obj["credentialSubject"].__setitem__("allowedCategories", ["not a uri"]) or obj)),
     ])
     negative_schema_check(PAY, "avp-micro.schema.json", [
         ("PaymentQuote zero amount", "01-payment-quote.json", "PaymentQuote",

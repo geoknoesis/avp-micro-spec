@@ -5,12 +5,17 @@
   "description": "JSON Schema for the SpendingAuthorizationCredential, PaymentCapabilityCredential, MerchantCredential, and trust-configuration structures. Validate an instance against the relevant $def, e.g. #/$defs/SpendingAuthorizationCredential.",
   "$defs": {
     "did": { "type": "string", "pattern": "^did:[a-z0-9]+:.+" },
-    "iri": { "type": "string", "minLength": 1, "format": "uri" },
+    "iri": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z][A-Za-z0-9+.\\-]*:.+" },
     "idValue": { "type": "string", "minLength": 1 },
     "decimal": {
       "type": "string",
       "description": "Non-negative decimal amount as a string.",
       "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+    },
+    "positiveDecimal": {
+      "type": "string",
+      "description": "Strictly positive decimal amount as a string.",
+      "pattern": "^(0\\.[0-9]*[1-9][0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$"
     },
     "dateTime": { "type": "string", "format": "date-time" },
     "contentDigest": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[A-Za-z0-9_-]+$" },
@@ -44,8 +49,8 @@
       "description": "Bounds on what a trusted issuer may authorize. All members optional; the more restrictive of scope and credential applies.",
       "properties": {
         "currency": { "type": "string" },
-        "maxPerTransaction": { "$ref": "#/$defs/decimal" },
-        "maxDailyTotal": { "$ref": "#/$defs/decimal" },
+        "maxPerTransaction": { "$ref": "#/$defs/positiveDecimal" },
+        "maxDailyTotal": { "$ref": "#/$defs/positiveDecimal" },
         "allowedCategories": { "$ref": "#/$defs/categoryList" }
       }
     },
@@ -78,10 +83,10 @@
           "properties": {
             "id": { "$ref": "#/$defs/did" },
             "currency": { "type": "string" },
-            "maxPerTransaction": { "$ref": "#/$defs/decimal" },
-            "dailyLimit": { "$ref": "#/$defs/decimal" },
+            "maxPerTransaction": { "$ref": "#/$defs/positiveDecimal" },
+            "dailyLimit": { "$ref": "#/$defs/positiveDecimal" },
             "limitTimezone": { "type": "string" },
-            "requiresApprovalAbove": { "$ref": "#/$defs/decimal" },
+            "requiresApprovalAbove": { "$ref": "#/$defs/positiveDecimal" },
             "allowedPayees": { "$ref": "#/$defs/didList" },
             "allowedCategories": { "$ref": "#/$defs/categoryList" }
           }
