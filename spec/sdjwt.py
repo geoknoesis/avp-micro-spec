@@ -85,6 +85,8 @@ def es256_sign(header: dict, payload: dict, priv: ec.EllipticCurvePrivateKey) ->
 def es256_verify(jws: str, pub: ec.EllipticCurvePublicKey) -> bool:
     try:
         h_b64, p_b64, sig_b64 = jws.split(".")
+        if json.loads(b64u_decode(h_b64)).get("alg") != "ES256":
+            return False  # pin the algorithm: reject alg:none and alg-confusion
         signing_input = (h_b64 + "." + p_b64).encode("ascii")
         raw = b64u_decode(sig_b64)
         if len(raw) != 64:

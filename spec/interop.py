@@ -296,7 +296,16 @@ def verify_purchase_confirmation(conf: dict, did_web_resolver: dict | None = Non
             pub = ac.public_from_did_key(confirmed_by)  # principal DID resolves locally
         else:
             return False
-        return sdjwt.es256_verify(sdjwt.sdjwt_jws(compact), pub)
+        jws = sdjwt.sdjwt_jws(compact)
+        if not sdjwt.es256_verify(jws, pub):
+            return False
+        # SECURITY: bind the approval to THIS confirmation -- the principal (iss=confirmedBy)
+        # approved the exact cart (cart_hash==requestHash) on behalf of the exact agent
+        # (sub==payer). Without this, a genuine approval for cart X authorizes any cart Y.
+        emb = sdjwt.jws_payload(jws)
+        return emb.get("iss") == confirmed_by \
+            and emb.get("sub") == conf.get("payer") \
+            and emb.get("cart_hash") == conf.get("requestHash")
     except Exception:
         return False
 
@@ -350,12 +359,40 @@ def intersect_limits(a: dict, b: dict) -> dict:
     for k, v in b.items():
         if k in out:
             try:
-                out[k] = v if _Decimal(v) < _Decimal(out[k]) else out[k]
+                dv, da = _Decimal(v), _Decimal(out[k])
+                if dv < 0:            # invalid (negative) limit: never widen toward it
+                    continue
+                if da < 0 or dv < da:  # take b-side if a-side invalid, or b is tighter
+                    out[k] = v
             except (ValueError, ArithmeticError):
-                out[k] = out[k]  # non-decimal limit (e.g. tz): keep the a-side value
+                pass  # non-decimal limit (e.g. tz): keep the a-side value
         else:
             out[k] = v
     return out
+
+
+def _le(a, b) -> bool:
+    """Decimal a <= b; non-decimal / unparseable values are incomparable (False)."""
+    try:
+        return _Decimal(a) <= _Decimal(b)
+    except (ValueError, ArithmeticError, TypeError):
+        return False
+
+
+def _subject_within(outer: dict, inner: dict) -> bool:
+    """No-widening (§11.2): True iff `outer` grants no more authority than `inner`.
+    Ensures a bridged / projected credentialSubject can never broaden the embedded,
+    authoritative mandate it claims to represent (numeric limits <=, payee/category
+    sets subset, currency equal)."""
+    for fld in ("maxPerTransaction", "dailyLimit", "requiresApprovalAbove"):
+        if fld in outer and not (fld in inner and _le(outer[fld], inner[fld])):
+            return False
+    if "currency" in outer and outer.get("currency") != inner.get("currency"):
+        return False
+    for listfld in ("allowedPayees", "allowedCategories"):
+        if listfld in outer and not set(outer[listfld]).issubset(set(inner.get(listfld, []))):
+            return False
+    return True
 
 
 # ---- export: AVP-Micro -> SD-JWT-VC (section "Export") ----
@@ -388,13 +425,20 @@ def _effective_claims(compact: str):
     """
     issuer_jws, disclosures, _kb = sdjwt.split_presentation(compact)
     payload = sdjwt.jws_payload(issuer_jws)
+    sd_digests = set(payload.get("_sd", []))
     effective = {k: v for k, v in payload.items() if k not in ("_sd", "_sd_alg")}
     presented = set()
     for d in disclosures:
+        digest = sdjwt.disclosure_digest(d)
+        # SECURITY: only honor disclosures the issuer committed to in `_sd`. A disclosure
+        # whose digest is absent is attacker-injected (not issuer-signed) and could
+        # override inline claims to widen authority -- it MUST NOT be merged.
+        if digest not in sd_digests:
+            continue
         arr = json.loads(sdjwt.b64u_decode(d))
         if isinstance(arr, list) and len(arr) == 3:
             effective[arr[1]] = arr[2]
-            presented.add(sdjwt.disclosure_digest(d))
+            presented.add(digest)
     withheld = [h for h in payload.get("_sd", []) if h not in presented]
     return effective, len(withheld)
 
@@ -469,6 +513,7 @@ def _verify_imported(vc: dict, did_web_resolver: dict) -> bool:
     compact = sec.get("embedded", "")
     jws = sdjwt.sdjwt_jws(compact)
     payload = sdjwt.jws_payload(jws)
+    eff, _ = _effective_claims(compact)  # issuer-committed claims (forged disclosures dropped)
     if mode == "proof-preserving":
         if "proof" in vc:  # no-downgrade: must be an unsigned projection
             return False
@@ -480,17 +525,26 @@ def _verify_imported(vc: dict, did_web_resolver: dict) -> bool:
             secured = json.loads(sdjwt.b64u_decode(payload["avp_vc"]))
             if not ac.verify_ecdsa_jcs_2022(secured):
                 return False
-            return secured["credentialSubject"]["id"] == vc["credentialSubject"]["id"] \
-                and _issuer_id(secured) == vc["issuer"]
+            if secured["credentialSubject"]["id"] != vc["credentialSubject"]["id"] \
+                    or _issuer_id(secured) != vc["issuer"]:
+                return False
+            # no-widening: the projection MUST NOT grant more than the embedded credential
+            return _subject_within(vc["credentialSubject"], secured["credentialSubject"])
         # foreign origin: authority is the embedded ES256, resolved via did:web
         jwk = did_web_resolver.get(vc["issuer"])  # did:web binding convention
         if jwk is None:
             return False
-        return sdjwt.es256_verify(jws, sdjwt.p256_public_from_jwk(jwk))
+        if not sdjwt.es256_verify(jws, sdjwt.p256_public_from_jwk(jwk)):
+            return False
+        # no-widening: the projection MUST NOT broaden the embedded mandate's claims
+        return _subject_within(vc["credentialSubject"], claims_to_avp_subject(eff))
     if mode == "attested":
         if "attestingBridge" not in sec or "proof" not in vc:
             return False
-        return ac.verify_ecdsa_jcs_2022(vc)
+        if not ac.verify_ecdsa_jcs_2022(vc):
+            return False
+        # no-widening: a trusted bridge re-attests but MUST NOT broaden the embedded mandate
+        return _subject_within(vc["credentialSubject"], claims_to_avp_subject(eff))
     if mode == "co-issued":
         # authority is the native outer Data Integrity proof; the embedded SD-JWT-VC
         # is a parallel representation the same issuer signed with the same P-256 key
@@ -562,9 +616,14 @@ def presentation_to_payment_authorization(presentation: str, mode: str = "proof-
                   source_vct=mp.get("vct"))
 
 
-def verify_presentation(presentation: str, did_web_resolver: dict | None = None) -> bool:
+def verify_presentation(presentation: str, did_web_resolver: dict | None = None,
+                        *, expected_nonce: str | None = None,
+                        expected_aud: str | None = None) -> bool:
     """Verify an L3 presentation: mandate authority + holder key-binding JWT + sd_hash.
-    Any parse/verify error is a verification failure, never an exception."""
+    A production verifier MUST pass `expected_nonce` (a fresh per-request challenge) and
+    `expected_aud` (its own identifier); when supplied they are enforced to defeat replay
+    and audience-misdirection of the key-binding JWT. Any parse/verify error is a
+    verification failure, never an exception."""
     try:
         parts = presentation.split("~")
         issuer_jws, kbjwt = parts[0], parts[-1]
@@ -582,8 +641,15 @@ def verify_presentation(presentation: str, did_web_resolver: dict | None = None)
         holder = sdjwt.p256_public_from_jwk(mp["cnf"]["jwk"])
         if not sdjwt.es256_verify(kbjwt, holder):
             return False
-        # 3. sd_hash binds the KB-JWT to exactly this mandate
         kb = sdjwt.jws_payload(kbjwt)
-        return kb.get("sd_hash") == sdjwt.sd_hash(issuer_jws + "~")
+        # 3. sd_hash binds the KB-JWT to exactly this mandate
+        if kb.get("sd_hash") != sdjwt.sd_hash(issuer_jws + "~"):
+            return False
+        # 4. freshness / audience: reject replayed or misdirected key-binding JWTs
+        if expected_nonce is not None and kb.get("nonce") != expected_nonce:
+            return False
+        if expected_aud is not None and kb.get("aud") != expected_aud:
+            return False
+        return True
     except Exception:
         return False

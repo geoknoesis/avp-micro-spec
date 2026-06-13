@@ -362,6 +362,47 @@ def main() -> int:
     # no-widening intersection (§11.2)
     check("intersect_limits keeps the most restrictive",
           interop.intersect_limits({"per_txn": "120.00"}, {"per_txn": "100.00"})["per_txn"] == "100.00")
+    check("intersect_limits ignores a negative (invalid) limit",
+          interop.intersect_limits({"per_txn": "100.00"}, {"per_txn": "-5.00"})["per_txn"] == "100.00")
+
+    print("Interop security (adversarial — must all be rejected):")
+    # C1: a disclosure NOT committed in the issuer `_sd` must not be honored / widen authority
+    _foreign = load(INTEROP, "03-foreign-sdjwtvc.json")["compact"]
+    _forged_d = sdjwt.make_disclosure("salt-attack", "limits", {"per_txn": "9999.00"})
+    _inj = interop.sdjwtvc_to_avp(_foreign.rstrip("~") + "~" + _forged_d + "~", "proof-preserving")
+    check("forged (unbound) disclosure does not widen import",
+          _inj["credentialSubject"].get("maxPerTransaction") != "9999.00")
+    # no-widening: a hand-crafted proof-preserving projection broader than the embedded is rejected
+    _hand = interop.sdjwtvc_to_avp(_foreign, "proof-preserving")
+    _hand["credentialSubject"]["maxPerTransaction"] = "9999.00"
+    check("hand-widened proof-preserving projection is rejected",
+          not interop.verify_imported(_hand, resolver))
+    # C3: a trusted bridge re-attesting with broadened limits is rejected
+    _att = load(INTEROP, "08-attested-mandate.json")
+    _w = json.loads(json.dumps({k: v for k, v in _att.items() if k != "proof"}))
+    _w["credentialSubject"]["maxPerTransaction"] = "9999.00"
+    _w = ac.sign_ecdsa_jcs_2022(_w, ac.seed_key("bridge-attestor"), "2026-04-01T00:05:00Z")
+    check("widened attested re-signature is rejected (no-widening)",
+          not interop.verify_imported(_w, resolver))
+    # C2: a genuine human approval for one cart MUST NOT authorize a different cart
+    _conf = load(INTEROP, "15-human-present-confirmation.json")
+    _sub = json.loads(json.dumps(_conf))
+    _sub["requestHash"] = "sha-256:" + "A" * 43
+    check("cart-substituted PurchaseConfirmation is rejected",
+          not interop.verify_purchase_confirmation(_sub, resolver))
+    # C5: algorithm pinning — an alg:none header must not verify
+    _vi = sdjwt.seed_p256("vi-issuer")
+    _jws = sdjwt.es256_sign({"alg": "ES256", "typ": "x"}, {"a": 1}, _vi)
+    _none = sdjwt.b64u_encode(json.dumps({"alg": "none"}).encode()) + "." + _jws.split(".", 1)[1]
+    check("alg:none JWS is rejected (algorithm pinned to ES256)",
+          not sdjwt.es256_verify(_none, sdjwt.p256_public_from_jwk(keys["viIssuer"]["jwk"])))
+    # C4: key-binding JWT freshness — a non-matching expected nonce is rejected
+    _pres = load(INTEROP, "06-l3-presentation.json")["presentation"]
+    _kb_nonce = sdjwt.jws_payload(_pres.split("~")[-1]).get("nonce")
+    check("L3 presentation accepts the matching nonce",
+          interop.verify_presentation(_pres, resolver, expected_nonce=_kb_nonce))
+    check("L3 presentation rejects a stale/replayed nonce",
+          not interop.verify_presentation(_pres, resolver, expected_nonce="n-stale-replay"))
 
     print("Refunds, reversals & dispute lifecycle:")
     arbiter = dids["arbiter"]
