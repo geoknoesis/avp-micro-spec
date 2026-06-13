@@ -72,9 +72,6 @@ stl:chain a owl:DatatypeProperty ; rdfs:label "chain"@en ; rdfs:range xsd:string
   rdfs:comment "CAIP-2 chain id (e.g. eip155:8453)."@en .
 stl:payeeAccount a owl:DatatypeProperty ; rdfs:label "payee account"@en ; rdfs:range xsd:string ;
   rdfs:comment "CAIP-10 account or Lightning destination (BOLT11/LNURL/node id)."@en .
-stl:account a owl:DatatypeProperty ; rdfs:label "account"@en ; rdfs:range xsd:string .
-stl:asset a owl:DatatypeProperty ; rdfs:label "asset"@en ; rdfs:range xsd:string ;
-  rdfs:comment "CAIP-19 asset id."@en .
 stl:amountBase a owl:DatatypeProperty ; rdfs:label "amount (base units)"@en ; rdfs:range xsd:string ;
   rdfs:comment "Integer minor units / sats / msat as a string."@en .
 stl:settledAmountBase a owl:DatatypeProperty ; rdfs:label "settled amount (base units)"@en ; rdfs:range xsd:string .

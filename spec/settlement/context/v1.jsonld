@@ -18,7 +18,6 @@
     "rail": { "@id": "stl:rail", "@type": "@id" },
     "chain": { "@id": "stl:chain" },
     "payeeAccount": { "@id": "stl:payeeAccount" },
-    "asset": { "@id": "stl:asset" },
     "amountBase": { "@id": "stl:amountBase" },
     "rate": { "@id": "stl:rate" },
     "confirmationThreshold": { "@id": "stl:confirmationThreshold" },
@@ -36,7 +35,6 @@
     "observedAt": { "@id": "stl:observedAt", "@type": "xsd:dateTime" },
 
     "subject": { "@id": "stl:subject", "@type": "@id" },
-    "account": { "@id": "stl:account" },
 
     "lock": { "@id": "stl:lock", "@type": "@id" },
     "lockDigest": { "@id": "stl:lockDigest" },

@@ -19,7 +19,7 @@ stl:ContentDigest a sh:NodeShape ; sh:nodeKind sh:Literal ;
 stl:PayeeAccountBindingShape a sh:NodeShape ;
   sh:targetClass stl:PayeeAccountBinding ;
   sh:property [ sh:path stl:subject ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
-  sh:property [ sh:path stl:account ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path dsa:account ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:chain ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
 
@@ -30,7 +30,7 @@ stl:SettlementInstructionShape a sh:NodeShape ;
   sh:property [ sh:path stl:rail ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:chain ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:payeeAccount ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
-  sh:property [ sh:path stl:asset ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path dsa:asset ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path avp:amount ; sh:node stl:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
@@ -49,7 +49,7 @@ stl:SettlementProofShape a sh:NodeShape ;
   sh:property [ sh:path stl:chain ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:transaction ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:settledAmountBase ; sh:node stl:BaseUnits ; sh:minCount 1 ; sh:maxCount 1 ] ;
-  sh:property [ sh:path stl:asset ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path dsa:asset ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:finality ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:observedAt ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
@@ -60,7 +60,7 @@ stl:EscrowLockShape a sh:NodeShape ;
   sh:property [ sh:path stl:instructionDigest ; sh:node stl:ContentDigest ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:lockRef ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:lockedAmountBase ; sh:node stl:BaseUnits ; sh:minCount 1 ] ;
-  sh:property [ sh:path stl:asset ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path dsa:asset ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:timeout ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
 
