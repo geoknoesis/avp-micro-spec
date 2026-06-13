@@ -551,5 +551,124 @@
       {"action": "execute", "expect": {"status": "completed", "settled": "3.00"}}
     ],
     "finalBalances": {"agent": "97.00", "payee": "3.00"}
+  },
+  {
+    "name": "settle-evm-direct",
+    "description": "on-chain settlement binding: the authorization is bound to an EVM stablecoin (USDC) rail with a did:pkh payee; the wallet verifies a final SettlementProof and the money moves",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00", "request": {"resource": "tool-api/run", "input": "doc-9"}},
+      {"action": "authorize"},
+      {"action": "settle_instruct", "rail": "evm-stablecoin", "archetype": "pkh"},
+      {"action": "settle_proof", "confirmations": 12, "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "settle-x402-account-binding",
+    "description": "x402 rail: the payee signs a PayeeAccountBinding proving it controls the account; the instruction references it and the wallet settles only to the bound account",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "payee_binding", "rail": "x402"},
+      {"action": "settle_instruct", "rail": "x402", "archetype": "binding"},
+      {"action": "settle_proof", "confirmations": 12, "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "settle-account-redirection",
+    "description": "anti-redirection: the settlement instruction names an account that is not bound to the payee DID; the wallet refuses to settle",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "settle_instruct", "rail": "evm-stablecoin", "redirect": true, "expect": {"reject": "accountRedirection"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "settle-not-final",
+    "description": "the SettlementProof has not reached the confirmation threshold; the wallet treats it as not final and does not release value",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "settle_instruct", "rail": "evm-stablecoin", "archetype": "pkh"},
+      {"action": "settle_proof", "confirmations": 3, "expect": {"reject": "settlementNotFinal"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "settle-amount-mismatch",
+    "description": "the SettlementProof reports a settled amount below what was instructed; the wallet rejects the binding",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "settle_instruct", "rail": "evm-stablecoin", "archetype": "pkh"},
+      {"action": "settle_proof", "underpaid": true, "confirmations": 12, "expect": {"reject": "settlementMismatch"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "settle-lightning-escrow",
+    "description": "Lightning hold-invoice: the instruction is escrow mode, funds are locked, the preimage reveal makes the SettlementProof final, and the release pays the payee",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "settle_instruct", "rail": "lightning", "mode": "escrow"},
+      {"action": "escrow_lock"},
+      {"action": "settle_proof", "expect": "ok"},
+      {"action": "escrow_release", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "settle-evm-escrow-timeout",
+    "description": "EVM escrow times out before the payee delivers: the locked funds are refunded to the payer and the payee is never paid",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "settle_instruct", "rail": "evm-stablecoin", "mode": "escrow", "archetype": "pkh"},
+      {"action": "escrow_lock"},
+      {"action": "advance_clock", "seconds": 1200},
+      {"action": "settle_proof", "confirmations": 12, "expect": "ok"},
+      {"action": "escrow_refund", "reason": "timeout", "expect": "ok"}
+    ],
+    "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "settle-reverse",
+    "description": "on-chain reversal: after a settled EVM payment, a compensating transfer with payer/payee swapped moves the value back to the agent (the settlement-layer image of a dispute reversal)",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "settle_instruct", "rail": "evm-stablecoin", "archetype": "pkh"},
+      {"action": "settle_proof", "confirmations": 12, "expect": {"status": "completed", "settled": "1.00"}},
+      {"action": "reverse_settle_instruct"},
+      {"action": "reverse_settle_proof", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "100.00", "payee": "0.00"}
   }
 ]

@@ -41,9 +41,14 @@ agent holds -- it accepts ``subject`` (the role whose key the credential is boun
 a non-agent role models a wrong-key delegation), ``expired`` (a credential whose
 validity window has already passed), ``validFor`` seconds, ``revoked``, or
 ``source: "ap2-intent"`` (the user issues an AP2 IntentMandate the agent imports).
-``revoke`` adds the standing credential to the wallet's revocation set. Each step's
-``expect`` is "ok", {"reject": code}, or {"status": s, "settled": amount}. Rejection
-codes are listed in REJECTIONS below.
+``revoke`` adds the standing credential to the wallet's revocation set. The on-chain
+settlement-binding steps -- payee_binding, settle_instruct, settle_proof, escrow_lock,
+escrow_release, escrow_refund, reverse_settle_instruct, reverse_settle_proof -- bind a
+PaymentAuthorization to a concrete rail (``rail``: evm-stablecoin / x402 / lightning;
+``mode``: direct / escrow; ``archetype``: pkh / binding) and carry a chain-native proof;
+the wallet enforces DID<->account binding, finality, and proof<->instruction binding.
+Each step's ``expect`` is "ok", {"reject": code}, or {"status": s, "settled": amount}.
+Rejection codes are listed in REJECTIONS below.
 """
 from __future__ import annotations
 
@@ -56,6 +61,7 @@ from pathlib import Path
 import avp_crypto as ac
 import interop
 import sdjwt
+import settlement as stl
 
 ISO = "%Y-%m-%dT%H:%M:%SZ"
 PAY_CTX = ["https://www.w3.org/ns/credentials/v2",
@@ -63,6 +69,15 @@ PAY_CTX = ["https://www.w3.org/ns/credentials/v2",
            "https://w3id.org/spending-authority/v1",
            "https://w3id.org/avp-micro/v1"]
 DSA_CTX = PAY_CTX[:3]
+SETTLE_CTX = PAY_CTX + ["https://w3id.org/avp-micro/settlement/v1"]
+
+# Rail -> CAIP-2 chain id (the test-fixture chains the settlement bundle uses).
+RAIL_CHAIN = {
+    "evm-stablecoin": "eip155:8453",
+    "x402": "eip155:8453",
+    "lightning": "bip122:000000000019d6689c085ae165831e93",
+}
+LN_RATE = "100000"  # USD per BTC (fixture rate for the Lightning profile)
 
 # every wallet rejection the simulator can emit (the runtime-enforcement vocabulary)
 REJECTIONS = {
@@ -72,6 +87,7 @@ REJECTIONS = {
     "categoryNotAllowed", "dailyLimitExceeded", "expired", "nonceReuse",
     "doubleSpend", "budgetExceeded", "missingConfirmation", "forgedConfirmation",
     "overRefund", "noReversalBasis",
+    "accountRedirection", "settlementNotFinal", "settlementMismatch",
 }
 
 
@@ -363,7 +379,10 @@ def _verify_confirmation(world: World, conf: dict, authz: dict):
         raise Reject("expired")
 
 
-def wallet_process(world: World, authz: dict) -> dict:
+def wallet_verify(world: World, authz: dict) -> dict:
+    """Verify + enforce policy on an authorization; return the credential subject.
+    Raises Reject on any failure. Does NOT settle or consume the authorization --
+    the caller's settlement step (execute, or a settlement-binding proof) does that."""
     quote = world.ctx["quote"]
     # 1. agent signature
     if not ac.verify_ecdsa_jcs_2022(authz):
@@ -420,6 +439,13 @@ def wallet_process(world: World, authz: dict) -> dict:
         if not conf:
             raise Reject("missingConfirmation")
         _verify_confirmation(world, conf, authz)
+    return subj
+
+
+def wallet_process(world: World, authz: dict) -> dict:
+    """Verify, then settle on the simulated rail and emit the wallet-signed execution."""
+    quote = world.ctx["quote"]
+    wallet_verify(world, authz)
     # 8. settle (simulated rail) and emit the wallet-signed execution
     payer_role, payee_role = "agent", quote["_payeeRole"]
     ref, settled = world.ledger.settle(payer_role, payee_role, authz["amount"], authz["id"])
@@ -521,6 +547,220 @@ def close_session(world: World, step: dict) -> dict:
     }, world.clock.now())
     world.ctx["sessionExecution"] = execution
     return execution
+
+
+# ---- on-chain settlement binding --------------------------------------------
+#
+# The Payments bundle scopes OUT the money-moving step; the settlement bundle binds
+# a PaymentAuthorization to a concrete rail (EVM stablecoin / x402 / Lightning) with
+# signed SettlementInstruction + SettlementProof objects, an optional escrow lifecycle,
+# and an on-chain reversal (compensating transfer). Chain data (tx hashes, preimages,
+# confirmations) are DETERMINISTIC FIXTURES from settlement.py -- nothing is broadcast.
+# In the simulator these steps ARE the settlement: the wallet verifies the binding
+# (DID<->account anti-redirection, finality, proof<->instruction, settled == instructed)
+# and only then moves play money on the simulated ledger.
+
+def _amount_base(rail: str, amount: str):
+    """(amountBase, rate-or-None) for a rail. Lightning quotes USD, settles msat at LN_RATE."""
+    if rail == "lightning":
+        return stl.usd_to_msat(amount, LN_RATE), LN_RATE
+    asset = stl.RAILS[rail]["asset"]
+    return stl.to_base_units(amount, stl.decimals_for_asset(asset)), None
+
+
+def _settle_onchain(world: World, instr: dict) -> Decimal:
+    """Move play money agent -> payee to reflect a verified on-chain settlement, and
+    consume the underlying authorization (single use)."""
+    payee_role = _orig_payee_role(world)
+    _ref, settled = world.ledger.settle("agent", payee_role, instr["amount"], "settle:" + instr["id"])
+    authz = world.ctx.get("authz") or {}
+    if authz.get("nonce"):
+        world.nonces.add(authz["nonce"])
+    if authz.get("id"):
+        world.executed.add(authz["id"])
+    if settled > 0:
+        world.daily.append((world.clock.date(), settled))
+    world.ctx["_settled"] = str(settled)
+    return settled
+
+
+def build_payee_binding(world: World, step: dict) -> dict:
+    """The payee signs a PayeeAccountBinding asserting it controls a CAIP-10 account on a
+    chain (binding archetype (b)); the wallet later checks the instruction pays only that."""
+    payee = world.actor(_orig_payee_role(world))
+    chain = RAIL_CHAIN[step.get("rail", "x402")]
+    account = chain + ":" + stl.fake_address("payee-acct:" + payee.role)
+    world.ctx["_payeeAccount"] = account
+    binding = {
+        "@context": SETTLE_CTX, "id": "urn:sim:payee-binding:1", "type": "PayeeAccountBinding",
+        "subject": payee.did, "account": account, "chain": chain,
+    }
+    return payee.sign(binding, world.clock.now())
+
+
+def _do_settle_instruct(world: World, step: dict) -> dict:
+    """The wallet binds the standing PaymentAuthorization to a concrete rail. It re-verifies
+    the authorization, then refuses to instruct a payment to an account that is not bound to
+    the payee DID (anti-redirection)."""
+    authz = world.ctx["authz"]
+    rail = step.get("rail", "evm-stablecoin")
+    chain = RAIL_CHAIN[rail]
+    mode = step.get("mode", "direct")
+    payee_role = _orig_payee_role(world)
+    payee = world.actor(payee_role)
+    amount_base, rate = _amount_base(rail, authz["amount"])
+    binding = world.ctx.get("binding")
+    archetype = step.get("archetype", "binding")
+    if step.get("redirect"):                              # attacker account, not bound to the payee
+        account, payee_did, binding_ref = chain + ":" + stl.fake_address("attacker"), payee.did, None
+    elif archetype == "pkh":                              # binding archetype (a): the DID *is* the account
+        addr = stl.fake_address("payee-pkh:" + payee_role)
+        account, payee_did, binding_ref = chain + ":" + addr, "did:pkh:" + chain + ":" + addr, None
+    else:                                                 # binding archetype (b): PayeeAccountBinding
+        account = world.ctx.get("_payeeAccount") or (chain + ":" + stl.fake_address("payee-acct:" + payee_role))
+        payee_did, binding_ref = payee.did, (binding or {}).get("id")
+    instr = {
+        "@context": SETTLE_CTX, "id": "urn:sim:settle-instr:" + step.get("nonce", "1"),
+        "type": "SettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": ac.jcs_digest(authz),
+        "rail": "stl:rail-" + rail, "chain": chain,
+        "payeeAccount": account, "asset": stl.RAILS[rail]["asset"],
+        "payer": world.actor("agent").did, "payee": payee_did,
+        "amount": authz["amount"], "currency": authz["currency"], "amountBase": amount_base,
+        "confirmationThreshold": stl.RAILS[rail]["threshold"], "mode": mode,
+        "nonce": "settle-" + step.get("nonce", "1"), "expires": world.clock.plus(1800),
+    }
+    if rate:
+        instr["rate"] = rate
+    if binding_ref:
+        instr["payeeAccountBinding"] = binding_ref
+    instr = world.actor("wallet").sign(instr, world.clock.now())
+    wallet_verify(world, authz)                           # the authorization must still be valid + in policy
+    # anti-redirection on the confirmation rails: pay only the account bound to the payee DID.
+    # Lightning binds via the hold-invoice itself, so the DID<->account rule does not apply.
+    if rail != "lightning" and not stl.account_binding_ok(instr, binding):
+        raise Reject("accountRedirection")
+    world.ctx["_settleRail"] = rail
+    world.ctx["instruction"] = instr
+    return {"ok": True}
+
+
+def _do_settle_proof(world: World, step: dict) -> dict:
+    """The rail returns a SettlementProof. The wallet checks it binds the instruction, is final,
+    and settles the instructed amount; a direct-mode proof then moves the money."""
+    instr = world.ctx["instruction"]
+    rail = world.ctx.get("_settleRail", "evm-stablecoin")
+    threshold = instr["confirmationThreshold"]
+    settled_base = str(int(instr["amountBase"]) - 1) if step.get("underpaid") else instr["amountBase"]
+    proof = {
+        "@context": SETTLE_CTX, "id": "urn:sim:settle-proof:" + step.get("nonce", "1"),
+        "type": "SettlementProof",
+        "instruction": instr["id"], "instructionDigest": ac.jcs_digest(instr),
+        "chain": instr["chain"], "settledAmountBase": settled_base, "asset": instr["asset"],
+        "finality": step.get("finality", "final"), "observedAt": world.clock.now(),
+    }
+    if rail == "lightning":                               # preimage reveal == finality (no confirmations)
+        label = "ln:" + instr["id"]
+        proof["preimage"] = stl.fake_preimage(label)
+        proof["transaction"] = stl.fake_payment_hash(label)   # == sha256(preimage)
+    else:
+        proof["transaction"] = stl.fake_tx(instr["id"] + ":" + step.get("nonce", "1"))
+        proof["confirmations"] = int(step.get("confirmations", threshold))
+        proof["blockHeight"] = 19000000
+    proof = world.actor("wallet").sign(proof, world.clock.now())
+    if proof["instruction"] != instr["id"] or proof["instructionDigest"] != ac.jcs_digest(instr):
+        raise Reject("settlementMismatch")
+    if not stl.finality_ok(proof, threshold):
+        raise Reject("settlementNotFinal")
+    if proof["settledAmountBase"] != instr["amountBase"]:
+        raise Reject("settlementMismatch")
+    world.ctx["settleProof"] = proof
+    if instr.get("mode") == "direct":                     # escrow waits for an explicit release
+        settled = _settle_onchain(world, instr)
+        return {"status": "completed" if settled == _d(instr["amount"]) else "partial", "settled": str(settled)}
+    return {"ok": True}
+
+
+def _do_escrow_lock(world: World, step: dict) -> dict:
+    instr = world.ctx["instruction"]
+    rail = world.ctx.get("_settleRail", "evm-stablecoin")
+    prefix = "ln-hold:" if rail == "lightning" else "escrow:"
+    lock = {
+        "@context": SETTLE_CTX, "id": "urn:sim:escrow-lock:1", "type": "EscrowLock",
+        "instruction": instr["id"], "instructionDigest": ac.jcs_digest(instr),
+        "lockRef": prefix + stl.fake_address("lock:" + instr["id"])[:18],
+        "lockedAmountBase": instr["amountBase"], "asset": instr["asset"],
+        "timeout": world.clock.plus(900),
+    }
+    world.ctx["lock"] = world.actor("wallet").sign(lock, world.clock.now())
+    return {"ok": True}
+
+
+def _do_escrow_release(world: World, step: dict) -> dict:
+    """Release the hold to the payee, binding the lock and the final settlement proof."""
+    lock, proof, instr = world.ctx["lock"], world.ctx["settleProof"], world.ctx["instruction"]
+    if proof["instructionDigest"] != ac.jcs_digest(instr):
+        raise Reject("settlementMismatch")
+    rel = {
+        "@context": SETTLE_CTX, "id": "urn:sim:escrow-release:1", "type": "EscrowRelease",
+        "lock": lock["id"], "lockDigest": ac.jcs_digest(lock),
+        "settlementProof": proof["id"], "settlementProofDigest": ac.jcs_digest(proof),
+    }
+    world.ctx["release"] = world.actor("wallet").sign(rel, world.clock.now())
+    settled = _settle_onchain(world, instr)
+    return {"status": "completed" if settled == _d(instr["amount"]) else "partial", "settled": str(settled)}
+
+
+def _do_escrow_refund(world: World, step: dict) -> dict:
+    """Escrow timed out: the held funds return to the payer; the payee is never paid."""
+    lock, proof = world.ctx["lock"], world.ctx["settleProof"]
+    ref = {
+        "@context": SETTLE_CTX, "id": "urn:sim:escrow-refund:1", "type": "EscrowRefund",
+        "lock": lock["id"], "lockDigest": ac.jcs_digest(lock),
+        "settlementProof": proof["id"], "settlementProofDigest": ac.jcs_digest(proof),
+        "reason": step.get("reason", "timeout"),
+    }
+    world.ctx["escrowRefund"] = world.actor("wallet").sign(ref, world.clock.now())
+    return {"ok": True}
+
+
+def _do_reverse_instruct(world: World, step: dict) -> dict:
+    """A compensating on-chain transfer (payer/payee swapped) -- the settlement-layer image of
+    a disputes Reversal. The original settlement must have happened."""
+    orig, authz = world.ctx["instruction"], world.ctx["authz"]
+    instr = {
+        "@context": SETTLE_CTX, "id": "urn:sim:settle-instr:reverse", "type": "SettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": ac.jcs_digest(authz),
+        "rail": orig["rail"], "chain": orig["chain"],
+        "payeeAccount": orig["chain"] + ":" + stl.fake_address("agent-evm"), "asset": orig["asset"],
+        "payer": orig["payee"], "payee": orig["payer"],   # swapped vs the original
+        "amount": orig["amount"], "currency": orig["currency"], "amountBase": orig["amountBase"],
+        "confirmationThreshold": orig["confirmationThreshold"], "mode": "direct",
+        "nonce": "settle-reverse-1", "expires": world.clock.plus(3600),
+    }
+    if not (instr["payer"] == orig["payee"] and instr["payee"] == orig["payer"]):
+        raise Reject("settlementMismatch")
+    world.ctx["reverseInstruction"] = world.actor("wallet").sign(instr, world.clock.now())
+    return {"ok": True}
+
+
+def _do_reverse_proof(world: World, step: dict) -> dict:
+    instr, orig = world.ctx["reverseInstruction"], world.ctx["instruction"]
+    threshold = instr["confirmationThreshold"]
+    proof = {
+        "@context": SETTLE_CTX, "id": "urn:sim:settle-proof:reverse", "type": "SettlementProof",
+        "instruction": instr["id"], "instructionDigest": ac.jcs_digest(instr),
+        "chain": instr["chain"], "transaction": stl.fake_tx("reverse:" + instr["id"]),
+        "settledAmountBase": instr["amountBase"], "asset": instr["asset"],
+        "blockHeight": 19000200, "confirmations": threshold, "finality": "final",
+        "observedAt": world.clock.now(),
+    }
+    proof = world.actor("wallet").sign(proof, world.clock.now())
+    if not stl.finality_ok(proof, threshold) or proof["settledAmountBase"] != instr["amountBase"]:
+        raise Reject("settlementMismatch")
+    world.ctx["reverseProof"] = proof
+    world.ledger.settle(_orig_payee_role(world), "agent", orig["amount"], "reverse:" + instr["id"])
+    return {"status": "completed", "settled": orig["amount"]}
 
 
 # ---- post-settlement: refunds, reversals, and the dispute lifecycle ---------
@@ -658,6 +898,14 @@ HANDLERS = {
     "accrue": lambda w, s: {"ok": True, "_set": ("accrual", accrue(w, s))},
     "extend": lambda w, s: {"ok": True, "_set": ("session", extend(w, s))},
     "close_session": lambda w, s: {"status": close_session(w, s)["status"]},
+    "payee_binding": lambda w, s: {"ok": True, "_set": ("binding", build_payee_binding(w, s))},
+    "settle_instruct": lambda w, s: _do_settle_instruct(w, s),
+    "settle_proof": lambda w, s: _do_settle_proof(w, s),
+    "escrow_lock": lambda w, s: _do_escrow_lock(w, s),
+    "escrow_release": lambda w, s: _do_escrow_release(w, s),
+    "escrow_refund": lambda w, s: _do_escrow_refund(w, s),
+    "reverse_settle_instruct": lambda w, s: _do_reverse_instruct(w, s),
+    "reverse_settle_proof": lambda w, s: _do_reverse_proof(w, s),
     "refund": lambda w, s: {"ok": True, "_set": ("refund", build_refund(w, s))},
     "reversal": lambda w, s: {"ok": True, "_set": ("reversal", build_reversal(w, s))},
     "reversal_ack": lambda w, s: {"ok": True, "_set": ("reversalAck", build_reversal_ack(w, s))},
@@ -714,6 +962,9 @@ _OBJECT_OF = {
     "execute": "execution", "replay": "execution", "receipt": "receipt",
     "open_session": "session", "budget_authorize": "sba", "accrue": "accrual",
     "close_session": "sessionExecution",
+    "payee_binding": "binding", "settle_instruct": "instruction", "settle_proof": "settleProof",
+    "escrow_lock": "lock", "escrow_release": "release", "escrow_refund": "escrowRefund",
+    "reverse_settle_instruct": "reverseInstruction", "reverse_settle_proof": "reverseProof",
     "refund": "refund", "reversal": "reversal", "reversal_ack": "reversalAck",
     "dispute": "dispute", "dispute_evidence": "evidence", "dispute_resolution": "resolution",
 }
