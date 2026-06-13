@@ -6,11 +6,12 @@ This file provides guidance to Claude Code when working in the `avp-micro-spec` 
 
 Formal W3C specifications, conformance tests, and signed test vectors for the **AVP-Micro** trust and authorization layer for AI agent payments.
 
-Three peer bundles live under `spec/`:
+Four peer bundles live under `spec/`:
 
 - **`spec/authority/`** — Delegated Spending Authority (DSA): identity, `SpendingAuthorizationCredential`, securing mechanisms, trust framework. Namespace `https://w3id.org/spending-authority/v1#`.
 - **`spec/payments/`** — AVP-Micro Payments: quotes, authorizations, executions, receipts, streaming, built on DSA. Namespace `https://w3id.org/avp-micro/v1#`.
 - **`spec/interop-sd-jwt-vc/`** — Bridge/binding between AVP-Micro and SD-JWT-VC credentials (Mastercard/Google Verifiable Intent, Google AP2). Namespace `https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#`.
+- **`spec/disputes/`** — Refunds, Reversals, Chargebacks & Dispute Lifecycles: the reverse value-flow (voluntary refunds + the adversarial dispute lifecycle) converging on a wallet-signed reversal. Built on Payments + DSA. Namespace `https://w3id.org/avp-micro/disputes/v1#`.
 
 Each bundle has: `context/v1.jsonld`, `schemas/*.schema.json`, `shapes/*.ttl`, `vocab/*.ttl`, and signed `test-vectors/`. A shared harness at `spec/` root generates and validates all three.
 
@@ -63,3 +64,4 @@ python spec/sim.py
 - DSA context: `https://w3id.org/spending-authority/v1` → `spec/authority/context/v1.jsonld`
 - Payments context: `https://w3id.org/avp-micro/v1` → `spec/payments/context/v1.jsonld`
 - Interop context: `https://w3id.org/avp-micro/interop/sd-jwt-vc/v1` → `spec/interop-sd-jwt-vc/context/v1.jsonld`
+- Disputes context: `https://w3id.org/avp-micro/disputes/v1` → `spec/disputes/context/v1.jsonld`

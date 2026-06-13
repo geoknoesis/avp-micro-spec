@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AVP-Micro Disputes</title>
+  <style>
+    p.object-summary { font-style: italic; color: #333; margin-bottom: 0.5em; }
+  </style>
+  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
+  <script class="remove">
+    // @ts-check
+    const respecConfig = {
+      specStatus: "unofficial",
+      shortName: "avp-micro-disputes",
+      subtitle: "Refunds, reversals, chargebacks, and dispute lifecycles for AVP-Micro",
+      editors: [
+        { name: "Stephane Fellah", company: "Geoknoesis LLC", companyURL: "https://geoknoesis.com" },
+      ],
+      github: { repoURL: "https://github.com/geoknoesis/avp-micro", branch: "main" },
+      license: "cc-by",
+      lint: { "no-unused-dfns": false },
+      xref: ["vc-data-model-2.0", "did-core", "INFRA"],
+      localBiblio: {
+        "DSA": { title: "Delegated Spending Authority", href: "../authority/",
+                 publisher: "Geoknoesis LLC (editor's draft)" },
+        "AVP-MICRO": { title: "AVP-Micro Payments", href: "../payments/",
+                       publisher: "Geoknoesis LLC (editor's draft)" },
+        "RFC8785": { title: "JSON Canonicalization Scheme (JCS)",
+                     href: "https://www.rfc-editor.org/rfc/rfc8785",
+                     authors: ["A. Rundgren", "B. Jordan", "S. Erdtman"],
+                     date: "June 2020", status: "Informational", publisher: "IETF" },
+      },
+    };
+  </script>
+</head>
+<body>
+  <section id="abstract" class="informative">
+    <p>
+      AVP-Micro Disputes defines the <strong>reverse value-flow</strong> for
+      [[AVP-MICRO]]: returning value to a payer, whether voluntarily (a
+      <a>Refund</a>) or adversarially (a <a>Dispute</a> that is upheld — a
+      chargeback), and the <strong>dispute lifecycle</strong> that governs the
+      adversarial case. It reuses the [[AVP-MICRO]] economic terms and the
+      [[DSA]] identity and securing layers; every object is secured with the
+      mandatory <code>ecdsa-jcs-2022</code> cryptosuite.
+    </p>
+  </section>
+
+  <section id="sotd"></section>
+
+  <section class="informative">
+    <h2>Introduction</h2>
+    <p>
+      "Refund", "reversal", and "chargeback" are not three parallel objects: they
+      are the same reverse value-movement reached by different triggers. A
+      <strong>Refund</strong> is decided voluntarily by the payee; a
+      <strong>chargeback</strong> is a <a>Dispute</a> that is upheld; a
+      <strong>Reversal</strong> is the wallet-signed settlement fact that actually
+      moves value back, which both paths produce. This specification therefore
+      models two trigger paths converging on one settlement record.
+    </p>
+    <p>
+      State is <strong>derived from the set of signed records</strong>, not stored
+      in a mutable field. Each lifecycle transition is the creation of a new signed,
+      append-only object. This lets the payer, payee, and an optional arbiter each
+      sign their own records independently.
+    </p>
+  </section>
+
+  <section>
+    <h2>Conformance</h2>
+    <p>
+      As well as sections marked as non-normative, all authoring guidelines,
+      diagrams, examples, and notes in this specification are non-normative.
+      Everything else is normative.
+    </p>
+    <p>
+      The key words <em class="rfc2119">MUST</em>, <em class="rfc2119">MUST NOT</em>,
+      <em class="rfc2119">SHOULD</em>, <em class="rfc2119">MAY</em>, and
+      <em class="rfc2119">OPTIONAL</em> in this document are to be interpreted as
+      described in [[RFC2119]] [[RFC8174]].
+    </p>
+  </section>
+
+  <section>
+    <h2>Terminology</h2>
+    <dl>
+      <dt><dfn>Refund</dfn></dt><dd>A payee-signed voluntary return-of-value intent.</dd>
+      <dt><dfn>Dispute</dfn></dt><dd>A payer-signed case contesting a prior charge.</dd>
+      <dt><dfn>DisputeEvidence</dfn></dt><dd>An append-only, party-signed evidence or representment record.</dd>
+      <dt><dfn>DisputeResolution</dfn></dt><dd>A signed decision: upheld, rejected, partial, or withdrawn.</dd>
+      <dt><dfn>Reversal</dfn></dt><dd>A wallet-signed settlement fact recording value returned to the payer.</dd>
+      <dt><dfn>ReversalAcknowledgement</dfn></dt><dd>An OPTIONAL payer-signed confirmation of receipt.</dd>
+      <dt><dfn>arbiter</dfn></dt><dd>An OPTIONAL neutral party whose signed resolution is binding on escalation.</dd>
+    </dl>
+  </section>
+
+  <section>
+    <h2>Namespace and JSON-LD context</h2>
+    <p>
+      The namespace IRI is <code>https://w3id.org/avp-micro/disputes/v1#</code>
+      (prefix <code>disp:</code>). Disputes objects use a five-entry
+      <code>@context</code> array, in this exact order, so that the credential,
+      data-integrity, [[DSA]], [[AVP-MICRO]], and disputes terms all resolve:
+    </p>
+    <pre class="json">
+[
+  "https://www.w3.org/ns/credentials/v2",
+  "https://w3id.org/security/data-integrity/v2",
+  "https://w3id.org/spending-authority/v1",
+  "https://w3id.org/avp-micro/v1",
+  "https://w3id.org/avp-micro/disputes/v1"
+]
+    </pre>
+    <p>
+      Disputes objects <em class="rfc2119">MUST</em> reuse the [[AVP-MICRO]] terms
+      <code>amount</code>, <code>currency</code>, <code>payer</code>,
+      <code>payee</code>, <code>status</code>, <code>settlementRef</code>,
+      <code>execution</code>, and <code>timestamp</code> rather than redefining them.
+    </p>
+  </section>
+
+  <section>
+    <h2>Data model</h2>
+    <p>
+      Every object is secured with a Data Integrity proof using the
+      <code>ecdsa-jcs-2022</code> cryptosuite (see [[DSA]]). Every reference to a
+      payment or dispute object <em class="rfc2119">MUST</em> include both the
+      object's IRI and a <code>*Digest</code> equal to the JCS content digest of the
+      referenced (signed) object, pinning it to that exact object.
+    </p>
+
+    <section>
+      <h3>Refund</h3>
+      <p class="object-summary">A payee-signed voluntary return-of-value intent.</p>
+      <p>
+        A <a>Refund</a> <em class="rfc2119">MUST</em> reference the
+        <code>PaymentReceipt</code> being refunded (<code>receipt</code> +
+        <code>receiptDigest</code>) and <em class="rfc2119">MUST</em> be signed by
+        the <code>payee</code>. Its <code>amount</code>
+        <em class="rfc2119">MUST</em> be greater than zero and
+        <em class="rfc2119">MUST NOT</em> exceed the referenced charge. Multiple
+        partial refunds <em class="rfc2119">MAY</em> reference the same original,
+        provided the cumulative settled return does not exceed the original amount.
+        The <code>reason</code> <em class="rfc2119">MUST</em> be a concept IRI (see
+        <a href="#reason-codes">Reason codes</a>).
+      </p>
+    </section>
+
+    <section>
+      <h3>Dispute</h3>
+      <p class="object-summary">A payer-signed case contesting a prior charge.</p>
+      <p>
+        A <a>Dispute</a> <em class="rfc2119">MUST</em> be signed by the
+        <code>payer</code> and <em class="rfc2119">MUST</em> reference at least one of
+        the contested objects (<code>receipt</code>, <code>execution</code>, or
+        <code>authorization</code>), each with its <code>*Digest</code>. Its
+        <code>disputedAmount</code> <em class="rfc2119">MUST NOT</em> exceed the
+        original charge. It <em class="rfc2119">MAY</em> propose an
+        <code>arbiter</code> DID for escalation and a <code>respondBy</code>
+        deadline.
+      </p>
+    </section>
+
+    <section>
+      <h3>DisputeEvidence</h3>
+      <p class="object-summary">An append-only, party-signed evidence or representment record.</p>
+      <p>
+        A <a>DisputeEvidence</a> record <em class="rfc2119">MUST</em> be signed by the
+        party named in <code>submittedBy</code>, whose <code>role</code>
+        (<code>payer</code> or <code>payee</code>) <em class="rfc2119">MUST</em>
+        match. Each record carries a per-dispute <code>sequence</code> that
+        <em class="rfc2119">MUST</em> be unique. The evidence artifact itself is
+        out of scope; the record carries only its <code>contentDigest</code> and an
+        optional <code>uri</code>.
+      </p>
+    </section>
+
+    <section>
+      <h3>DisputeResolution</h3>
+      <p class="object-summary">A signed decision: upheld, rejected, partial, or withdrawn.</p>
+      <p>
+        A <a>DisputeResolution</a> carries an <code>outcome</code> and a
+        <code>resolvedAmount</code> (which <em class="rfc2119">MUST NOT</em> exceed
+        the <code>disputedAmount</code>, and <em class="rfc2119">MUST</em> be zero for
+        <code>rejected</code> and <code>withdrawn</code>). A <code>withdrawn</code>
+        resolution <em class="rfc2119">MUST</em> have <code>resolverRole</code>
+        <code>payer</code>. An <code>arbiter</code> resolution
+        <em class="rfc2119">MUST</em> carry <code>supersedes</code> +
+        <code>supersedesDigest</code> referencing the payee resolution it overrides,
+        and its signer <em class="rfc2119">MUST</em> equal the dispute's
+        <code>arbiter</code>.
+      </p>
+    </section>
+
+    <section>
+      <h3>Reversal</h3>
+      <p class="object-summary">A wallet-signed settlement fact recording value returned to the payer.</p>
+      <p>
+        A <a>Reversal</a> <em class="rfc2119">MUST</em> be signed by the wallet and
+        <em class="rfc2119">MUST</em> reference exactly one trigger: a
+        <code>refund</code> (when <code>cause</code> is <code>refund</code>) or a
+        <code>resolution</code> (when <code>cause</code> is <code>dispute</code>),
+        each with its digest. A dispute-caused Reversal's referenced resolution
+        <em class="rfc2119">MUST</em> have outcome <code>upheld</code> or
+        <code>partial</code>. The <code>amount</code> <em class="rfc2119">MUST</em>
+        equal the trigger's amount (or be less when <code>status</code> is
+        <code>partial</code>). When present, the original forward
+        <code>execution</code> SHOULD be referenced.
+      </p>
+    </section>
+
+    <section>
+      <h3>ReversalAcknowledgement</h3>
+      <p class="object-summary">An OPTIONAL payer-signed confirmation of receipt.</p>
+      <p>
+        A <a>ReversalAcknowledgement</a> <em class="rfc2119">MUST</em> be signed by
+        the <code>payer</code> and reference the <code>reversal</code> (+
+        <code>reversalDigest</code>) whose funds were received.
+      </p>
+    </section>
+  </section>
+
+  <section class="informative">
+    <h2>Dispute lifecycle</h2>
+    <pre>
+Voluntary:   Refund (payee) -> Reversal cause=refund (wallet) -> [Ack (payer)]
+
+Adversarial: Dispute (payer)
+               -> OPENED -> [DisputeEvidence* (payer/payee)]
+               -> UNDER-REVIEW -> DisputeResolution (payee)
+                    rejected  -> CLOSED
+                    upheld/partial -> Reversal cause=dispute (wallet) -> [Ack] -> CLOSED
+                    payer escalates -> DisputeResolution (arbiter, supersedes payee) [BINDING]
+                                         -> rejected -> CLOSED
+                                         -> upheld/partial -> Reversal -> CLOSED
+               -> WITHDRAWN (DisputeResolution role=payer, outcome=withdrawn) -> CLOSED
+    </pre>
+  </section>
+
+  <section id="reason-codes">
+    <h2>Reason codes</h2>
+    <p>
+      Reason values are concept IRIs in the extensible SKOS scheme
+      <code>disp:DisputeReasonScheme</code> (see
+      <a href="vocab/reasons.ttl"><code>vocab/reasons.ttl</code></a>): for example
+      <code>disp:not-delivered</code>, <code>disp:not-as-described</code>,
+      <code>disp:unauthorized</code>, <code>disp:incorrect-amount</code>,
+      <code>disp:duplicate</code>, <code>disp:canceled</code>,
+      <code>disp:quality</code>, <code>disp:goodwill</code>, and
+      <code>disp:other</code>. Mappings to external frameworks (card-network
+      chargeback families, ISO 20022 returns) are non-normative. Implementers
+      <em class="rfc2119">MAY</em> mint additional concepts in their own scheme.
+    </p>
+  </section>
+
+  <section class="informative">
+    <h2>Security and Privacy</h2>
+    <p>
+      Reverse-flow value movement does not consume a Spending Authorization
+      Credential; none of these objects are authorization instances. Integrity of a
+      refund or dispute chain rests on the per-object proofs and the
+      IRI-plus-digest binding to the contested payment objects. Verifiers
+      <em class="rfc2119">MUST</em> reject a Reversal whose cumulative settled value
+      against one original execution would exceed that original's amount.
+    </p>
+  </section>
+</body>
+</html>

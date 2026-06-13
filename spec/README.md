@@ -26,6 +26,8 @@ an external revision never churns the core specs. It is covered by `verify.py` a
 `validate.py` like the core bundles. See the
 [bridge design](../docs/superpowers/specs/2026-06-11-avp-sdjwt-vc-bridge-design.md).
 
+- **`disputes/`** — Refunds, Reversals, Chargebacks & Dispute Lifecycles: the reverse value-flow built on Payments + DSA. Namespace `https://w3id.org/avp-micro/disputes/v1#`.
+
 ## Relationship to network agent-payment schemes
 
 AVP-Micro is the **trust and authorization layer**, not a payment network. It
