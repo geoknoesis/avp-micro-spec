@@ -1,0 +1,50 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "id": "@id",
+    "type": "@type",
+    "stl": "https://w3id.org/avp-micro/settlement/v1#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "SettlementInstruction": "stl:SettlementInstruction",
+    "SettlementProof": "stl:SettlementProof",
+    "PayeeAccountBinding": "stl:PayeeAccountBinding",
+    "EscrowLock": "stl:EscrowLock",
+    "EscrowRelease": "stl:EscrowRelease",
+    "EscrowRefund": "stl:EscrowRefund",
+
+    "authorizationDigest": { "@id": "stl:authorizationDigest" },
+    "rail": { "@id": "stl:rail", "@type": "@id" },
+    "chain": { "@id": "stl:chain" },
+    "payeeAccount": { "@id": "stl:payeeAccount" },
+    "asset": { "@id": "stl:asset" },
+    "amountBase": { "@id": "stl:amountBase" },
+    "rate": { "@id": "stl:rate" },
+    "confirmationThreshold": { "@id": "stl:confirmationThreshold" },
+    "mode": { "@id": "stl:mode" },
+    "payeeAccountBinding": { "@id": "stl:payeeAccountBinding", "@type": "@id" },
+
+    "instruction": { "@id": "stl:instruction", "@type": "@id" },
+    "instructionDigest": { "@id": "stl:instructionDigest" },
+    "transaction": { "@id": "stl:transaction" },
+    "preimage": { "@id": "stl:preimage" },
+    "settledAmountBase": { "@id": "stl:settledAmountBase" },
+    "blockHeight": { "@id": "stl:blockHeight" },
+    "confirmations": { "@id": "stl:confirmations" },
+    "finality": { "@id": "stl:finality" },
+    "observedAt": { "@id": "stl:observedAt", "@type": "xsd:dateTime" },
+
+    "subject": { "@id": "stl:subject", "@type": "@id" },
+    "account": { "@id": "stl:account" },
+
+    "lock": { "@id": "stl:lock", "@type": "@id" },
+    "lockDigest": { "@id": "stl:lockDigest" },
+    "lockRef": { "@id": "stl:lockRef" },
+    "lockedAmountBase": { "@id": "stl:lockedAmountBase" },
+    "timeout": { "@id": "stl:timeout", "@type": "xsd:dateTime" },
+    "settlementProof": { "@id": "stl:settlementProof", "@type": "@id" },
+    "settlementProofDigest": { "@id": "stl:settlementProofDigest" },
+    "reason": { "@id": "stl:reason" }
+  }
+}

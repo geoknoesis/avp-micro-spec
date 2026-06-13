@@ -1,0 +1,26 @@
+# AVP-Micro settlement-rail registry (extensible SKOS scheme) + finality terms.
+# Informative skos:note maps each rail to its real-world substrate. NON-NORMATIVE
+# mappings; implementers MAY mint additional rail concepts in their own scheme.
+#
+# Namespace: https://w3id.org/avp-micro/settlement/v1#  (prefix stl:)
+@prefix stl:  <https://w3id.org/avp-micro/settlement/v1#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+stl:RailScheme a skos:ConceptScheme ;
+  skos:prefLabel "AVP-Micro settlement-rail scheme"@en ;
+  skos:definition "An extensible set of settlement-rail concepts for on-chain binding."@en .
+
+stl:rail-evm-stablecoin a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "EVM stablecoin"@en ;
+  skos:definition "ERC-20 stablecoin transfer on an EVM chain (CAIP-2 eip155:*)."@en ;
+  skos:note "Reference: USDC on Base. Finality by confirmation depth."@en .
+
+stl:rail-x402 a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "Coinbase x402"@en ;
+  skos:definition "HTTP 402 + stablecoin settlement for agent/API micropayments."@en ;
+  skos:note "Pay-then-serve; settlement proof is the facilitator's on-chain transfer."@en .
+
+stl:rail-lightning a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "Bitcoin Lightning"@en ;
+  skos:definition "Lightning Network payment; amounts in millisatoshi."@en ;
+  skos:note "Finality is preimage reveal; escrow is native via hold-invoices."@en .

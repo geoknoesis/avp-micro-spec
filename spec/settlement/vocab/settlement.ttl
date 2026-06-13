@@ -1,0 +1,100 @@
+# AVP-Micro Settlement core RDFS/OWL ontology.
+#
+# Classes/properties whose JSON-LD term mappings live in ../context/v1.jsonld.
+# The on-chain settlement binding: rail-agnostic instruction + chain-native proof,
+# an optional escrow lifecycle, and a payee account<->DID binding. Reused members
+# (amount, currency, payer, payee, status, timestamp, settlementRef, execution,
+# authorization) expand to avp:/dsa:/sec:; new members expand to stl:.
+#
+# Namespace: https://w3id.org/avp-micro/settlement/v1#  (prefix stl:)
+@prefix stl:  <https://w3id.org/avp-micro/settlement/v1#> .
+@prefix avp:  <https://w3id.org/avp-micro/v1#> .
+@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+<https://w3id.org/avp-micro/settlement/v1> a owl:Ontology ;
+  dct:title "AVP-Micro Settlement vocabulary"@en ;
+  dct:description "Classes and properties for binding AVP-Micro payments to public-blockchain settlement rails (EVM stablecoin, x402, Lightning)."@en ;
+  owl:versionInfo "0.1.0" ;
+  rdfs:seeAlso <https://w3id.org/avp-micro/v1> .
+
+#################################################################
+# Classes
+#################################################################
+
+stl:SettlementInstruction a owl:Class ; rdfs:label "Settlement instruction"@en ;
+  rdfs:comment "A wallet-signed instruction binding a PaymentAuthorization to a concrete rail, recipient account, asset, and base-unit amount."@en .
+stl:SettlementProof a owl:Class ; rdfs:label "Settlement proof"@en ;
+  rdfs:comment "A chain-native attestation that settlement occurred (transaction reference + finality)."@en .
+stl:PayeeAccountBinding a owl:Class ; rdfs:label "Payee account binding"@en ;
+  rdfs:comment "A payee-signed assertion that a DID controls an on-chain account (CAIP-10) on a chain (CAIP-2)."@en .
+stl:EscrowLock a owl:Class ; rdfs:label "Escrow lock"@en ;
+  rdfs:comment "A wallet-signed record that funds were locked (escrow contract or Lightning hold-invoice) pending delivery."@en .
+stl:EscrowRelease a owl:Class ; rdfs:label "Escrow release"@en ;
+  rdfs:comment "A wallet-signed record releasing a prior EscrowLock to the payee, carrying the settling SettlementProof."@en .
+stl:EscrowRefund a owl:Class ; rdfs:label "Escrow refund"@en ;
+  rdfs:comment "A wallet-signed record refunding a prior EscrowLock to the payer (timeout/dispute), carrying the settling SettlementProof."@en .
+
+#################################################################
+# Object properties (node references / DIDs / IRIs)
+#################################################################
+
+stl:rail a owl:ObjectProperty ; rdfs:label "rail"@en ;
+  rdfs:comment "IRI of the settlement-rail concept (a stl: SKOS concept; see rails.ttl)."@en .
+stl:instruction a owl:ObjectProperty ; rdfs:label "instruction"@en ;
+  rdfs:comment "IRI of the SettlementInstruction a proof/lock concerns."@en .
+stl:payeeAccountBinding a owl:ObjectProperty ; rdfs:label "payee account binding"@en ;
+  rdfs:comment "IRI of the PayeeAccountBinding that authorizes payeeAccount (when payee is not a did:pkh)."@en .
+stl:subject a owl:ObjectProperty ; rdfs:label "subject"@en ;
+  rdfs:comment "DID whose control of an account a PayeeAccountBinding asserts."@en .
+stl:lock a owl:ObjectProperty ; rdfs:label "lock"@en ;
+  rdfs:comment "IRI of the EscrowLock a release/refund concerns."@en .
+stl:settlementProof a owl:ObjectProperty ; rdfs:label "settlement proof"@en ;
+  rdfs:comment "IRI of the SettlementProof recording the on-chain transaction for a release/refund."@en .
+
+#################################################################
+# Digest properties (content digests over the referenced signed object)
+#################################################################
+
+stl:authorizationDigest a owl:DatatypeProperty ; rdfs:label "authorization digest"@en ; rdfs:range xsd:string .
+stl:instructionDigest a owl:DatatypeProperty ; rdfs:label "instruction digest"@en ; rdfs:range xsd:string .
+stl:lockDigest a owl:DatatypeProperty ; rdfs:label "lock digest"@en ; rdfs:range xsd:string .
+stl:settlementProofDigest a owl:DatatypeProperty ; rdfs:label "settlement proof digest"@en ; rdfs:range xsd:string .
+
+#################################################################
+# Scalar / enumerated properties
+#################################################################
+
+stl:chain a owl:DatatypeProperty ; rdfs:label "chain"@en ; rdfs:range xsd:string ;
+  rdfs:comment "CAIP-2 chain id (e.g. eip155:8453)."@en .
+stl:payeeAccount a owl:DatatypeProperty ; rdfs:label "payee account"@en ; rdfs:range xsd:string ;
+  rdfs:comment "CAIP-10 account or Lightning destination (BOLT11/LNURL/node id)."@en .
+stl:account a owl:DatatypeProperty ; rdfs:label "account"@en ; rdfs:range xsd:string .
+stl:asset a owl:DatatypeProperty ; rdfs:label "asset"@en ; rdfs:range xsd:string ;
+  rdfs:comment "CAIP-19 asset id."@en .
+stl:amountBase a owl:DatatypeProperty ; rdfs:label "amount (base units)"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Integer minor units / sats / msat as a string."@en .
+stl:settledAmountBase a owl:DatatypeProperty ; rdfs:label "settled amount (base units)"@en ; rdfs:range xsd:string .
+stl:lockedAmountBase a owl:DatatypeProperty ; rdfs:label "locked amount (base units)"@en ; rdfs:range xsd:string .
+stl:rate a owl:DatatypeProperty ; rdfs:label "rate"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Agreed conversion when the quote currency differs from the settlement asset (e.g. USD per BTC)."@en .
+stl:confirmationThreshold a owl:DatatypeProperty ; rdfs:label "confirmation threshold"@en ; rdfs:range xsd:integer .
+stl:confirmations a owl:DatatypeProperty ; rdfs:label "confirmations"@en ; rdfs:range xsd:integer .
+stl:blockHeight a owl:DatatypeProperty ; rdfs:label "block height"@en ; rdfs:range xsd:integer .
+stl:mode a owl:DatatypeProperty ; rdfs:label "mode"@en ; rdfs:range xsd:string ;
+  rdfs:comment "One of 'direct' or 'escrow'."@en .
+stl:finality a owl:DatatypeProperty ; rdfs:label "finality"@en ; rdfs:range xsd:string ;
+  rdfs:comment "One of 'pending', 'probabilistic', 'final'."@en .
+stl:transaction a owl:DatatypeProperty ; rdfs:label "transaction"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Chain-native transaction reference: tx hash, or Lightning payment_hash."@en .
+stl:preimage a owl:DatatypeProperty ; rdfs:label "preimage"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Lightning payment preimage; sha256(preimage)==transaction proves payment."@en .
+stl:lockRef a owl:DatatypeProperty ; rdfs:label "lock reference"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Escrow handle: contract address + escrow id, or a Lightning hold-invoice payment_hash."@en .
+stl:reason a owl:DatatypeProperty ; rdfs:label "reason"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Why an EscrowRefund occurred (e.g. 'timeout')."@en .
+stl:observedAt a owl:DatatypeProperty ; rdfs:label "observed at"@en ; rdfs:range xsd:dateTime .
+stl:timeout a owl:DatatypeProperty ; rdfs:label "timeout"@en ; rdfs:range xsd:dateTime .
