@@ -684,6 +684,10 @@ def main() -> int:
     tampered = json.loads(json.dumps(authz))
     tampered["amount"] = "0.05"
     check("tampered amount breaks the payer signature", not ac.verify_ecdsa_jcs_2022(tampered))
+    # JCS conformance: RFC 8785 requires U+2028/U+2029 escaped (interop across impls)
+    check("JCS escapes U+2028/U+2029 (RFC 8785)",
+          (chr(92) + "u2028").encode() in ac.jcs({"x": chr(0x2028) + chr(0x2029)})
+          and b"\xe2\x80\xa8" not in ac.jcs({"x": chr(0x2028)}))
 
     print()
     if _failed:

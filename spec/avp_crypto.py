@@ -88,10 +88,17 @@ def b64url_nopad(data: bytes) -> str:
 
 
 def jcs(obj: Any) -> bytes:
-    """RFC 8785 canonical JSON for the value types used by AVP-Micro."""
-    return json.dumps(
-        obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8")
+    """RFC 8785 canonical JSON for the value types used by AVP-Micro.
+
+    Python's ``json`` with ``ensure_ascii=False`` emits U+2028 (LINE SEPARATOR) and
+    U+2029 (PARAGRAPH SEPARATOR) raw, but RFC 8785 (per ECMAScript serialization)
+    requires them escaped. Fix that up so a document containing those code points
+    canonicalizes — and therefore signs/verifies — identically across implementations.
+    """
+    s = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    _bs = chr(92)
+    s = s.replace(chr(0x2028), _bs + "u2028").replace(chr(0x2029), _bs + "u2029")
+    return s.encode("utf-8")
 
 
 def content_digest(data: bytes, alg: str = "sha-256") -> str:

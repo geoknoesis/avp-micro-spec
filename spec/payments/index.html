@@ -1357,6 +1357,16 @@
           <em class="rfc2119">MUST</em> interpret <code>status</code> against the
           enclosing object's <code>type</code>.
         </p>
+        <p class="note">
+          A <a>PaymentReceipt</a> with <code>status</code> <code>reversed</code> is
+          <strong>informational</strong>: this bundle defines no reversal mechanics.
+          The authoritative record of a reversal is a <code>Reversal</code> object in
+          the AVP-Micro Disputes bundle whose <code>execution</code> (and, where
+          present, <code>receipt</code>) reference and digest bind this transaction. A
+          verifier determining whether a transaction has been reversed
+          <em class="rfc2119">MUST</em> consult the disputes record set rather than
+          relying on a receipt's mutable <code>status</code> alone.
+        </p>
       </section>
 
       <section id="payment-receipt">
