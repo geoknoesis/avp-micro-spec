@@ -1,5 +1,10 @@
 # AVP-Micro specifications
 
+**AVP-Micro** (*Agent Verifiable Micropayments*) is a vendor-neutral trust and
+authorization layer for AI-agent payments, built on open W3C primitives (DIDs,
+Verifiable Credentials 2.0, JSON-LD, Data Integrity proofs) and sitting *above*
+any settlement rail.
+
 Two peer specifications form the core protocol:
 
 - **[Delegated Spending Authority](authority/)** (`authority/`) — identity, the
@@ -27,6 +32,7 @@ an external revision never churns the core specs. It is covered by `verify.py` a
 [bridge design](../docs/superpowers/specs/2026-06-11-avp-sdjwt-vc-bridge-design.md).
 
 - **`disputes/`** — Refunds, Reversals, Chargebacks & Dispute Lifecycles: the reverse value-flow built on Payments + DSA. Namespace `https://w3id.org/avp-micro/disputes/v1#`.
+- **`settlement/`** — On-chain settlement binding: maps AVP-Micro payments onto public-blockchain rails (EVM stablecoin, Coinbase x402, Bitcoin Lightning) via a rail-agnostic `SettlementInstruction`/`SettlementProof` core, an optional escrow lifecycle, and a DID↔account binding. Built on Payments + DSA, by reference. Namespace `https://w3id.org/avp-micro/settlement/v1#`.
 
 ## Relationship to network agent-payment schemes
 
@@ -115,3 +121,5 @@ uses local context files by explicit configuration:
 - Service categories: `https://w3id.org/avp-micro/cat#` (scheme `…/cat/scheme/AgentServiceCategory`)
 - Interop profile context: `https://w3id.org/avp-micro/interop/sd-jwt-vc/v1` → `interop-sd-jwt-vc/context/v1.jsonld`
 - Interop profile namespace: `https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#`
+- Settlement context: `https://w3id.org/avp-micro/settlement/v1` → `settlement/context/v1.jsonld`
+- Settlement namespace: `https://w3id.org/avp-micro/settlement/v1#`
