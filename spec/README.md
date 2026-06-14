@@ -33,6 +33,7 @@ an external revision never churns the core specs. It is covered by `verify.py` a
 
 - **`disputes/`** — Refunds, Reversals, Chargebacks & Dispute Lifecycles: the reverse value-flow built on Payments + DSA. Namespace `https://w3id.org/avp-micro/disputes/v1#`.
 - **`settlement/`** — On-chain settlement binding: maps AVP-Micro payments onto public-blockchain rails (EVM stablecoin, Coinbase x402, Bitcoin Lightning) via a rail-agnostic `SettlementInstruction`/`SettlementProof` core, an optional escrow lifecycle, and a DID↔account binding. Built on Payments + DSA, by reference. Namespace `https://w3id.org/avp-micro/settlement/v1#`.
+- **`transport/`** — Transport & Protocol binding: the normative HTTP/REST wire binding (service discovery + HTTP 402 challenge) that carries the AVP-Micro payment objects between agent and payee. OpenAPI 3.1 + signed objects + vectors. Namespace `https://w3id.org/avp-micro/transport/v1#`.
 
 ## Relationship to network agent-payment schemes
 
@@ -123,3 +124,4 @@ uses local context files by explicit configuration:
 - Interop profile namespace: `https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#`
 - Settlement context: `https://w3id.org/avp-micro/settlement/v1` → `settlement/context/v1.jsonld`
 - Settlement namespace: `https://w3id.org/avp-micro/settlement/v1#`
+- Transport context: `https://w3id.org/avp-micro/transport/v1` → `transport/context/v1.jsonld`

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AVP-Micro Transport &amp; Protocol Binding</title>
+  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
+  <script class="remove">
+    var respecConfig = {
+      specStatus: "unofficial",
+      editors: [{ name: "AVP-Micro Working Group" }],
+      github: "https://example.com/avp-micro",
+      shortName: "avp-micro-transport",
+      latestVersion: "https://w3id.org/avp-micro/transport/v1",
+      edDraftURI: "https://w3id.org/avp-micro/transport/v1",
+      group: "unofficial"
+    };
+  </script>
+</head>
+<body>
+  <section id="abstract">
+    <p>
+      This specification defines the normative <strong>HTTP/REST binding</strong> for
+      AVP-Micro: how an agent (payer) and a service (payee) discover each other and run
+      the offer &rarr; quote &rarr; authorize &rarr; execute &rarr; settle &rarr; receipt
+      flow over HTTP, using an <strong>HTTP 402 "Payment Required" challenge</strong>. It
+      transports the existing AVP-Micro payment objects; it defines no new economic
+      semantics. It is the prerequisite that lets two independent implementations
+      interoperate.
+    </p>
+  </section>
+  <section id="sotd"></section>
+
+  <section>
+    <h2>Overview</h2>
+    <p>
+      AVP-Micro specifies <em>messages</em> (DSA credentials, payments, disputes,
+      settlement). This bundle is the <em>wire layer</em>. It adds four object types and
+      an error-code vocabulary, all in the namespace
+      <code>https://w3id.org/avp-micro/transport/v1#</code> (prefix <code>txp:</code>),
+      and an OpenAPI 3.1 contract for the HTTP surface.
+    </p>
+    <table class="simple">
+      <thead><tr><th>Object</th><th>Signer</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><code>ServiceDescription</code></td><td>payee</td><td>Discovery document at <code>/.well-known/avp-micro</code>.</td></tr>
+        <tr><td><code>PaymentChallenge</code></td><td>payee</td><td>Body of an HTTP 402; wraps a quote + a server challenge nonce.</td></tr>
+        <tr><td><code>AuthorizationSubmission</code></td><td>payer agent</td><td>The 402 retry payload; binds the authorization to the challenge.</td></tr>
+        <tr><td><code>ProblemDetails</code></td><td>unsigned</td><td>RFC 9457 error body; <code>type</code> is a <code>txp:ErrorScheme</code> IRI.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Discovery</h2>
+    <p>
+      <code>GET /.well-known/avp-micro</code> returns a payee-signed
+      <code>ServiceDescription</code> advertising <code>endpoints</code>,
+      <code>acceptedCredentialIssuers</code>, <code>acceptedSettlementRails</code>, and
+      <code>supportedBundles</code>. Clients SHOULD fetch it before transacting.
+    </p>
+  </section>
+
+  <section>
+    <h2>The HTTP 402 challenge flow</h2>
+    <ol>
+      <li>Agent requests a gated resource.</li>
+      <li>Payee replies <code>402 Payment Required</code> with
+        <code>WWW-Authenticate: AVP-Micro</code> and a body
+        <code>{ challenge: PaymentChallenge, quote: PaymentQuote }</code>. The
+        <code>PaymentChallenge</code> carries <code>quoteDigest</code> (=
+        <code>jcs_digest(quote)</code>), a server <code>challenge</code> nonce, and
+        <code>expires</code>.</li>
+      <li>Agent verifies the quote, builds a <code>PaymentAuthorization</code> (which
+        embeds the SAC verifiable presentation), and wraps it in an
+        <code>AuthorizationSubmission</code> that <strong>echoes the
+        <code>challenge</code></strong>, references the authorization by IRI +
+        <code>authorizationDigest</code>, and carries an <code>idempotencyKey</code>.</li>
+      <li>Agent retries with <code>Authorization: AVP-Micro &lt;submission&gt;</code> and
+        <code>Idempotency-Key</code>.</li>
+      <li>Payee verifies the quote binding, SAC policy, <strong>challenge
+        freshness</strong>, and idempotency, settles, and returns <code>200</code> with
+        the resource and a <code>PaymentReceipt</code> &mdash; or a <code>4xx/402</code>
+        with a <code>ProblemDetails</code>.</li>
+    </ol>
+    <p class="note">
+      The echoed <code>challenge</code> binds the submission to the verifier and request
+      that issued the 402. A captured authorization cannot be replayed to a different
+      verifier &mdash; closing the presentation-replay gap identified in the security
+      review.
+    </p>
+  </section>
+
+  <section>
+    <h2>Explicit-quote, streaming, and async settlement</h2>
+    <p>
+      Non-gated clients MAY use <code>POST /quote</code>, <code>POST /authorize</code>,
+      <code>GET /receipt/{id}</code> directly. Streaming reuses the payments session
+      objects via <code>POST /session</code>, <code>/session/{id}/budget</code>,
+      <code>/session/{id}/accruals</code>, <code>/session/{id}/extend</code>,
+      <code>/session/{id}/close</code>. When settlement is not instant,
+      <code>execute</code> returns a pending <code>PaymentExecution</code> and a
+      <code>Location: /settlement/{id}</code>; polling that endpoint returns the
+      execution and then the <code>SettlementProof</code> as finality advances. A
+      <code>callbackUrl</code> MAY be supplied for a webhook instead of polling.
+    </p>
+  </section>
+
+  <section>
+    <h2>Idempotency</h2>
+    <p>
+      <code>Idempotency-Key</code> (mirrored in
+      <code>AuthorizationSubmission.idempotencyKey</code>) makes retries safe. The payee
+      MUST return the same execution/receipt for a repeated key, and MUST return
+      <code>409 idempotency-conflict</code> if the key is reused with a different body.
+    </p>
+  </section>
+
+  <section>
+    <h2>Error model</h2>
+    <p>
+      Every non-success response is a <code>ProblemDetails</code> whose <code>type</code>
+      is an error-code IRI in <code>txp:ErrorScheme</code> (see <code>vocab/errors.ttl</code>).
+    </p>
+    <table class="simple">
+      <thead><tr><th>HTTP</th><th>Example codes</th></tr></thead>
+      <tbody>
+        <tr><td>402</td><td>(challenge), <code>over-cap</code>, <code>daily-limit-exceeded</code>, <code>budget-exceeded</code></td></tr>
+        <tr><td>400</td><td><code>malformed-request</code></td></tr>
+        <tr><td>401 / 403</td><td><code>unauthorized</code>, <code>payee-not-allowed</code>, <code>category-not-allowed</code>, <code>missing-confirmation</code>, <code>credential-revoked</code></td></tr>
+        <tr><td>409</td><td><code>idempotency-conflict</code>, <code>double-spend</code>, <code>nonce-reuse</code></td></tr>
+        <tr><td>422</td><td><code>amount-mismatch</code>, <code>currency-mismatch</code>, <code>expired</code>, <code>challenge-expired</code>, <code>forged-confirmation</code></td></tr>
+        <tr><td>5xx</td><td><code>settlement-pending</code> (also 200 + Location), <code>settlement-failed</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="informative">
+    <h2>Security considerations</h2>
+    <ul>
+      <li><strong>Challenge freshness.</strong> The payee MUST reject a submission whose
+        echoed <code>challenge</code> is unknown, expired, or already consumed. This binds
+        the SAC presentation to a single verifier and request.</li>
+      <li><strong>Quote binding.</strong> The payee MUST verify
+        <code>quoteDigest == jcs_digest(quote)</code> and that the quote's
+        <code>requestHash</code> matches the attempted request.</li>
+      <li><strong>Transport security.</strong> All exchanges MUST use TLS; AVP-Micro
+        proofs authenticate payloads but do not replace channel encryption.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Conformance &amp; artifacts</h2>
+    <p>
+      The JSON-LD context, RDFS/OWL vocabulary, SKOS error scheme, JSON Schema, SHACL
+      shapes, OpenAPI contract, and signed test vectors are normative companions in this
+      bundle directory. The shared harness (<code>spec/generate.py</code>,
+      <code>verify.py</code>, <code>validate.py</code>) generates and validates them.
+    </p>
+  </section>
+</body>
+</html>
