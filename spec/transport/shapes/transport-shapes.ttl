@@ -1,0 +1,42 @@
+# AVP-Micro Transport SHACL shapes.
+# Second validation layer alongside the JSON Schema in ../schemas/. Validates the
+# RDF produced by expanding a transport JSON-LD object. Reused members expand to
+# avp:/dsa:/sec:; new members expand to txp:. The @json members (endpoints,
+# supportedBundles) are governed by the JSON Schema and are not shaped here.
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix txp:  <https://w3id.org/avp-micro/transport/v1#> .
+@prefix avp:  <https://w3id.org/avp-micro/v1#> .
+@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
+@prefix sec:  <https://w3id.org/security#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+txp:ContentDigest a sh:NodeShape ; sh:nodeKind sh:Literal ;
+  sh:pattern "^[a-z0-9][a-z0-9-]*:[A-Za-z0-9_-]+$" .
+
+txp:ServiceDescriptionShape a sh:NodeShape ;
+  sh:targetClass txp:ServiceDescription ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path txp:acceptedSettlementRails ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+txp:PaymentChallengeShape a sh:NodeShape ;
+  sh:targetClass txp:PaymentChallenge ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:quote ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:quoteDigest ; sh:node txp:ContentDigest ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path txp:challenge ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path txp:authorizeEndpoint ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+txp:AuthorizationSubmissionShape a sh:NodeShape ;
+  sh:targetClass txp:AuthorizationSubmission ;
+  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:authorization ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path txp:authorizationDigest ; sh:node txp:ContentDigest ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path txp:challenge ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path txp:idempotencyKey ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
