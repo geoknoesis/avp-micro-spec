@@ -135,6 +135,10 @@ section { padding: 84px 0; scroll-margin-top: calc(var(--nav-h) + 12px); }
 .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
 .section-dark .btn-ghost { background: transparent; color: #e2e8f0; border-color: #334155; }
 .section-dark .btn-ghost:hover { border-color: var(--teal); color: #fff; }
+.btn-demo { background: #fff; color: var(--teal-2); border-color: #99f6e4; }
+.btn-demo:hover { border-color: var(--teal); color: var(--teal-2); box-shadow: 0 10px 24px -10px rgba(20,184,166,.5); }
+.live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 0 rgba(20,184,166,.55); animation: livePulse 2s infinite; }
+@keyframes livePulse { 70% { box-shadow: 0 0 0 8px rgba(20,184,166,0); } 100% { box-shadow: 0 0 0 0 rgba(20,184,166,0); } }
 
 /* ============================================================
    HERO
@@ -339,6 +343,9 @@ table.cmp td b { color: var(--ink); }
 .conf-card h3 { color: #fff; font-size: 1.05rem; }
 .conf-card p { color: #94a3b8; font-size: .92rem; margin: 0; }
 .conf-card .ico { background: #0b1224; color: var(--teal); }
+.conf-demo-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; font-weight: 600; font-size: .92rem; color: var(--teal); }
+.conf-demo-link:hover { color: #fff; }
+.conf-demo-link svg { width: 15px; height: 15px; }
 .badges { display: flex; gap: 12px; flex-wrap: wrap; }
 .badge {
   display: inline-flex; align-items: center; gap: 9px;
@@ -389,5 +396,5 @@ table.cmp td b { color: var(--ink); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  * { transition: none !important; }
+  * { transition: none !important; animation: none !important; }
 }
