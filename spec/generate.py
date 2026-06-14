@@ -860,7 +860,7 @@ def main() -> None:
                 "request": {"method": "GET", "path": "/resource/premium",
                             "headers": {"Accept": "application/avp-micro+json"}},
                 "response": {"status": 402,
-                             "headers": {"WWW-Authenticate": "AVP-Micro",
+                             "headers": {"WWW-Authenticate": 'AVP-Micro challenge="' + challenge["challenge"] + '"',
                                          "Content-Type": "application/avp-micro+json"},
                              "body": body_402},
             },
@@ -887,7 +887,8 @@ def main() -> None:
                                         "Idempotency-Key": "idemp-2026-03-25-0002",
                                         "Content-Type": "application/avp-micro+json"}},
                 "response": {"status": 402,
-                             "headers": {"Content-Type": "application/problem+json"},
+                             "headers": {"Content-Type": "application/problem+json",
+                                         "WWW-Authenticate": 'AVP-Micro error="over-cap"'},
                              "body": problem},
             },
         ],
@@ -984,6 +985,47 @@ def main() -> None:
         ],
     }
     write(TXP, "45-exchange-idempotency.json", idem)
+
+    # ---- transport hardening: signed errors (A4) + anti-replay (A3) ----
+    # A signed error is just the problem JSON + an ecdsa-jcs-2022 proof (JCS-based; no @context).
+    problem_signed = {
+        "type": TXP_URL + "#challenge-expired",
+        "title": "Payment challenge expired",
+        "status": 422,
+        "detail": "The PaymentChallenge is past its expiry; request a fresh 402.",
+        "field": "challenge",
+    }
+    problem_signed = ac.sign_ecdsa_jcs_2022(problem_signed, payee, "2026-03-25T21:37:00Z")
+    write(TXP, "47-problem-details-signed.json", problem_signed)
+
+    # Anti-replay: re-presenting a consumed challenge nonce is refused with a signed 409.
+    problem_replay = {
+        "type": TXP_URL + "#nonce-reuse",
+        "title": "Challenge nonce already used",
+        "status": 409,
+        "detail": "This challenge nonce was already consumed; request a fresh 402.",
+        "field": "challenge",
+    }
+    problem_replay = ac.sign_ecdsa_jcs_2022(problem_replay, payee, "2026-03-25T21:38:00Z")
+    replay = {
+        "description": "Anti-replay: re-presenting a consumed challenge nonce is refused with a signed 409 nonce-reuse.",
+        "steps": [
+            {"request": {"method": "GET", "path": "/resource/premium",
+                         "headers": {"Authorization": "AVP-Micro " + submission["id"],
+                                     "Idempotency-Key": submission["idempotencyKey"],
+                                     "Content-Type": "application/avp-micro+json"},
+                         "body": submission},
+             "response": {"status": 200, "headers": JCT, "body": receipt_c}},
+            {"request": {"method": "GET", "path": "/resource/premium",
+                         "headers": {"Authorization": "AVP-Micro " + submission["id"],
+                                     "Content-Type": "application/avp-micro+json"},
+                         "body": submission},
+             "response": {"status": 409,
+                          "headers": {**PCT, "WWW-Authenticate": 'AVP-Micro error="nonce-reuse"'},
+                          "body": problem_replay}},
+        ],
+    }
+    write(TXP, "46-exchange-replay.json", replay)
 
     # ---- Interop (SD-JWT-VC) bundle ----
     # Two P-256 (ES256) test keys: a bridge that signs export envelopes, and a

@@ -1,0 +1,15 @@
+{
+  "type": "https://w3id.org/avp-micro/transport/v1#challenge-expired",
+  "title": "Payment challenge expired",
+  "status": 422,
+  "detail": "The PaymentChallenge is past its expiry; request a fresh 402.",
+  "field": "challenge",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:37:00Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z5WbSFnRW9qBsDJ7JbHtVziFLdzRNptFBNbF1B6ooQGFpCNFaFPk6vu5XcvkKDF9UkSQRXkUeGXq5VQ5AmGCFrajr"
+  }
+}

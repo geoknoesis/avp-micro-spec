@@ -127,12 +127,15 @@ TRANSPORT_UNSIGNED_VECTORS = {
     "43-exchange-streaming.json": "HttpExchangeLog",
     "44-exchange-async-settlement.json": "HttpExchangeLog",
     "45-exchange-idempotency.json": "HttpExchangeLog",
+    "46-exchange-replay.json": "HttpExchangeLog",
+    "47-problem-details-signed.json": "ProblemDetails",
 }
 # Exchange logs whose every step is cross-checked against the OpenAPI contract.
 EXCHANGE_VECTORS = [
     "40-exchange-402-flow.json", "41-exchange-over-cap.json",
     "42-exchange-quote-flow.json", "43-exchange-streaming.json",
     "44-exchange-async-settlement.json", "45-exchange-idempotency.json",
+    "46-exchange-replay.json",
 ]
 
 failures = []

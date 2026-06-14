@@ -106,7 +106,8 @@
         "status": { "type": "integer", "minimum": 100, "maximum": 599 },
         "detail": { "type": "string" },
         "field": { "type": "string" },
-        "instance": { "type": "string" }
+        "instance": { "type": "string" },
+        "proof": { "$ref": "#/$defs/proof" }
       }
     },
 

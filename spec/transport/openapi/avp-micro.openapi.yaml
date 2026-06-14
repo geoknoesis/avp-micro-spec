@@ -63,6 +63,17 @@ paths:
             application/problem+json:
               schema:
                 $ref: ../schemas/transport.schema.json#/$defs/ProblemDetails
+        "409":
+          description: >
+            Replay refused — the challenge nonce was already consumed (nonce-reuse).
+            The body MAY be a signed ProblemDetails (optional proof).
+          headers:
+            WWW-Authenticate:
+              schema: { type: string, example: 'AVP-Micro error="nonce-reuse"' }
+          content:
+            application/problem+json:
+              schema:
+                $ref: ../schemas/transport.schema.json#/$defs/ProblemDetails
   /quote:
     post:
       tags: [payment]

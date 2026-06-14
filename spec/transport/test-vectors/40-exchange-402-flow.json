@@ -12,7 +12,7 @@
       "response": {
         "status": 402,
         "headers": {
-          "WWW-Authenticate": "AVP-Micro",
+          "WWW-Authenticate": "AVP-Micro challenge=\"txp-nonce-7f3a9c2e\"",
           "Content-Type": "application/avp-micro+json"
         },
         "body": {

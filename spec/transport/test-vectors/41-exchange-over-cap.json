@@ -14,7 +14,8 @@
       "response": {
         "status": 402,
         "headers": {
-          "Content-Type": "application/problem+json"
+          "Content-Type": "application/problem+json",
+          "WWW-Authenticate": "AVP-Micro error=\"over-cap\""
         },
         "body": {
           "type": "https://w3id.org/avp-micro/transport/v1#over-cap",

@@ -813,6 +813,25 @@ def main() -> int:
     check("the conflict submission is a valid, distinct signed AuthorizationSubmission",
           ac.verify_ecdsa_jcs_2022(_conf["request"]["body"]))
 
+    # transport hardening: signed errors (A4) + anti-replay (A3)
+    prob_signed = load(TXP, "47-problem-details-signed.json")
+    replay = load(TXP, "46-exchange-replay.json")
+    errors_ttl2 = (SPEC / "transport" / "vocab" / "errors.ttl").read_text(encoding="utf-8")
+    check("signed ProblemDetails proof verifies", ac.verify_ecdsa_jcs_2022(prob_signed))
+    check("signed ProblemDetails is signed by the payee", controller(prob_signed) == payee)
+    check("signed ProblemDetails type resolves in txp:ErrorScheme",
+          (prob_signed["type"].rsplit("#", 1)[-1] + " a skos:Concept") in errors_ttl2)
+    _r1, _r2 = replay["steps"][0], replay["steps"][1]
+    check("replay re-presents the same submission (consumed nonce)",
+          _r1["request"]["body"] == _r2["request"]["body"])
+    check("replay first attempt succeeds (200, nonce consumed)", _r1["response"]["status"] == 200)
+    check("replay second attempt is refused 409", _r2["response"]["status"] == 409)
+    _rb = _r2["response"]["body"]
+    check("replay 409 body is a signed nonce-reuse ProblemDetails",
+          _rb["type"].rsplit("#", 1)[-1] == "nonce-reuse" and ac.verify_ecdsa_jcs_2022(_rb))
+    check("replay 409 carries a WWW-Authenticate error param",
+          'error="nonce-reuse"' in _r2["response"]["headers"].get("WWW-Authenticate", ""))
+
     print("Negative control (tamper detection):")
     tampered = json.loads(json.dumps(authz))
     tampered["amount"] = "0.05"
