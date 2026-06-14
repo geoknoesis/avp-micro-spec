@@ -210,8 +210,9 @@ The AVP-Micro bundles fill that gap, end to end:
 - **AVP-Micro Payments** defines the forward value-flow messages (quotes, authorizations, executions, receipts, sessions, accruals) bound to specific requests — the *did value move, and what was delivered*.
 - **AVP-Micro Disputes** defines the reverse value-flow (refunds, reversals, chargebacks, dispute lifecycle) — closing the loop when delivery is contested or value must be returned.
 - **AVP-Micro ⇄ SD-JWT-VC interop** carries the same authority across the SD-JWT-VC ecosystems (Verifiable Intent / AP2), so the trust layer is not captive to one credential stack.
+- **AVP-Micro Settlement** binds an authorization to a concrete rail (EVM stablecoin, x402, Lightning) with escrow and on-chain settlement proofs — the *how value actually moves on a rail*.
 
-All four plug in **any** settlement technology, and a conformance harness with signed test vectors and a protocol simulator demonstrates the guarantees rather than merely asserting them.
+The authorization bundles stay settlement-agnostic while **Settlement** binds them to any rail, and a conformance harness with signed test vectors and a protocol simulator demonstrates the guarantees rather than merely asserting them.
 
 ---
 
