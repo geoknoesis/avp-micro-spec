@@ -1,0 +1,69 @@
+# AVP-Micro Transport & Protocol binding RDFS/OWL ontology.
+#
+# Classes/properties whose JSON-LD term mappings live in ../context/v1.jsonld.
+# The wire layer: a discovery document, an HTTP 402 payment challenge, the
+# client's authorization submission, and an RFC 9457 problem-details body.
+# Reused members (payee, payer, quote, quoteDigest, requestHash, amount,
+# currency, nonce, expires, authorization, timestamp, acceptedCredentialIssuers)
+# expand to avp:/dsa:/sec:; new members expand to txp:.
+#
+# Namespace: https://w3id.org/avp-micro/transport/v1#  (prefix txp:)
+@prefix txp:  <https://w3id.org/avp-micro/transport/v1#> .
+@prefix avp:  <https://w3id.org/avp-micro/v1#> .
+@prefix dsa:  <https://w3id.org/spending-authority/v1#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+<https://w3id.org/avp-micro/transport/v1> a owl:Ontology ;
+  dct:title "AVP-Micro Transport & Protocol vocabulary"@en ;
+  dct:description "Classes and properties for the normative HTTP binding of AVP-Micro: service discovery, the HTTP 402 payment challenge, the client authorization submission, and the problem-details error body."@en ;
+  owl:versionInfo "0.1.0" ;
+  rdfs:seeAlso <https://w3id.org/avp-micro/v1> .
+
+#################################################################
+# Classes
+#################################################################
+
+txp:ServiceDescription a owl:Class ; rdfs:label "Service description"@en ;
+  rdfs:comment "A payee-signed discovery document served at /.well-known/avp-micro: endpoints, accepted issuers, accepted settlement rails, and supported bundle versions."@en .
+txp:PaymentChallenge a owl:Class ; rdfs:label "Payment challenge"@en ;
+  rdfs:comment "A payee-signed HTTP 402 body that wraps a PaymentQuote (by IRI + digest) and a server-chosen challenge nonce the client must echo."@en .
+txp:AuthorizationSubmission a owl:Class ; rdfs:label "Authorization submission"@en ;
+  rdfs:comment "A payer-agent-signed 402 retry payload that wraps a PaymentAuthorization (by IRI + digest), echoes the challenge nonce, and carries an idempotency key."@en .
+txp:ProblemDetails a owl:Class ; rdfs:label "Problem details"@en ;
+  rdfs:comment "An unsigned RFC 9457 problem+json error body whose type is an error-code IRI in txp:ErrorScheme."@en .
+
+#################################################################
+# Object properties (node references / DIDs / IRIs)
+#################################################################
+
+txp:offers a owl:ObjectProperty ; rdfs:label "offers"@en ;
+  rdfs:comment "IRIs of the PaymentOffers advertised by the payee."@en .
+txp:acceptedSettlementRails a owl:ObjectProperty ; rdfs:label "accepted settlement rails"@en ;
+  rdfs:comment "IRIs of the settlement-rail SKOS concepts (see settlement rails.ttl) the payee will settle on."@en .
+
+#################################################################
+# Digest properties (content digests over the referenced signed object)
+#################################################################
+
+txp:authorizationDigest a owl:DatatypeProperty ; rdfs:label "authorization digest"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Content digest (e.g. sha-256:...) of the wrapped PaymentAuthorization."@en .
+
+#################################################################
+# Scalar / structured properties
+#################################################################
+
+txp:endpoints a owl:DatatypeProperty ; rdfs:label "endpoints"@en ; rdfs:range rdfs:Literal ;
+  rdfs:comment "A JSON object mapping operation names (quote, authorize, execute, receipt, settlementStatus, session, accruals, close, extend) to URL templates."@en .
+txp:supportedBundles a owl:DatatypeProperty ; rdfs:label "supported bundles"@en ; rdfs:range rdfs:Literal ;
+  rdfs:comment "A JSON object mapping bundle context IRIs to the supported version string."@en .
+txp:challenge a owl:DatatypeProperty ; rdfs:label "challenge"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Server-chosen anti-replay nonce; the client echoes it in the AuthorizationSubmission."@en .
+txp:authorizeEndpoint a owl:DatatypeProperty ; rdfs:label "authorize endpoint"@en ; rdfs:range xsd:anyURI ;
+  rdfs:comment "URL the client submits the authorization to (or the gated resource to retry)."@en .
+txp:idempotencyKey a owl:DatatypeProperty ; rdfs:label "idempotency key"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Client-chosen idempotency key, mirrored in the Idempotency-Key header."@en .
+txp:callbackUrl a owl:DatatypeProperty ; rdfs:label "callback URL"@en ; rdfs:range xsd:anyURI ;
+  rdfs:comment "Optional webhook for async settlement notification."@en .

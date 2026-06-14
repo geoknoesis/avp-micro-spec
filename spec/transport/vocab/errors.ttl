@@ -1,0 +1,90 @@
+# AVP-Micro Transport error-code scheme (native, extensible SKOS scheme).
+#
+# A ProblemDetails.type is an IRI of one of these concepts. The HTTP status
+# note (skos:note) is INFORMATIVE; §4.7 of the spec gives the status mapping.
+# Implementers MAY mint additional concepts in their own scheme.
+#
+# Namespace: https://w3id.org/avp-micro/transport/v1#  (prefix txp:)
+@prefix txp:  <https://w3id.org/avp-micro/transport/v1#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+txp:ErrorScheme a skos:ConceptScheme ;
+  skos:prefLabel "AVP-Micro transport error-code scheme"@en ;
+  skos:definition "An extensible set of error-code concepts used as ProblemDetails.type values."@en .
+
+txp:amount-mismatch a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Amount mismatch"@en ;
+  skos:definition "The submitted authorization amount does not equal the quoted amount."@en ;
+  skos:note "HTTP 422."@en .
+txp:currency-mismatch a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Currency mismatch"@en ;
+  skos:definition "The submitted currency does not equal the quoted currency."@en ;
+  skos:note "HTTP 422."@en .
+txp:over-cap a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Over per-transaction cap"@en ;
+  skos:definition "The amount exceeds the credential's maxPerTransaction."@en ;
+  skos:note "HTTP 402."@en .
+txp:payee-not-allowed a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Payee not allowed"@en ;
+  skos:definition "The payee is not in the credential's allowedPayees."@en ;
+  skos:note "HTTP 403."@en .
+txp:category-not-allowed a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Category not allowed"@en ;
+  skos:definition "The requested category is not in the credential's allowedCategories."@en ;
+  skos:note "HTTP 403."@en .
+txp:daily-limit-exceeded a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Daily limit exceeded"@en ;
+  skos:definition "This charge would exceed the credential's dailyLimit."@en ;
+  skos:note "HTTP 402."@en .
+txp:expired a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Expired"@en ;
+  skos:definition "The quote or authorization is past its expiry."@en ;
+  skos:note "HTTP 422."@en .
+txp:nonce-reuse a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Nonce reuse"@en ;
+  skos:definition "A nonce was reused (anti-replay)."@en ;
+  skos:note "HTTP 409."@en .
+txp:double-spend a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Double spend"@en ;
+  skos:definition "The authorization was already executed."@en ;
+  skos:note "HTTP 409."@en .
+txp:budget-exceeded a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Budget exceeded"@en ;
+  skos:definition "A streaming accrual would exceed the session budget."@en ;
+  skos:note "HTTP 402."@en .
+txp:missing-confirmation a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Missing purchase confirmation"@en ;
+  skos:definition "A PurchaseConfirmation is required for this charge but was absent."@en ;
+  skos:note "HTTP 403."@en .
+txp:forged-confirmation a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Forged confirmation"@en ;
+  skos:definition "A supplied PurchaseConfirmation failed verification."@en ;
+  skos:note "HTTP 422."@en .
+txp:malformed-request a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Malformed request"@en ;
+  skos:definition "The request body was syntactically or schematically invalid."@en ;
+  skos:note "HTTP 400."@en .
+txp:unauthorized a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Unauthorized"@en ;
+  skos:definition "The submission signature or credential chain did not verify."@en ;
+  skos:note "HTTP 401."@en .
+txp:challenge-expired a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Challenge expired"@en ;
+  skos:definition "The PaymentChallenge is past its expiry; request a fresh 402."@en ;
+  skos:note "HTTP 422."@en .
+txp:idempotency-conflict a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Idempotency conflict"@en ;
+  skos:definition "The Idempotency-Key was reused with a different request body."@en ;
+  skos:note "HTTP 409."@en .
+txp:settlement-pending a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Settlement pending"@en ;
+  skos:definition "Settlement has not reached finality; poll settlementStatus."@en ;
+  skos:note "HTTP 200 + Location, or 503."@en .
+txp:settlement-failed a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Settlement failed"@en ;
+  skos:definition "On-chain or rail settlement failed."@en ;
+  skos:note "HTTP 502."@en .
+txp:credential-revoked a skos:Concept ; skos:inScheme txp:ErrorScheme ;
+  skos:prefLabel "Credential revoked"@en ;
+  skos:definition "A credential in the chain is revoked per its status list."@en ;
+  skos:note "HTTP 403."@en .

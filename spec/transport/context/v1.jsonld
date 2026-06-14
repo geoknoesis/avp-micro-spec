@@ -1,0 +1,26 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "id": "@id",
+    "type": "@type",
+    "txp": "https://w3id.org/avp-micro/transport/v1#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "ServiceDescription": "txp:ServiceDescription",
+    "PaymentChallenge": "txp:PaymentChallenge",
+    "AuthorizationSubmission": "txp:AuthorizationSubmission",
+    "ProblemDetails": "txp:ProblemDetails",
+
+    "offers": { "@id": "txp:offers", "@container": "@set", "@type": "@id" },
+    "endpoints": { "@id": "txp:endpoints", "@type": "@json" },
+    "acceptedSettlementRails": { "@id": "txp:acceptedSettlementRails", "@container": "@set", "@type": "@id" },
+    "supportedBundles": { "@id": "txp:supportedBundles", "@type": "@json" },
+
+    "challenge": { "@id": "txp:challenge" },
+    "authorizeEndpoint": { "@id": "txp:authorizeEndpoint", "@type": "xsd:anyURI" },
+    "authorizationDigest": { "@id": "txp:authorizationDigest" },
+    "idempotencyKey": { "@id": "txp:idempotencyKey" },
+    "callbackUrl": { "@id": "txp:callbackUrl", "@type": "xsd:anyURI" }
+  }
+}
