@@ -225,15 +225,15 @@ section { padding: 84px 0; scroll-margin-top: calc(var(--nav-h) + 12px); }
 .arch-interface .pill { position: relative; background: var(--soft); border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; font-size: .84rem; font-weight: 600; color: var(--slate); box-shadow: var(--shadow-sm); text-align: center; }
 .arch-interface .pill b { color: var(--blue); }
 
-/* settlement layer (neutral, pluggable) */
-.arch-settle { background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
-.arch-settle .arch-head { color: var(--ink); }
-.arch-settle .arch-head .muted { font-weight: 500; color: var(--muted); font-size: .85rem; }
-.arch-settle .tag { background: var(--soft); color: var(--muted); border: 1px solid var(--line); }
-.arch-settle .sub { color: var(--muted); }
+/* settlement layer (dark infrastructure, pluggable) */
+.arch-settle { background: var(--ink); border: 1px solid #233150; box-shadow: 0 22px 48px -22px rgba(15,23,42,.55); }
+.arch-settle .arch-head { color: #fff; }
+.arch-settle .arch-head .muted { font-weight: 500; color: #94a3b8; font-size: .85rem; }
+.arch-settle .tag { background: rgba(255,255,255,.1); color: #e2e8f0; border: 1px solid rgba(255,255,255,.2); }
+.arch-settle .sub { color: #94a3b8; }
 .arch-rails { display: flex; flex-wrap: wrap; gap: 10px; }
-.rail-mod { display: inline-flex; align-items: center; gap: 9px; background: var(--soft); border: 1px solid var(--line); border-radius: 11px; padding: 10px 14px; font-size: .86rem; font-weight: 500; color: var(--slate); transition: border-color .15s ease, transform .15s ease; }
-.rail-mod:hover { border-color: var(--teal); transform: translateY(-2px); }
+.rail-mod { display: inline-flex; align-items: center; gap: 9px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.16); border-radius: 11px; padding: 10px 14px; font-size: .86rem; font-weight: 500; color: #cbd5e1; transition: border-color .15s ease, transform .15s ease, background .15s ease; }
+.rail-mod:hover { border-color: var(--teal); background: rgba(20,184,166,.12); transform: translateY(-2px); }
 .rail-mod .dot { width: 9px; height: 9px; border-radius: 3px; background: var(--grad); flex: none; }
 
 /* ============================================================
