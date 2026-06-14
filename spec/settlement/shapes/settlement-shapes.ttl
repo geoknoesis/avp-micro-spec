@@ -80,3 +80,40 @@ stl:EscrowRefundShape a sh:NodeShape ;
   sh:property [ sh:path stl:settlementProofDigest ; sh:node stl:ContentDigest ; sh:minCount 1 ] ;
   sh:property [ sh:path stl:reason ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+# ---- Attested (closed-processor) rails: card via Stripe + bank/RTP ----------
+
+stl:ProcessorAccountBindingShape a sh:NodeShape ;
+  sh:targetClass stl:ProcessorAccountBinding ;
+  sh:property [ sh:path stl:subject ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path dsa:account ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:processor ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path stl:rail ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+stl:AttestedSettlementInstructionShape a sh:NodeShape ;
+  sh:targetClass stl:AttestedSettlementInstruction ;
+  sh:property [ sh:path avp:authorization ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:authorizationDigest ; sh:node stl:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:rail ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:payeeAccountBinding ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path avp:amount ; sh:node stl:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:mode ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:nonce ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .
+
+stl:AttestedSettlementProofShape a sh:NodeShape ;
+  sh:targetClass stl:AttestedSettlementProof ;
+  sh:property [ sh:path stl:instruction ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:instructionDigest ; sh:node stl:ContentDigest ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:rail ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:settledAmount ; sh:node stl:PositiveDecimalAmount ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path dsa:currency ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:attestation ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:finality ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
+  sh:property [ sh:path stl:observedAt ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
+  sh:property [ sh:path sec:proof ; sh:minCount 1 ] .

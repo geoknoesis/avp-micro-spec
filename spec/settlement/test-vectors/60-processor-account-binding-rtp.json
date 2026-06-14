@@ -1,0 +1,23 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:proc-binding:rtp",
+  "type": "ProcessorAccountBinding",
+  "subject": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "account": "bank:fednow:token:ACME-PAYEE-001",
+  "processor": "did:web:bank.example",
+  "rail": "stl:rail-bank-rtp",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:29:50Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z488VMm5S1tJdUTpVPaDncEn1Ae8zZLuThMLE3VNeJUH8wxM3cWfcqJ6UZotE98fbrKZPAsGdDFkwbNaktNHK9waV"
+  }
+}

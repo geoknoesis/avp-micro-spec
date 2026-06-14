@@ -811,6 +811,92 @@ def main() -> None:
     binding_agent = ac.sign_ecdsa_jcs_2022(binding_agent, agent, "2026-03-26T09:04:00Z")
     write(SETTLE, "55-payee-account-binding-agent.json", binding_agent)
 
+    # ---- Attested (closed-processor) rails: card via Stripe + bank/RTP ----
+    # Same authorization (urn:avp:authz:999, 0.001 USD), but the rail settles inside a
+    # private processor, so finality is NOT publicly verifiable. The proof is an
+    # AttestedSettlementProof: the payee re-signs (payee-attested) an embedded processor
+    # attestation. Anti-redirection holds via a payee-signed ProcessorAccountBinding whose
+    # subject == the authorized payee. References (stripe:pi_*, rtp e2e ids) are FIXTURES.
+
+    # 57: ProcessorAccountBinding -- payee proves it controls a Stripe connected account.
+    binding_card = {
+        "@context": SETTLE_CTX, "id": "urn:avp:proc-binding:card", "type": "ProcessorAccountBinding",
+        "subject": DID_PAYEE, "account": "stripe:acct_1Nv8aXAVPdemo01",
+        "processor": "did:web:stripe.com", "rail": "stl:rail-card-stripe",
+    }
+    binding_card = ac.sign_ecdsa_jcs_2022(binding_card, payee, "2026-03-25T21:29:40Z")
+    write(SETTLE, "57-processor-account-binding-card.json", binding_card)
+
+    # 58: card AttestedSettlementInstruction (escrow == authorize/capture).
+    instr_card = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:card", "type": "AttestedSettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": authz_digest,
+        "rail": "stl:rail-card-stripe", "payeeAccountBinding": binding_card["id"],
+        "payer": DID_AGENT, "payee": DID_PAYEE,
+        "amount": amount, "currency": currency,
+        "mode": "escrow", "captureMode": "auth-capture",
+        "processorIntent": "stripe:pi_3QavpDemoCard01",
+        "nonce": "settle-card-1", "expires": "2026-03-25T22:00:00Z",
+    }
+    instr_card = ac.sign_ecdsa_jcs_2022(instr_card, wallet, "2026-03-25T21:30:20Z")
+    write(SETTLE, "58-settlement-instruction-card.json", instr_card)
+
+    # 59: card AttestedSettlementProof (captured; payee-attested over the Stripe result).
+    proof_card = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:card", "type": "AttestedSettlementProof",
+        "instruction": instr_card["id"], "instructionDigest": ac.jcs_digest(instr_card),
+        "execution": execution["id"], "rail": "stl:rail-card-stripe",
+        "settledAmount": amount, "currency": currency,
+        "attestation": {
+            "type": "ProcessorAttestation", "mode": "payee-attested",
+            "processor": "did:web:stripe.com", "reference": "stripe:pi_3QavpDemoCard01",
+            "status": "captured", "evidence": "stripe-event:evt_1QavpDemoCard",
+            "observedAt": "2026-03-25T21:33:40Z",
+        },
+        "finality": "final", "observedAt": "2026-03-25T21:33:41Z",
+    }
+    proof_card = ac.sign_ecdsa_jcs_2022(proof_card, payee, "2026-03-25T21:33:41Z")
+    write(SETTLE, "59-settlement-proof-card.json", proof_card)
+
+    # 60: ProcessorAccountBinding for an instant-bank (RTP/FedNow) creditor token.
+    binding_rtp = {
+        "@context": SETTLE_CTX, "id": "urn:avp:proc-binding:rtp", "type": "ProcessorAccountBinding",
+        "subject": DID_PAYEE, "account": "bank:fednow:token:ACME-PAYEE-001",
+        "processor": "did:web:bank.example", "rail": "stl:rail-bank-rtp",
+    }
+    binding_rtp = ac.sign_ecdsa_jcs_2022(binding_rtp, payee, "2026-03-25T21:29:50Z")
+    write(SETTLE, "60-processor-account-binding-rtp.json", binding_rtp)
+
+    # 61: RTP AttestedSettlementInstruction (direct -- push transfer, NO escrow).
+    instr_rtp = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:rtp", "type": "AttestedSettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": authz_digest,
+        "rail": "stl:rail-bank-rtp", "payeeAccountBinding": binding_rtp["id"],
+        "payer": DID_AGENT, "payee": DID_PAYEE,
+        "amount": amount, "currency": currency,
+        "mode": "direct", "scheme": "fednow",
+        "nonce": "settle-rtp-1", "expires": "2026-03-25T22:00:00Z",
+    }
+    instr_rtp = ac.sign_ecdsa_jcs_2022(instr_rtp, wallet, "2026-03-25T21:30:21Z")
+    write(SETTLE, "61-settlement-instruction-rtp.json", instr_rtp)
+
+    # 62: RTP AttestedSettlementProof (settled; payee-attested over the bank's pacs.002).
+    proof_rtp = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:rtp", "type": "AttestedSettlementProof",
+        "instruction": instr_rtp["id"], "instructionDigest": ac.jcs_digest(instr_rtp),
+        "execution": execution["id"], "rail": "stl:rail-bank-rtp",
+        "settledAmount": amount, "currency": currency,
+        "attestation": {
+            "type": "ProcessorAttestation", "mode": "payee-attested",
+            "processor": "did:web:bank.example", "reference": "rtp:e2e:20260325-ACME-0001",
+            "status": "settled", "evidence": "iso20022:pacs.002:msgid-7f3a",
+            "observedAt": "2026-03-25T21:34:20Z",
+        },
+        "finality": "final", "observedAt": "2026-03-25T21:34:21Z",
+    }
+    proof_rtp = ac.sign_ecdsa_jcs_2022(proof_rtp, payee, "2026-03-25T21:34:21Z")
+    write(SETTLE, "62-settlement-proof-rtp.json", proof_rtp)
+
     # ---- Transport & protocol binding bundle ----
     # Wraps the canonical payments objects. Reload them from disk so the digests
     # bound here match the exact bytes validate.py / verify.py will read.

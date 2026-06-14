@@ -734,6 +734,57 @@ def main() -> int:
     check("reverse instruction swaps payer/payee vs the original payment",
           instr_rev["payer"] == instr_evm["payee"] and instr_rev["payee"] == instr_evm["payer"])
 
+    print("Attested (closed-processor) settlement rails -- card (Stripe) & bank/RTP:")
+    binding_card = load(SETTLE, "57-processor-account-binding-card.json")
+    instr_card = load(SETTLE, "58-settlement-instruction-card.json")
+    proof_card = load(SETTLE, "59-settlement-proof-card.json")
+    binding_rtp = load(SETTLE, "60-processor-account-binding-rtp.json")
+    instr_rtp = load(SETTLE, "61-settlement-instruction-rtp.json")
+    proof_rtp = load(SETTLE, "62-settlement-proof-rtp.json")
+
+    # signers: bindings + attested proofs are PAYEE-signed (payee-attested); the wallet
+    # still signs the instructions. (Unlike on-chain proofs, which the wallet signs.)
+    attested = [("57 binding(card)", binding_card, payee), ("58 instr(card)", instr_card, wallet),
+                ("59 proof(card)", proof_card, payee), ("60 binding(rtp)", binding_rtp, payee),
+                ("61 instr(rtp)", instr_rtp, wallet), ("62 proof(rtp)", proof_rtp, payee)]
+    for label, obj, signer in attested:
+        check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
+        check(f"{label} signed by expected key", controller(obj) == signer)
+
+    for label, binding, instr, proof in [("card", binding_card, instr_card, proof_card),
+                                         ("rtp", binding_rtp, instr_rtp, proof_rtp)]:
+        # binding: payee-signed, subject == the AUTHORIZED payee (anti-redirection root),
+        # naming a did:web processor as the trust root, on the instruction's rail.
+        check(f"{label} processor-account binding signed by its subject (payee==authz.payee)",
+              controller(binding) == binding["subject"] == payee == authz["payee"])
+        check(f"{label} binding names a did:web processor on the instruction's rail",
+              binding["processor"].startswith("did:web:") and binding["rail"] == instr["rail"])
+        # instruction <-> authorization binding (economic terms + parties).
+        check(f"instr({label}).authorization == authz.id", instr["authorization"] == authz["id"])
+        check(f"instr({label}).authorizationDigest matches authz",
+              instr["authorizationDigest"] == ac.jcs_digest(authz))
+        check(f"instr({label}).amount/currency == authz",
+              instr["amount"] == authz["amount"] and instr["currency"] == authz["currency"])
+        check(f"instr({label}).payee/payer == authz",
+              instr["payee"] == authz["payee"] and instr["payer"] == authz["payer"])
+        # anti-redirection: settle only to the bound account, on the same rail.
+        check(f"instr({label}) destination bound to the authorized payee",
+              st.attested_binding_ok(instr, binding))
+        # proof <-> instruction binding + attested finality.
+        check(f"proof({label}).instruction == instr.id", proof["instruction"] == instr["id"])
+        check(f"proof({label}).instructionDigest matches instr",
+              proof["instructionDigest"] == ac.jcs_digest(instr))
+        check(f"proof({label}).settledAmount/currency == instr",
+              proof["settledAmount"] == instr["amount"] and proof["currency"] == instr["currency"])
+        check(f"proof({label}) is an attested-finality rail", st.is_attested_rail(proof["rail"]))
+        check(f"proof({label}) final per its embedded attestation", st.attested_finality_ok(proof))
+        check(f"proof({label}) is payee-attested by the payee (the proof signer)",
+              proof["attestation"]["mode"] == "payee-attested" and controller(proof) == authz["payee"])
+    # card maps to auth/capture (escrow); RTP is push/irrevocable (no escrow).
+    check("card instruction uses auth-capture (escrow) semantics",
+          instr_card["mode"] == "escrow" and instr_card["captureMode"] == "auth-capture")
+    check("rtp instruction is a direct push (no escrow)", instr_rtp["mode"] == "direct")
+
     print("Transport & protocol binding:")
     service = load(TXP, "00-service-description.json")
     challenge = load(TXP, "10-payment-challenge.json")

@@ -24,3 +24,16 @@ stl:rail-lightning a skos:Concept ; skos:inScheme stl:RailScheme ;
   skos:prefLabel "Bitcoin Lightning"@en ;
   skos:definition "Lightning Network payment; amounts in millisatoshi."@en ;
   skos:note "Finality is preimage reveal; escrow is native via hold-invoices."@en .
+
+# Closed-processor (attested-finality) rails. Settlement happens inside a private
+# processor, so finality is not publicly verifiable: the SettlementProof is an
+# AttestedSettlementProof that embeds a processor attestation (see settlement.ttl).
+stl:rail-card-stripe a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "Card via processor (Stripe)"@en ;
+  skos:definition "Card settlement executed through a processor (Stripe as the worked example), authorize-then-capture."@en ;
+  skos:note "Attested finality (payee- or processor-attested). Escrow maps to auth/capture; refunds/chargebacks map to the Disputes bundle."@en .
+
+stl:rail-bank-rtp a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "Instant bank credit transfer (RTP)"@en ;
+  skos:definition "Instant account-to-account credit transfer (FedNow / TCH RTP / SEPA Instant)."@en ;
+  skos:note "Attested finality; push and irrevocable, so NO native escrow; a refund is a fresh credit transfer."@en .

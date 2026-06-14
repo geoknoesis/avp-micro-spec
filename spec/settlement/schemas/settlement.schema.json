@@ -154,6 +154,80 @@
         "reason": { "enum": ["timeout", "dispute"] },
         "proof": { "$ref": "#/$defs/proof" }
       }
+    },
+
+    "ProcessorAccountBinding": {
+      "type": "object",
+      "required": ["@context", "id", "type", "subject", "account", "processor", "rail", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "ProcessorAccountBinding" }, { "type": "array", "contains": { "const": "ProcessorAccountBinding" } } ] },
+        "subject": { "$ref": "#/$defs/did" },
+        "account": { "type": "string", "minLength": 1 },
+        "processor": { "$ref": "#/$defs/did" },
+        "rail": { "type": "string", "minLength": 1 },
+        "validFrom": { "$ref": "#/$defs/dateTime" },
+        "validUntil": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "AttestedSettlementInstruction": {
+      "type": "object",
+      "required": ["@context", "id", "type", "authorization", "authorizationDigest", "rail", "payeeAccountBinding", "payer", "payee", "amount", "currency", "mode", "nonce", "expires", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "AttestedSettlementInstruction" }, { "type": "array", "contains": { "const": "AttestedSettlementInstruction" } } ] },
+        "authorization": { "$ref": "#/$defs/idValue" },
+        "authorizationDigest": { "$ref": "#/$defs/contentDigest" },
+        "rail": { "type": "string", "minLength": 1 },
+        "payeeAccountBinding": { "$ref": "#/$defs/idValue" },
+        "payer": { "$ref": "#/$defs/did" },
+        "payee": { "$ref": "#/$defs/did" },
+        "amount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "mode": { "enum": ["direct", "escrow"] },
+        "captureMode": { "enum": ["auth-capture", "immediate"] },
+        "processorIntent": { "type": "string", "minLength": 1 },
+        "scheme": { "enum": ["fednow", "rtp", "sepa-instant"] },
+        "nonce": { "type": "string", "minLength": 1 },
+        "expires": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
+
+    "AttestedSettlementProof": {
+      "type": "object",
+      "required": ["@context", "id", "type", "instruction", "instructionDigest", "rail", "settledAmount", "currency", "attestation", "finality", "observedAt", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/signedContext" },
+        "id": { "$ref": "#/$defs/idValue" },
+        "type": { "oneOf": [ { "const": "AttestedSettlementProof" }, { "type": "array", "contains": { "const": "AttestedSettlementProof" } } ] },
+        "instruction": { "$ref": "#/$defs/idValue" },
+        "instructionDigest": { "$ref": "#/$defs/contentDigest" },
+        "execution": { "$ref": "#/$defs/idValue" },
+        "rail": { "type": "string", "minLength": 1 },
+        "settledAmount": { "$ref": "#/$defs/positiveDecimal" },
+        "currency": { "type": "string" },
+        "attestation": {
+          "type": "object",
+          "required": ["mode", "processor", "reference", "status"],
+          "properties": {
+            "type": { "type": "string" },
+            "mode": { "enum": ["payee-attested", "processor-attested"] },
+            "processor": { "$ref": "#/$defs/did" },
+            "reference": { "type": "string", "minLength": 1 },
+            "status": { "type": "string", "minLength": 1 },
+            "evidence": { "type": "string" },
+            "observedAt": { "$ref": "#/$defs/dateTime" }
+          }
+        },
+        "finality": { "enum": ["pending", "probabilistic", "final"] },
+        "observedAt": { "$ref": "#/$defs/dateTime" },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
     }
   }
 }

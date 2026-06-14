@@ -3,14 +3,25 @@
 On-chain settlement binding for AVP-Micro: defines the **money-moving step** that
 the [Payments](../payments/) specification deliberately scopes out. Builds on the
 [Payments](../payments/) and [Delegated Spending Authority](../authority/) bundles
-by reference, modifying neither. Three normative rail profiles &mdash; EVM stablecoin
-(USDC on an L2), Coinbase x402, and Bitcoin Lightning &mdash; share a rail-agnostic
-core of signed objects (`SettlementInstruction`, `SettlementProof`,
-`PayeeAccountBinding`) with an optional escrow lifecycle (`EscrowLock`,
-`EscrowRelease`, `EscrowRefund`). DID&harr;account binding prevents payment
-redirection. On-chain irreversibility is handled by compensating-transfer reversals
-that reference [[AVP-DISPUTES]] `Reversal` objects. Every object is secured with the
-mandatory `ecdsa-jcs-2022` cryptosuite.
+by reference, modifying neither. Five rail profiles share a rail-agnostic core of
+signed objects (`SettlementInstruction`, `SettlementProof`, `PayeeAccountBinding`)
+with an optional escrow lifecycle (`EscrowLock`, `EscrowRelease`, `EscrowRefund`):
+
+- **On-chain (self-verifiable finality)** &mdash; EVM stablecoin (USDC on an L2),
+  Coinbase x402, and Bitcoin Lightning. Finality is a public artifact (confirmations
+  or a Lightning preimage) any verifier can check.
+- **Closed-processor (attested finality)** &mdash; card via a processor (Stripe) and
+  instant bank credit transfers (`rail-bank-rtp`: FedNow / RTP / SEPA Instant).
+  Settlement happens inside a private processor, so finality is **not** publicly
+  verifiable: an `AttestedSettlementProof` embeds a processor attestation and is
+  signed by the payee (payee-attested) or the processor (processor-attested), with the
+  named `did:web` processor as the trust root. Card auth/capture maps to the escrow
+  lifecycle; RTP is push/irrevocable (no escrow); a `ProcessorAccountBinding` ties the
+  payee DID to a processor/bank account for anti-redirection.
+
+DID&harr;account binding prevents payment redirection. On-chain irreversibility is
+handled by compensating-transfer reversals that reference [[AVP-DISPUTES]] `Reversal`
+objects. Every object is secured with the mandatory `ecdsa-jcs-2022` cryptosuite.
 
 - **Namespace:** `https://w3id.org/avp-micro/settlement/v1#` (prefix `stl:`)
 - **Context:** `https://w3id.org/avp-micro/settlement/v1` &rarr; [`context/v1.jsonld`](context/v1.jsonld)
@@ -46,6 +57,13 @@ mandatory `ecdsa-jcs-2022` cryptosuite.
 | 53 | `53-reverse-settlement-instruction.json` | SettlementInstruction (reverse) | EVM stablecoin |
 | 54 | `54-reverse-settlement-proof.json` | SettlementProof (reverse) | EVM stablecoin |
 | 55 | `55-payee-account-binding-agent.json` | PayeeAccountBinding | — |
+| 56 | `56-payee-account-binding-evm.json` | PayeeAccountBinding | EVM stablecoin |
+| 57 | `57-processor-account-binding-card.json` | ProcessorAccountBinding | Card (Stripe) |
+| 58 | `58-settlement-instruction-card.json` | AttestedSettlementInstruction (escrow) | Card (Stripe) |
+| 59 | `59-settlement-proof-card.json` | AttestedSettlementProof (captured) | Card (Stripe) |
+| 60 | `60-processor-account-binding-rtp.json` | ProcessorAccountBinding | Bank/RTP |
+| 61 | `61-settlement-instruction-rtp.json` | AttestedSettlementInstruction (direct) | Bank/RTP |
+| 62 | `62-settlement-proof-rtp.json` | AttestedSettlementProof (settled) | Bank/RTP |
 
 Regenerate and check from the repo root (see [`../README.md`](../README.md)):
 

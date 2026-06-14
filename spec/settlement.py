@@ -141,6 +141,55 @@ def finality_ok(proof: dict, threshold: int, *, rail: str | None = None) -> bool
     return int(proof.get("confirmations", -1)) >= threshold  # -1 sentinel: absent == never confirmed
 
 
+# ---- attested (closed-processor) rails: card via Stripe + bank/RTP ----------
+# These rails settle inside a private processor, so finality is NOT publicly
+# verifiable: the proof embeds a processor attestation and is signed by the payee
+# (payee-attested) or carries a processor signature (processor-attested).
+
+_ATTESTED_RAILS = {"stl:rail-card-stripe", "stl:rail-bank-rtp"}
+# Statuses that count as final per rail family (card capture / bank settlement).
+_ATTESTED_FINAL_STATUS = {"succeeded", "captured", "settled"}
+_ATTESTED_MODES = {"payee-attested", "processor-attested"}
+
+
+def is_attested_rail(rail: str) -> bool:
+    """True for closed-processor rails whose finality is attested, not on-chain."""
+    return rail in _ATTESTED_RAILS
+
+
+def attested_finality_ok(proof: dict) -> bool:
+    """Finality predicate for an AttestedSettlementProof.
+
+    final  <=>  proof.finality == 'final'  AND  the embedded attestation is well-formed:
+    a recognized mode, a resolvable did:web processor (the named trust root), a non-empty
+    processor reference, and a terminal status (captured/succeeded/settled).
+    """
+    if proof.get("finality") != "final":
+        return False
+    att = proof.get("attestation") or {}
+    if att.get("mode") not in _ATTESTED_MODES:
+        return False
+    if not str(att.get("processor", "")).startswith("did:web:"):
+        return False
+    if not att.get("reference"):
+        return False
+    return att.get("status") in _ATTESTED_FINAL_STATUS
+
+
+def attested_binding_ok(instruction: dict, binding: dict | None) -> bool:
+    """Anti-redirection for attested rails: the instruction must settle to an account a
+    ProcessorAccountBinding ties to the instruction's payee, on the same rail, and the
+    instruction must reference that binding. (Caller verifies the binding's signature and
+    that binding.subject == the authorized payee separately.)
+    """
+    if binding is None:
+        return False
+    return (binding.get("subject") == instruction.get("payee")
+            and instruction.get("payeeAccountBinding") == binding.get("id")
+            and binding.get("rail") == instruction.get("rail")
+            and bool(binding.get("account")))
+
+
 # ---- deterministic chain fixtures (never a real chain) ----------------------
 
 def fake_tx(label: str) -> str:

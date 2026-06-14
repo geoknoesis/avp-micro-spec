@@ -13,6 +13,9 @@
     "EscrowLock": "stl:EscrowLock",
     "EscrowRelease": "stl:EscrowRelease",
     "EscrowRefund": "stl:EscrowRefund",
+    "ProcessorAccountBinding": "stl:ProcessorAccountBinding",
+    "AttestedSettlementInstruction": "stl:AttestedSettlementInstruction",
+    "AttestedSettlementProof": "stl:AttestedSettlementProof",
 
     "authorizationDigest": { "@id": "stl:authorizationDigest" },
     "rail": { "@id": "stl:rail", "@type": "@id" },
@@ -43,6 +46,13 @@
     "timeout": { "@id": "stl:timeout", "@type": "xsd:dateTime" },
     "settlementProof": { "@id": "stl:settlementProof", "@type": "@id" },
     "settlementProofDigest": { "@id": "stl:settlementProofDigest" },
-    "reason": { "@id": "stl:reason" }
+    "reason": { "@id": "stl:reason" },
+
+    "processor": { "@id": "stl:processor", "@type": "@id" },
+    "captureMode": { "@id": "stl:captureMode" },
+    "processorIntent": { "@id": "stl:processorIntent" },
+    "scheme": { "@id": "stl:scheme" },
+    "settledAmount": { "@id": "stl:settledAmount" },
+    "attestation": { "@id": "stl:attestation", "@type": "@json" }
   }
 }

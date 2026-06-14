@@ -1,0 +1,23 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:proc-binding:card",
+  "type": "ProcessorAccountBinding",
+  "subject": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "account": "stripe:acct_1Nv8aXAVPdemo01",
+  "processor": "did:web:stripe.com",
+  "rail": "stl:rail-card-stripe",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:29:40Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z2J4iAQtm8VMqucujC4mYZysDWtuEApUhhSSxVyb76DR3VRvamVBPm7EWPA8E7956CM8QG8btcRJrQDcXX15z4Rs2"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:settle-proof:rtp",
+  "type": "AttestedSettlementProof",
+  "instruction": "urn:avp:settle-instr:rtp",
+  "instructionDigest": "sha-256:P0QMoBlQyZhHgbjQGRNv7xgkZ3i39PMObG9iTl_8w4M",
+  "execution": "urn:avp:exec:555",
+  "rail": "stl:rail-bank-rtp",
+  "settledAmount": "0.001",
+  "currency": "USD",
+  "attestation": {
+    "type": "ProcessorAttestation",
+    "mode": "payee-attested",
+    "processor": "did:web:bank.example",
+    "reference": "rtp:e2e:20260325-ACME-0001",
+    "status": "settled",
+    "evidence": "iso20022:pacs.002:msgid-7f3a",
+    "observedAt": "2026-03-25T21:34:20Z"
+  },
+  "finality": "final",
+  "observedAt": "2026-03-25T21:34:21Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:34:21Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z5kLhgZrLhMgmbVGXxAMAp96wXYgDnSQ4qeP5KpFUuypovAFuQW4KZsc1kiCtGCHkrENtBiSAkNcvogYYGVts4ZL3"
+  }
+}

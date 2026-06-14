@@ -38,6 +38,16 @@ stl:EscrowRelease a owl:Class ; rdfs:label "Escrow release"@en ;
 stl:EscrowRefund a owl:Class ; rdfs:label "Escrow refund"@en ;
   rdfs:comment "A wallet-signed record refunding a prior EscrowLock to the payer (timeout/dispute), carrying the settling SettlementProof."@en .
 
+# Attested (closed-processor) rails: card via a processor (Stripe) and instant bank
+# credit transfers (RTP). Finality is not publicly verifiable, so the proof embeds a
+# processor attestation and roots trust in the payee (payee-attested) or the processor.
+stl:ProcessorAccountBinding a owl:Class ; rdfs:label "Processor account binding"@en ;
+  rdfs:comment "A payee-signed assertion that a DID controls a processor/bank account (e.g. a Stripe connected account or a bank creditor token), naming the attesting processor and the rail."@en .
+stl:AttestedSettlementInstruction a owl:Class ; rdfs:label "Attested settlement instruction"@en ;
+  rdfs:comment "A wallet-signed instruction binding a PaymentAuthorization to a closed-processor rail (card/RTP); fiat amount in decimal, destination via a ProcessorAccountBinding, no chain/asset/base-units."@en .
+stl:AttestedSettlementProof a owl:Class ; rdfs:label "Attested settlement proof"@en ;
+  rdfs:comment "A payee-signed proof embedding a processor attestation that a closed-processor settlement reached finality (card captured / RTP settled). Not self-verifiable against a public ledger."@en .
+
 #################################################################
 # Object properties (node references / DIDs / IRIs)
 #################################################################
@@ -95,3 +105,17 @@ stl:reason a owl:DatatypeProperty ; rdfs:label "reason"@en ; rdfs:range xsd:stri
   rdfs:comment "Why an EscrowRefund occurred (e.g. 'timeout')."@en .
 stl:observedAt a owl:DatatypeProperty ; rdfs:label "observed at"@en ; rdfs:range xsd:dateTime .
 stl:timeout a owl:DatatypeProperty ; rdfs:label "timeout"@en ; rdfs:range xsd:dateTime .
+
+# Attested-rail properties.
+stl:processor a owl:ObjectProperty ; rdfs:label "processor"@en ;
+  rdfs:comment "DID of the settlement processor that attests finality (e.g. did:web:stripe.com); the named trust root for an attested proof."@en .
+stl:settledAmount a owl:DatatypeProperty ; rdfs:label "settled amount"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Settled amount as a decimal in the instruction currency (closed-processor fiat rails; no base units)."@en .
+stl:captureMode a owl:DatatypeProperty ; rdfs:label "capture mode"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Card capture semantics: 'auth-capture' (escrow: authorize then capture) or 'immediate'."@en .
+stl:processorIntent a owl:DatatypeProperty ; rdfs:label "processor intent"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Processor-side reference for the intended settlement (e.g. a Stripe PaymentIntent id)."@en .
+stl:scheme a owl:DatatypeProperty ; rdfs:label "scheme"@en ; rdfs:range xsd:string ;
+  rdfs:comment "Instant-bank-transfer scheme: 'fednow', 'rtp', or 'sepa-instant'."@en .
+stl:attestation a owl:DatatypeProperty ; rdfs:label "attestation"@en ; rdfs:range rdfs:Literal ;
+  rdfs:comment "Embedded processor attestation (JSON literal): mode, processor, reference, status, evidence."@en .

@@ -112,6 +112,12 @@ SETTLEMENT_VECTORS = {
     "54-reverse-settlement-proof.json": "SettlementProof",
     "55-payee-account-binding-agent.json": "PayeeAccountBinding",
     "56-payee-account-binding-evm.json": "PayeeAccountBinding",
+    "57-processor-account-binding-card.json": "ProcessorAccountBinding",
+    "58-settlement-instruction-card.json": "AttestedSettlementInstruction",
+    "59-settlement-proof-card.json": "AttestedSettlementProof",
+    "60-processor-account-binding-rtp.json": "ProcessorAccountBinding",
+    "61-settlement-instruction-rtp.json": "AttestedSettlementInstruction",
+    "62-settlement-proof-rtp.json": "AttestedSettlementProof",
 }
 # Signed transport objects: full expand + schema + SHACL coverage.
 TRANSPORT_VECTORS = {
@@ -479,6 +485,13 @@ def main():
         "47-settlement-proof-lightning.json": [(SETTLE_NS + "preimage", "stl:preimage")],
         "48-escrow-release-lightning.json": [(SETTLE_NS + "settlementProof", "stl:settlementProof")],
         "52-escrow-refund-evm.json": [(SETTLE_NS + "reason", "stl:reason")],
+        "57-processor-account-binding-card.json": [(SETTLE_NS + "processor", "stl:processor")],
+        "58-settlement-instruction-card.json": [(SETTLE_NS + "rail", "stl:rail"),
+                                                (SETTLE_NS + "captureMode", "stl:captureMode")],
+        "59-settlement-proof-card.json": [(SETTLE_NS + "settledAmount", "stl:settledAmount"),
+                                          (SETTLE_NS + "attestation", "stl:attestation")],
+        "61-settlement-instruction-rtp.json": [(SETTLE_NS + "scheme", "stl:scheme")],
+        "62-settlement-proof-rtp.json": [(SETTLE_NS + "settledAmount", "stl:settledAmount")],
     })
     expand_check(TRANSPORT, TRANSPORT_VECTORS, {
         "00-service-description.json": [(TXP_NS + "acceptedSettlementRails", "txp:acceptedSettlementRails"),
