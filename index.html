@@ -2,459 +2,565 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>AVP-Micro Specification Suite</title>
-  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
-  <script class="remove">
-    const respecConfig = {
-      specStatus: "unofficial",
-      shortName: "avp-micro",
-      subtitle: "Vendor-neutral trust and authorization for AI agent payments",
-      edDraftURI: "https://geoknoesis.github.io/avp-micro-spec/",
-      editors: [
-        {
-          name: "Stephane Fellah",
-          company: "Geoknoesis LLC",
-          companyURL: "https://geoknoesis.com",
-        },
-      ],
-      github: {
-        repoURL: "https://github.com/geoknoesis/avp-micro-spec",
-        branch: "master",
-      },
-      license: "cc-by",
-      lint: { "no-unused-dfns": false },
-      xref: ["vc-data-model-2.0", "did-core", "INFRA"],
-      localBiblio: {
-        "DSA": {
-          title: "Delegated Spending Authority",
-          href: "spec/authority/",
-          publisher: "Geoknoesis LLC",
-        },
-        "AVP-PAYMENTS": {
-          title: "AVP-Micro Payments",
-          href: "spec/payments/",
-          publisher: "Geoknoesis LLC",
-        },
-        "AVP-INTEROP": {
-          title: "AVP-Micro ⇄ SD-JWT-VC Interop Profile",
-          href: "spec/interop-sd-jwt-vc/",
-          publisher: "Geoknoesis LLC",
-        },
-        "RFC8785": {
-          title: "JSON Canonicalization Scheme (JCS)",
-          href: "https://www.rfc-editor.org/rfc/rfc8785",
-          authors: ["A. Rundgren", "B. Jordan", "S. Erdtman"],
-          date: "June 2020",
-          status: "Informational",
-          publisher: "IETF",
-        },
-        "SD-JWT-VC": {
-          title: "SD-JWT-based Verifiable Credentials (SD-JWT VC)",
-          href: "https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-08.html",
-          publisher: "IETF",
-        },
-        "VC-DATA-INTEGRITY": {
-          title: "Verifiable Credential Data Integrity 1.0",
-          href: "https://www.w3.org/TR/vc-data-integrity/",
-          status: "REC",
-          publisher: "W3C",
-        },
-        "VC-DI-ECDSA": {
-          title: "Verifiable Credential Data Integrity ECDSA Cryptosuites v1.0",
-          href: "https://www.w3.org/TR/vc-di-ecdsa/",
-          status: "REC",
-          publisher: "W3C",
-        },
-        "VC-DI-EDDSA": {
-          title: "Verifiable Credential Data Integrity EdDSA Cryptosuites v1.0",
-          href: "https://www.w3.org/TR/vc-di-eddsa/",
-          status: "REC",
-          publisher: "W3C",
-        },
-        "BITSTRING-STATUS-LIST": {
-          title: "Bitstring Status List v1.0",
-          href: "https://www.w3.org/TR/vc-bitstring-status-list/",
-          status: "REC",
-          publisher: "W3C",
-        },
-        "JSON-LD11": {
-          title: "JSON-LD 1.1",
-          href: "https://www.w3.org/TR/json-ld11/",
-          status: "REC",
-          publisher: "W3C",
-        },
-      },
-    };
-  </script>
-  <style>
-    .spec-table { width: 100%; border-collapse: collapse; margin: 1.5em 0; }
-    .spec-table th, .spec-table td { padding: .6em .9em; border: 1px solid #ccc; vertical-align: top; }
-    .spec-table th { background: #f0f0f0; font-weight: bold; }
-    .spec-table tr:nth-child(even) td { background: #fafafa; }
-    .dep-arrow { color: #666; font-size: .9em; }
-    .status-unofficial { color: #b00; font-style: italic; }
-    .artifact-list { margin: 0; padding-left: 1.4em; }
-    .artifact-list li { margin: .25em 0; }
-    .namespace { font-family: monospace; font-size: .9em; word-break: break-all; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AVP-Micro — Verifiable trust &amp; authorization for AI-agent payments</title>
+  <meta name="description" content="AVP-Micro is a vendor-neutral trust and authorization layer for AI-agent payments: six open specifications built on W3C Verifiable Credentials 2.0, DIDs, and Data Integrity proofs — delegated spending authority that any merchant can verify, above any settlement rail.">
+  <link rel="canonical" href="https://geoknoesis.github.io/avp-micro-spec/">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="assets/avp.css">
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="AVP-Micro — the trust layer for AI-agent payments">
+  <meta property="og:description" content="Six open specifications for delegated, verifiable spending authority — built on W3C VC 2.0, DIDs, and Data Integrity proofs, above any settlement rail.">
+  <meta property="og:url" content="https://geoknoesis.github.io/avp-micro-spec/">
+  <meta property="og:image" content="https://geoknoesis.github.io/avp-micro-spec/assets/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AVP-Micro — the trust layer for AI-agent payments">
+  <meta name="twitter:description" content="Delegated, verifiable spending authority for autonomous agents — six open W3C-based specifications, above any settlement rail.">
+  <meta name="twitter:image" content="https://geoknoesis.github.io/avp-micro-spec/assets/og-image.svg">
 </head>
 <body>
 
-<h1 id="title">AVP-Micro Specification Suite</h1>
+<!-- ════════════════════ NAV ════════════════════ -->
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="#top">
+      <img src="assets/logo.svg" alt="" width="26" height="26">
+      AVP-Micro
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <nav class="nav-links" id="navLinks">
+      <a href="#problem">Problem</a>
+      <a href="#specs">Specifications</a>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#compare">Compare</a>
+      <a href="#conformance">Conformance</a>
+      <a class="nav-cta" href="https://github.com/geoknoesis/avp-micro-spec">GitHub</a>
+    </nav>
+  </div>
+</header>
 
-<!-- ═══════════════════ ABSTRACT ═══════════════════ -->
-<section id="abstract">
-  <p>
-    This document provides an overview of the <strong>AVP-Micro specification suite</strong>:
-    a set of open, standards-based specifications for delegated, verifiable spending authority
-    for autonomous AI agents. The suite defines how an <em>issuer</em> grants bounded spending
-    rights to an <em>agent</em>, how a <em>merchant</em> independently verifies those rights at
-    transaction time, and how all objects in the payment lifecycle are cryptographically secured
-    using W3C Verifiable Credentials 2.0, Decentralized Identifiers, and Data Integrity proofs.
-  </p>
-  <p>
-    A third document specifies a normative interoperability bridge to SD-JWT-VC credentials as
-    used by Mastercard/Google Verifiable Intent and Google AP2.
-  </p>
+<main id="top">
+
+<!-- ════════════════════ HERO ════════════════════ -->
+<section class="hero" id="hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Unofficial draft · Open W3C-based specifications</span>
+    <h1>The <span class="grad">trust layer</span> for AI-agent payments</h1>
+    <p class="hero-sub">
+      AVP-Micro is a vendor-neutral way to grant, prove, and verify <strong>delegated spending
+      authority</strong> for autonomous agents — built on W3C Verifiable Credentials, DIDs, and
+      Data Integrity proofs, and designed to sit <em>above any settlement rail</em>.
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#specs">Explore the specifications
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/geoknoesis/avp-micro-spec">View on GitHub</a>
+    </div>
+    <div class="hero-meta">
+      <span><b>6</b> peer specifications</span>
+      <span><b>W3C VC 2.0</b> + DIDs + Data Integrity</span>
+      <span><b>Signed</b> conformance test vectors</span>
+      <span><b>Settlement-agnostic</b> by design</span>
+    </div>
+    <p class="hero-note">An unofficial draft from Geoknoesis LLC, not reviewed by a W3C Working Group. Feedback welcome on GitHub.</p>
+  </div>
 </section>
 
-<!-- ═══════════════════ SOTD ═══════════════════ -->
-<section id="sotd">
-  <p>
-    This is an unofficial draft produced by
-    <a href="https://geoknoesis.com">Geoknoesis LLC</a>. It has not been reviewed by a W3C
-    Working Group. Feedback and contributions are welcome via the
-    <a href="https://github.com/geoknoesis/avp-micro-spec">GitHub repository</a>.
-  </p>
+<!-- ════════════════════ PROBLEM ════════════════════ -->
+<section id="problem">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">The problem</span>
+      <h2>Agents spend money. Who says they can?</h2>
+      <p class="lead">
+        Autonomous agents pay for marginal resources — tokens, rows, minutes, inference calls — at a
+        frequency and granularity humans never needed. Every serious deployment has to answer three
+        questions, <em>verifiably</em>, without handing each agent an unlimited corporate card.
+      </p>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <span class="q-num">01</span>
+        <h3>Who is paying?</h3>
+        <p>Not just "which API key" — an identity recognizable across services and audits, bound to cryptographic keys. AVP-Micro identifies every party by <strong>DID</strong>.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <span class="q-num">02</span>
+        <h3>Under what authority?</h3>
+        <p>The agent should spend only within rules a principal set: per-transaction caps, daily limits, allowed counterparties, categories, time windows, and revocation.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+        <span class="q-num">03</span>
+        <h3>Did value move — and what was delivered?</h3>
+        <p>Settlement is distinct from authorization. There must be a clear, signed link between agreed terms, execution, and delivery — for reconciliation and disputes.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-3" style="margin-top:20px">
+      <div class="notcard"><span class="x">✕</span><div><b>Cards &amp; bank rails</b> were built for human consent and chargeback regimes, with fees that punish true micropayments.</div></div>
+      <div class="notcard"><span class="x">✕</span><div><b>OAuth &amp; API keys</b> express <em>access</em> to an API, not <em>spending policy</em> under a principal's mandate — and rarely port across merchants.</div></div>
+      <div class="notcard"><span class="x">✕</span><div><b>Platform wallets</b> solve one ecosystem but reinforce lock-in: each marketplace becomes its own root of trust.</div></div>
+    </div>
+  </div>
 </section>
 
-<!-- ═══════════════════ INTRODUCTION ═══════════════════ -->
-<section id="introduction">
-  <h2>Introduction</h2>
-  <p>
-    Autonomous AI agents that spend money on behalf of users or organizations require a trust
-    layer that answers three questions with cryptographic proof:
-  </p>
-  <ol>
-    <li><em>Who authorized this agent to spend?</em> — proven by a signed
-      <a href="spec/authority/#dfn-spendingauthorizationcredential">SpendingAuthorizationCredential</a>.</li>
-    <li><em>What are the spending terms?</em> — limits, allowed payees, currency, and expiry
-      encoded in the credential subject and enforced by verifiers.</li>
-    <li><em>Is this specific purchase authorized?</em> — confirmed by a
-      <a href="spec/payments/#dfn-paymentauthorization">PaymentAuthorization</a> signed by the
-      agent and bound to a merchant-issued quote.</li>
-  </ol>
-  <p>
-    AVP-Micro provides the vocabulary, credential formats, cryptographic securing mechanisms,
-    and conformance test harness for this trust layer. It deliberately does <em>not</em> specify
-    payment rails or settlement — those are pluggable substrates. The same credential grammar
-    spans Lightning, Interledger, card, and stablecoin rails alike.
-  </p>
+<!-- ════════════════════ INSIGHT ════════════════════ -->
+<section class="section-soft" id="insight">
+  <div class="container">
+    <div class="section-head center">
+      <span class="eyebrow">The architectural insight</span>
+      <h2>Separate trust from settlement</h2>
+      <p class="lead center">
+        Make the split explicit, and the same authorization semantics survive when the rail changes —
+        and many rails can coexist behind one wallet policy engine.
+      </p>
+    </div>
 
-  <section id="design-goals">
-    <h3>Design goals</h3>
-    <dl>
-      <dt>Vendor-neutral trust anchor</dt>
-      <dd>Authority is proven by verifying an issuer's credential against a DID — not by
-        trusting any specific network's ledger, token format, or settlement guarantee.</dd>
-      <dt>Open standards only</dt>
-      <dd>All securing mechanisms are built on ratified W3C specifications:
-        [[VC-DATA-MODEL-2.0]], [[DID-CORE]], [[VC-DATA-INTEGRITY]], [[VC-DI-ECDSA]],
-        [[BITSTRING-STATUS-LIST]], and [[JSON-LD11]].</dd>
-      <dt>Interoperable with SD-JWT-VC networks</dt>
-      <dd>The interop profile ([[AVP-INTEROP]]) provides a normative, bidirectional mapping to
-        SD-JWT-VC credentials without collapsing either trust stack.</dd>
-      <dt>Conformance-testable</dt>
-      <dd>Every normative requirement is exercised by signed test vectors generated by a shared
-        Python harness (<code>generate.py</code>) and verified by <code>verify.py</code> and
-        <code>validate.py</code>.</dd>
-    </dl>
-  </section>
+    <div class="layers">
+      <div class="layer layer-top">
+        <div class="t">Trust &amp; authorization layer · AVP-Micro</div>
+        <div class="d">Portable DIDs · machine-verifiable delegation (VCs) · signed quotes &amp; authorizations bound to specific requests</div>
+      </div>
+      <div class="layer-mid">▼ &nbsp; sits above &nbsp; ▼</div>
+      <div class="layer layer-bot">
+        <div class="t">Settlement layer · any rail (out of scope by design)</div>
+        <div class="rails">
+          <span class="rail-pill">Lightning / L402</span>
+          <span class="rail-pill">EVM stablecoin</span>
+          <span class="rail-pill">Coinbase x402</span>
+          <span class="rail-pill">Open Payments / ILP</span>
+          <span class="rail-pill">Card rails</span>
+          <span class="rail-pill">Internal ledger</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<!-- ═══════════════════ SPECIFICATION SUITE ═══════════════════ -->
-<section id="suite">
-  <h2>Specification suite</h2>
-  <p>
-    The suite comprises four peer documents. Each ships a normative ReSpec specification,
-    a JSON-LD 1.1 context, a JSON Schema, SHACL shapes, an OWL/RDFS vocabulary, and signed
-    conformance test vectors. A reference <a href="#simulator">protocol simulator</a> exercises
-    the full message flow end to end against a play-money ledger.
-  </p>
+<!-- ════════════════════ SPECIFICATIONS ════════════════════ -->
+<section id="specs">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">The specifications</span>
+      <h2>Six peer specifications, one credential grammar</h2>
+      <p class="lead">
+        Each bundle ships a normative ReSpec specification, a JSON-LD 1.1 context, a JSON Schema,
+        SHACL shapes, an RDFS/OWL vocabulary, and signed test vectors. Click any card to read its spec.
+      </p>
+    </div>
 
-  <table class="spec-table">
-    <thead>
-      <tr>
-        <th>Specification</th>
-        <th>Namespace</th>
-        <th>Depends on</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a href="spec/authority/"><strong>Delegated Spending Authority (DSA)</strong></a></td>
-        <td class="namespace">https://w3id.org/spending-authority/v1#</td>
-        <td>—</td>
-        <td class="status-unofficial">Unofficial Draft</td>
-      </tr>
-      <tr>
-        <td><a href="spec/payments/"><strong>AVP-Micro Payments</strong></a></td>
-        <td class="namespace">https://w3id.org/avp-micro/v1#</td>
-        <td><a href="spec/authority/">DSA</a></td>
-        <td class="status-unofficial">Unofficial Draft</td>
-      </tr>
-      <tr>
-        <td><a href="spec/interop-sd-jwt-vc/"><strong>SD-JWT-VC Interop Profile</strong></a></td>
-        <td class="namespace">https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#</td>
-        <td><a href="spec/authority/">DSA</a>, <a href="spec/payments/">Payments</a>, [[SD-JWT-VC]]</td>
-        <td class="status-unofficial">Unofficial Draft</td>
-      </tr>
-      <tr>
-        <td><a href="spec/disputes/"><strong>Refunds, Reversals &amp; Disputes</strong></a></td>
-        <td class="namespace">https://w3id.org/avp-micro/disputes/v1#</td>
-        <td><a href="spec/payments/">Payments</a>, <a href="spec/authority/">DSA</a></td>
-        <td class="status-unofficial">Unofficial Draft</td>
-      </tr>
-    </tbody>
-  </table>
+    <div class="grid spec-grid">
+      <a class="spec-card" href="spec/authority/">
+        <span class="tag">Foundation</span>
+        <h3>Delegated Spending Authority</h3>
+        <p class="role">Identity, the <code>SpendingAuthorizationCredential</code> (caps, allowlists, categories, windows), securing mechanisms, revocation, and the issuer trust framework.</p>
+        <div class="dep"><b>Depends on:</b> &mdash;</div>
+        <div class="ns">https://w3id.org/spending-authority/v1#</div>
+        <span class="go">Read the spec <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
 
-  <section id="dsa-overview">
-    <h3>Delegated Spending Authority</h3>
-    <p>
-      The <a href="spec/authority/">Delegated Spending Authority specification</a> [[DSA]] is
-      the identity and trust foundation. It defines:
-    </p>
-    <ul>
-      <li>The <strong>SpendingAuthorizationCredential</strong> — a W3C VC 2.0 credential whose
-        subject is an agent DID, carrying per-transaction and daily amount limits, an
-        allowed-payees list, currency, and expiry.</li>
-      <li>The <strong>MerchantCredential</strong> and <strong>PaymentCapabilityCredential</strong>
-        for payee and wallet endorsement.</li>
-      <li>The mandatory-to-implement securing mechanism: <code>DataIntegrityProof</code> with
-        cryptosuite <code>ecdsa-jcs-2022</code> and DID method <code>did:key</code>
-        (P-256 / Multikey, multicodec <code>p256-pub</code>).</li>
-      <li>Revocation via [[BITSTRING-STATUS-LIST]].</li>
-      <li>An <strong>Agent Service Category</strong> SKOS vocabulary for scoping spending
-        authority by domain.</li>
-    </ul>
-    <p>Namespace: <code>https://w3id.org/spending-authority/v1#</code></p>
-  </section>
+      <a class="spec-card" href="spec/payments/">
+        <span class="tag">Forward value-flow</span>
+        <h3>AVP-Micro Payments</h3>
+        <p class="role">Offers, signed quotes, authorizations, executions, and receipts — plus streaming/metered sessions, signed accruals, and session budgets. A pricing-model vocabulary (flat, per-call, tiered, composite).</p>
+        <div class="dep"><b>Depends on:</b> Authority</div>
+        <div class="ns">https://w3id.org/avp-micro/v1#</div>
+        <span class="go">Read the spec <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
 
-  <section id="payments-overview">
-    <h3>AVP-Micro Payments</h3>
-    <p>
-      The <a href="spec/payments/">AVP-Micro Payments specification</a> [[AVP-PAYMENTS]] defines
-      the full payment lifecycle on top of DSA credentials:
-    </p>
-    <ul>
-      <li><strong>PaymentOffer</strong> — merchant-issued, signed offer with a normative
-        pricing-model vocabulary (flat, per-call, tiered, composite).</li>
-      <li><strong>PaymentQuote</strong> — merchant-computed, signed binding of price to a
-        specific service request.</li>
-      <li><strong>PaymentAuthorization</strong> — agent-signed approval of a quote, committing
-        to economic terms and binding the agent's spending credential.</li>
-      <li><strong>PaymentExecution</strong> and <strong>PaymentReceipt</strong> — wallet and
-        merchant records closing the transaction.</li>
-      <li><strong>UsageSession</strong>, <strong>UsageAccrual</strong>, and
-        <strong>SessionBudgetAuthorization</strong> — streaming/metered payment objects for
-        long-running or usage-billed services.</li>
-    </ul>
-    <p>Namespace: <code>https://w3id.org/avp-micro/v1#</code></p>
-  </section>
+      <a class="spec-card" href="spec/settlement/">
+        <span class="tag">On-chain binding</span>
+        <h3>On-Chain Settlement</h3>
+        <p class="role">Binds an authorization to a concrete rail (EVM stablecoin, x402, Lightning) via a rail-agnostic <code>SettlementInstruction</code>/<code>SettlementProof</code>, an escrow lifecycle, and a DID&#8596;account binding.</p>
+        <div class="dep"><b>Depends on:</b> Payments, Authority</div>
+        <div class="ns">https://w3id.org/avp-micro/settlement/v1#</div>
+        <span class="go">Read the spec <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
 
-  <section id="interop-overview">
-    <h3>SD-JWT-VC Interop Profile</h3>
-    <p>
-      The <a href="spec/interop-sd-jwt-vc/">SD-JWT-VC Interop Profile</a> [[AVP-INTEROP]] is a
-      bridge/binding, not a third protocol pillar. A W3C Data Integrity proof signs
-      JCS-canonical JSON-LD bytes; an SD-JWT signature signs JOSE serialization. Translating
-      credentials from one envelope to the other changes the signed bytes — the original
-      signature can never verify over the translated form. Authority therefore crosses the
-      boundary in one of three <dfn>bridge modes</dfn>:
-    </p>
-    <table class="spec-table">
-      <thead>
-        <tr><th>Mode</th><th>Mechanism</th><th>Trust added by bridge</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><code>proof-preserving</code> (default)</td>
-          <td>Embed the original credential + proof; the verifier checks <em>both</em></td>
-          <td>None</td>
-        </tr>
-        <tr>
-          <td><code>co-issued</code></td>
-          <td>Issuer natively signs both forms at creation time</td>
-          <td>None</td>
-        </tr>
-        <tr>
-          <td><code>attested</code></td>
-          <td>A named bridge re-signs in the target format</td>
-          <td>Bridge becomes a trust root; must be explicitly trusted by relying party</td>
-        </tr>
-      </tbody>
-    </table>
-    <p>Namespace: <code>https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#</code></p>
-  </section>
+      <a class="spec-card" href="spec/disputes/">
+        <span class="tag">Reverse value-flow</span>
+        <h3>Refunds, Reversals &amp; Disputes</h3>
+        <p class="role">The reverse flow: voluntary refunds and the adversarial dispute lifecycle (evidence, resolution, optional arbiter), both converging on a wallet-signed reversal.</p>
+        <div class="dep"><b>Depends on:</b> Payments, Authority</div>
+        <div class="ns">https://w3id.org/avp-micro/disputes/v1#</div>
+        <span class="go">Read the spec <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
 
-  <section id="disputes-overview">
-    <h3>Refunds, Reversals &amp; Disputes</h3>
-    <p>
-      The <a href="spec/disputes/">Refunds, Reversals &amp; Disputes specification</a> defines the
-      <em>reverse</em> value-flow on top of Payments — the voluntary path and the adversarial
-      path, both converging on a wallet-signed reversal:
-    </p>
-    <ul>
-      <li><strong>Refund</strong> — a payee-signed return of value (full or partial) against a
-        receipt/execution.</li>
-      <li><strong>Reversal</strong> and <strong>ReversalAcknowledgement</strong> — the
-        wallet-signed settlement that undoes a charge (caused by a refund or an upheld dispute),
-        and the payer's acknowledgement of it.</li>
-      <li><strong>Dispute</strong>, <strong>DisputeEvidence</strong>, and
-        <strong>DisputeResolution</strong> — the adversarial lifecycle: a payer raises a dispute,
-        both sides submit evidence, and the payee or a named arbiter resolves it (upheld /
-        partial / rejected / withdrawn).</li>
-    </ul>
-    <p>Namespace: <code>https://w3id.org/avp-micro/disputes/v1#</code></p>
-  </section>
+      <a class="spec-card" href="spec/interop-sd-jwt-vc/">
+        <span class="tag">Bridge</span>
+        <h3>SD-JWT-VC Interop Profile</h3>
+        <p class="role">A normative, bidirectional bridge carrying the same authority across the SD-JWT-VC stack used by Mastercard/Google <strong>Verifiable Intent</strong> and Google <strong>AP2</strong> — three bridge modes, no trust collapse.</p>
+        <div class="dep"><b>Depends on:</b> Authority, Payments, SD-JWT-VC</div>
+        <div class="ns">https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#</div>
+        <span class="go">Read the spec <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="spec-card" href="spec/transport/">
+        <span class="tag">Wire binding</span>
+        <h3>Transport &amp; Protocol</h3>
+        <p class="role">The normative HTTP/REST wire binding — service discovery plus an HTTP <strong>402</strong> payment challenge — that carries the signed payment objects between agent and payee. OpenAPI 3.1 + signed objects.</p>
+        <div class="dep"><b>Depends on:</b> Payments, Authority</div>
+        <div class="ns">https://w3id.org/avp-micro/transport/v1#</div>
+        <span class="go">Read the spec <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+    </div>
+  </div>
 </section>
 
-<!-- ═══════════════════ ARTIFACTS ═══════════════════ -->
-<section id="artifacts">
-  <h2>Artifacts per bundle</h2>
-  <p>Every bundle ships the following artifacts under its directory:</p>
-  <table class="spec-table">
-    <thead>
-      <tr><th>Artifact</th><th>File</th><th>Role</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>ReSpec specification</td>
-        <td><code>index.html</code></td>
-        <td>Normative</td>
-      </tr>
-      <tr>
-        <td>JSON-LD 1.1 context</td>
-        <td><code>context/v1.jsonld</code></td>
-        <td>Normative</td>
-      </tr>
-      <tr>
-        <td>JSON Schema (Draft 2020-12)</td>
-        <td><code>schemas/*.schema.json</code></td>
-        <td>Conformance aid</td>
-      </tr>
-      <tr>
-        <td>SHACL shapes</td>
-        <td><code>shapes/*.ttl</code></td>
-        <td>Conformance aid</td>
-      </tr>
-      <tr>
-        <td>RDFS/OWL vocabulary</td>
-        <td><code>vocab/*.ttl</code></td>
-        <td>Conformance aid</td>
-      </tr>
-      <tr>
-        <td>Signed test vectors</td>
-        <td><code>test-vectors/*.json</code></td>
-        <td>Informative fixtures</td>
-      </tr>
-    </tbody>
-  </table>
+<!-- ════════════════════ HOW IT WORKS ════════════════════ -->
+<section class="section-soft" id="how">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">How it works</span>
+      <h2>Check authority once, pay many times</h2>
+      <p class="lead">
+        A principal issues one bounded credential. Each charge is then a lightweight, request-bound
+        signed message. Every object below is a real, signed test vector from this repository.
+      </p>
+    </div>
+
+    <div class="flow">
+      <div class="flow-step"><span class="s">STEP 1</span><b>Quote</b><span>Payee signs a price bound to a request</span></div>
+      <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="flow-step"><span class="s">STEP 2</span><b>Authorize</b><span>Agent signs approval + presents credential</span></div>
+      <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="flow-step"><span class="s">STEP 3</span><b>Execute</b><span>Wallet enforces policy &amp; records the charge</span></div>
+      <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="flow-step"><span class="s">STEP 4</span><b>Receipt</b><span>Payee signs confirmation of delivery</span></div>
+    </div>
+
+    <div class="codepanel">
+      <div class="tabs" role="tablist" aria-label="Signed object examples">
+        <button class="tab" role="tab" aria-selected="true"  aria-controls="ex-auth"   id="tab-auth">SpendingAuthorizationCredential</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="ex-payauth" id="tab-payauth">PaymentAuthorization</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="ex-settle"  id="tab-settle">SettlementProof</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="ex-402"     id="tab-402">HTTP 402 Challenge</button>
+      </div>
+      <div class="code-body">
+<pre class="codeblock" role="tabpanel" id="ex-auth" aria-labelledby="tab-auth"><span class="cap c">// Issuer grants bounded authority to an agent  ·  spec/authority/test-vectors/  (trimmed)</span>{
+  <span class="k">"@context"</span>: [ <span class="s">"…/credentials/v2"</span>, <span class="s">"…/spending-authority/v1"</span> ],
+  <span class="k">"type"</span>: [ <span class="s">"VerifiableCredential"</span>, <span class="s">"SpendingAuthorizationCredential"</span> ],
+  <span class="k">"issuer"</span>: <span class="s">"did:key:zDnaekFd…uy8tv"</span>,
+  <span class="k">"validUntil"</span>: <span class="s">"2026-06-25T20:00:00Z"</span>,
+  <span class="k">"credentialStatus"</span>: { <span class="k">"type"</span>: <span class="s">"BitstringStatusListEntry"</span>, … },  <span class="c">// revocable</span>
+  <span class="k">"credentialSubject"</span>: {
+    <span class="k">"id"</span>: <span class="s">"did:key:zDnaew8N…hxkSU"</span>,            <span class="c">// the agent</span>
+    <span class="k">"currency"</span>: <span class="s">"USD"</span>,
+    <span class="k">"maxPerTransaction"</span>: <span class="s">"0.05"</span>,
+    <span class="k">"dailyLimit"</span>: <span class="s">"5.00"</span>,
+    <span class="k">"allowedPayees"</span>: [ <span class="s">"did:key:zDnaenNX…drxEN"</span> ]
+  },
+  <span class="k">"proof"</span>: { <span class="k">"cryptosuite"</span>: <span class="s">"ecdsa-jcs-2022"</span>, <span class="k">"proofValue"</span>: <span class="s">"z3u5ws3g…95Kte"</span> }
+}</pre>
+
+<pre class="codeblock" role="tabpanel" id="ex-payauth" aria-labelledby="tab-payauth" hidden><span class="cap c">// Agent approves a specific quote, bound to the request  ·  spec/payments/test-vectors/  (trimmed)</span>{
+  <span class="k">"type"</span>: <span class="s">"PaymentAuthorization"</span>,
+  <span class="k">"quote"</span>: <span class="s">"urn:avp:quote:789"</span>,
+  <span class="k">"quoteDigest"</span>: <span class="s">"sha-256:EuScAr2q…MbFg"</span>,        <span class="c">// binds to the quote</span>
+  <span class="k">"payer"</span>: <span class="s">"did:key:zDnaew8N…hxkSU"</span>,
+  <span class="k">"payee"</span>: <span class="s">"did:key:zDnaenNX…drxEN"</span>,
+  <span class="k">"amount"</span>: <span class="s">"0.001"</span>,
+  <span class="k">"currency"</span>: <span class="s">"USD"</span>,
+  <span class="k">"requestHash"</span>: <span class="s">"sha-256:-DqOvoa7…O_0M"</span>,         <span class="c">// binds to the request</span>
+  <span class="k">"expires"</span>: <span class="s">"2026-03-25T21:31:02Z"</span>,
+  <span class="k">"nonce"</span>: <span class="s">"n-39102"</span>,                          <span class="c">// single-use · anti-replay</span>
+  <span class="k">"vp"</span>: { <span class="k">"type"</span>: <span class="s">"VerifiablePresentation"</span>, … },  <span class="c">// carries the credential above</span>
+  <span class="k">"proof"</span>: { <span class="k">"cryptosuite"</span>: <span class="s">"ecdsa-jcs-2022"</span>, <span class="k">"proofValue"</span>: <span class="s">"z2ro1yMp…1V7N6"</span> }
+}</pre>
+
+<pre class="codeblock" role="tabpanel" id="ex-settle" aria-labelledby="tab-settle" hidden><span class="cap c">// Optional: bind the payment to on-chain settlement  ·  spec/settlement/test-vectors/  (trimmed)</span>{
+  <span class="k">"type"</span>: <span class="s">"SettlementProof"</span>,
+  <span class="k">"execution"</span>: <span class="s">"urn:avp:exec:555"</span>,
+  <span class="k">"chain"</span>: <span class="s">"eip155:8453"</span>,                       <span class="c">// Base</span>
+  <span class="k">"transaction"</span>: <span class="s">"0x5329ecf0…d1aedb"</span>,
+  <span class="k">"settledAmountBase"</span>: <span class="s">"1000"</span>,
+  <span class="k">"asset"</span>: <span class="s">"eip155:8453/erc20:0x8335…2913"</span>,    <span class="c">// USDC</span>
+  <span class="k">"confirmations"</span>: <span class="n">12</span>,
+  <span class="k">"finality"</span>: <span class="s">"final"</span>,
+  <span class="k">"proof"</span>: { <span class="k">"cryptosuite"</span>: <span class="s">"ecdsa-jcs-2022"</span>, <span class="k">"proofValue"</span>: <span class="s">"z22vE8mB…LiLbSG"</span> }
+}</pre>
+
+<pre class="codeblock" role="tabpanel" id="ex-402" aria-labelledby="tab-402" hidden><span class="cap c">// Payee asks for payment in-band  ·  spec/transport/test-vectors/  (trimmed)</span><span class="n">HTTP/1.1 402 Payment Required</span>
+<span class="k">Content-Type</span>: application/json
+{
+  <span class="k">"type"</span>: <span class="s">"PaymentChallenge"</span>,
+  <span class="k">"payee"</span>: <span class="s">"did:key:zDnaenNX…drxEN"</span>,
+  <span class="k">"quote"</span>: <span class="s">"urn:avp:quote:789"</span>,
+  <span class="k">"challenge"</span>: <span class="s">"txp-nonce-7f3a9c2e"</span>,
+  <span class="k">"acceptedSettlementRails"</span>: [
+    <span class="s">"…/settlement/v1#rail-evm-stablecoin"</span>,
+    <span class="s">"…/settlement/v1#rail-x402"</span>
+  ],
+  <span class="k">"expires"</span>: <span class="s">"2026-03-25T21:36:00Z"</span>,
+  <span class="k">"proof"</span>: { <span class="k">"cryptosuite"</span>: <span class="s">"ecdsa-jcs-2022"</span>, <span class="k">"proofValue"</span>: <span class="s">"z53jFJTK…phEAM"</span> }
+}</pre>
+      </div>
+    </div>
+
+    <div class="runline">
+      <span class="prompt">$</span> python spec/verify.py
+      <span class="c" style="color:var(--code-com)"># proofs · bindings · policy · interop round-trip</span>
+      <span class="pass">PASS</span>
+    </div>
+  </div>
 </section>
 
-<!-- ═══════════════════ CONFORMANCE HARNESS ═══════════════════ -->
-<section id="harness">
-  <h2>Conformance harness</h2>
-  <p>
-    A shared Python harness at the repository root generates all signed test vectors and
-    validates every bundle. Dependencies are installable via <code>pip install -r
-    requirements.txt</code>.
-  </p>
+<!-- ════════════════════ CHALLENGES ════════════════════ -->
+<section id="challenges">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">The challenges</span>
+      <h2>What makes this hard — and how the suite answers it</h2>
+      <p class="lead">
+        Machine-native micropayments run into economic, technical, trust, and operational walls.
+        Each maps to a concrete mechanism in the bundles.
+      </p>
+    </div>
 
-  <section id="harness-commands">
-    <h3>Commands</h3>
-    <pre class="example" title="Regenerate all test vectors">python spec/generate.py</pre>
-    <pre class="example" title="Verify proofs, bindings, policy, and interop round-trip">python spec/verify.py    # must report PASS</pre>
-    <pre class="example" title="Validate Turtle, JSON-LD expansion, JSON Schema, and SHACL">python spec/validate.py  # must report PASS</pre>
-    <pre class="example" title="Run the protocol simulator over the declarative use cases">python spec/sim.py       # must report PASS</pre>
-    <p>
-      <code>validate.py</code> is fully offline: the stable external W3C contexts
-      (<code>credentials/v2</code>, <code>data-integrity/v2</code>) are vendored under
-      <code>spec/contexts/</code> and served by a local document loader, so JSON-LD
-      expansion does not depend on network access to w3.org.
-    </p>
-  </section>
-
-  <section id="harness-modules">
-    <h3>Harness modules</h3>
-    <dl>
-      <dt><code>spec/avp_crypto.py</code></dt>
-      <dd>P-256 key derivation, JCS canonicalization ([[RFC8785]]),
-        <code>ecdsa-jcs-2022</code> sign/verify (deterministic RFC 6979, canonical
-        low-s). The mandatory-to-implement cryptosuite.</dd>
-      <dt><code>spec/sdjwt.py</code></dt>
-      <dd>P-256 key derivation, ES256/JOSE sign/verify, JWK encode/decode, SD-JWT compact
-        serialization, <code>make_disclosure</code>, <code>sd_hash</code>, and key-binding
-        JWT helpers. Used only by the interop bundle.</dd>
-      <dt><code>spec/interop.py</code></dt>
-      <dd>AVP-Micro ↔ SD-JWT-VC translator: claim mapping, three bridge modes, cross-stack
-        verification rules, <code>importAdvisory</code> surfacing, and L3 key-binding JWT.</dd>
-      <dt><code>spec/pricing.py</code></dt>
-      <dd>Normative pricing-model evaluator: flat, per-call, tiered, and composite models.
-        Used by the Payments bundle conformance vectors.</dd>
-      <dt><code>spec/sim.py</code> + <code>spec/sim-scenarios.json</code></dt>
-      <dd>Reference <a href="#simulator">protocol simulator</a> and its declarative use cases.</dd>
-    </dl>
-  </section>
-
-  <section id="simulator">
-    <h3>Protocol simulator &amp; interactive demo</h3>
-    <p>
-      <code>spec/sim.py</code> runs the full signed-message flow end to end — credential
-      issuance/delegation (and revocation), quote → authorize → execute → receipt, plus
-      streaming/metered sessions, human-present approval, AP2-bridged imported authority, and
-      the refund/reversal/dispute lifecycle — with real
-      <code>ecdsa-jcs-2022</code> proofs and complete wallet-side policy enforcement, settled on a
-      <strong>simulated play-money ledger</strong>. Settlement is the only money-touching step and
-      is the one part the protocol scopes out, so it is stubbed: <strong>no real funds move</strong>.
-    </p>
-    <p>
-      The use cases are defined declaratively in <code>spec/sim-scenarios.json</code> and cover
-      the happy paths plus the full rejection vocabulary (caps, replay, expiry, quote-binding,
-      budget, forged approval, over-refund, …). An interactive
-      <strong>Streamlit demo</strong> (separate <code>avp-micro-sim-demo</code> repository)
-      visualises each use case: a plain-language outcome, a flow diagram of who signs what, the
-      money moving on the ledger, and a per-participant view.
-    </p>
-    <pre class="example" title="Run the simulator headless">python spec/sim.py    # PASS/FAIL per declarative use case</pre>
-  </section>
+    <div class="chal">
+      <div class="chal-card">
+        <span class="cat">Economic</span>
+        <h3>Unit economics &amp; streaming</h3>
+        <p>Per-transaction fees dominate when the payment is tiny.</p>
+        <div class="fix"><b>→</b> Signed accruals &amp; <b>session budgets</b>, a pricing-model vocabulary, and rail-pluggable settlement so low-fee rails drop in without changing authorization.</div>
+      </div>
+      <div class="chal-card">
+        <span class="cat">Technical</span>
+        <h3>Replay &amp; request binding</h3>
+        <p>Old approvals must not be replayed against new charges.</p>
+        <div class="fix"><b>→</b> Every payment binds a <b>requestHash</b> and <b>quoteDigest</b>, with nonces and short expiry; the simulator enforces <b>single-use</b> consumption at runtime.</div>
+      </div>
+      <div class="chal-card">
+        <span class="cat">Trust &amp; interop</span>
+        <h3>Fragmented identity &amp; opaque delegation</h3>
+        <p>Without portable identity, every platform is its own trust root.</p>
+        <div class="fix"><b>→</b> Parties are identified by <b>DID</b>; authority is an issuer-signed VC with explicit, machine-verifiable policy — recognizable across independent merchants.</div>
+      </div>
+      <div class="chal-card">
+        <span class="cat">Operational</span>
+        <h3>Revocation, audit &amp; disputes</h3>
+        <p>Rights change; enterprises need who-authorized-what evidence.</p>
+        <div class="fix"><b>→</b> <b>BitstringStatusList</b> revocation, an append-only signed chain from authorization to receipt, and a full <b>refund / reversal / dispute</b> lifecycle.</div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<!-- ═══════════════════ RELATIONSHIPS ═══════════════════ -->
-<section id="ecosystem">
-  <h2>Relationship to network agent-payment schemes</h2>
-  <p>
-    AVP-Micro is the <em>trust and authorization layer</em>, not a payment network. It
-    standardizes <em>who may spend, under what terms, and how that authority is proven</em>,
-    leaving value movement to any settlement rail.
-  </p>
-  <p>
-    Emerging network schemes for agent payments use a different credential stack:
-    Mastercard <strong>Agent Pay for Machines</strong> / <strong>Verifiable Intent</strong>
-    and Google <strong>AP2</strong> are built on [[SD-JWT-VC]] — three-layer KB-SD-JWT chains
-    signed with <code>ES256</code>, typed by <code>vct</code>, and identified by
-    <code>iss</code>/<code>sub</code> URIs. They deliberately do not conform to the
-    W3C VC Data Model and do not use DIDs. AVP-Micro, by contrast, secures W3C VC 2.0
-    credentials with Data Integrity proofs and identifies parties by DID.
-  </p>
-  <p>
-    The <a href="spec/interop-sd-jwt-vc/">SD-JWT-VC Interop Profile</a> bridges this gap
-    normatively. See the
-    <a href="https://github.com/geoknoesis/avp-micro-spec/blob/master/docs/superpowers/specs/2026-06-11-avp-sdjwt-vc-bridge-design.md">bridge design note</a>
-    for the full analysis of the three bridge modes and identity asymmetry.
-  </p>
+<!-- ════════════════════ FEATURES ════════════════════ -->
+<section class="section-soft" id="features">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Features it supports</span>
+      <h2>What the credential grammar can express</h2>
+      <p class="lead">One set of signed objects covers the policy, the lifecycle, and the proofs — enforced, not just declared.</p>
+    </div>
+
+    <div class="grid feat-grid">
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Per-tx &amp; daily caps</b><span>maxPerTransaction, dailyLimit, currency</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Payee allowlists</b><span>spend only with approved counterparties</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Service categories &amp; windows</b><span>scope authority by domain &amp; time</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Streaming &amp; session budgets</b><span>signed accruals for metered services</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Replay &amp; request binding</b><span>requestHash, quoteDigest, nonce, expiry</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Single-use consumption</b><span>enforced by the wallet at runtime</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Revocation &amp; status</b><span>BitstringStatusList v1.0</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Refunds, reversals &amp; disputes</b><span>cryptographically-bound reverse flow</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>On-chain settlement &amp; escrow</b><span>EVM stablecoin · x402 · Lightning</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>SD-JWT-VC interop</b><span>bridge to Verifiable Intent / AP2, with selective disclosure</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>HTTP 402 transport</b><span>discovery + in-band payment challenge</span></div></div>
+      <div class="feat"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Mandatory-to-implement crypto</b><span>ecdsa-jcs-2022 · did:key (P-256)</span></div></div>
+    </div>
+  </div>
 </section>
 
+<!-- ════════════════════ COMPARE ════════════════════ -->
+<section id="compare">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">How it compares</span>
+      <h2>Where AVP-Micro sits among agent-payment protocols</h2>
+      <p class="lead">
+        Most agent-commerce protocols orchestrate checkout or move money. AVP-Micro's job is the
+        portable, merchant-verifiable <strong>spending mandate</strong> — and it bridges to, rather
+        than fights, the front-runners.
+      </p>
+    </div>
+
+    <div class="table-wrap">
+      <table class="cmp">
+        <thead>
+          <tr><th>Protocol</th><th>Primary layer</th><th>Authorization model</th><th>Relationship to AVP-Micro</th></tr>
+        </thead>
+        <tbody>
+          <tr class="self">
+            <td><b>AVP-Micro</b></td>
+            <td><span class="pill pill-blue">Trust + authorization</span></td>
+            <td>W3C VC mandate (<code>SpendingAuthorizationCredential</code>), <code>ecdsa-jcs-2022</code>, settlement-agnostic</td>
+            <td>&mdash;</td>
+          </tr>
+          <tr>
+            <td><b>AP2</b> (Google, 60+ partners)</td>
+            <td><span class="pill pill-blue">Trust + authorization</span></td>
+            <td>W3C VC mandates (Intent / Cart / Payment)</td>
+            <td>Closest analog; <b>interop target</b> via the SD-JWT-VC bridge</td>
+          </tr>
+          <tr>
+            <td><b>Skyfire</b> KYA / KYAPay</td>
+            <td><span class="pill pill-blue">Identity + authz + rail</span></td>
+            <td>Signed KYA JWT, OAuth2/OIDC</td>
+            <td>Direct competitor at the mandate layer; candidate bridge target</td>
+          </tr>
+          <tr>
+            <td><b>ACP</b> (OpenAI + Stripe)</td>
+            <td><span class="pill pill-teal">Commerce + payment</span></td>
+            <td>Stripe Shared Payment Token</td>
+            <td>Competes on intent authorization; token, not a VC</td>
+          </tr>
+          <tr>
+            <td><b>UCP</b> (Google + Shopify)</td>
+            <td><span class="pill pill-teal">Commerce orchestration</span></td>
+            <td>Delegates to AP2</td>
+            <td>Composes <em>onto</em> the mandate layer; not a rival</td>
+          </tr>
+          <tr>
+            <td><b>Mastercard Agent Pay</b></td>
+            <td><span class="pill pill-gray">Card-rail impl.</span></td>
+            <td>Agentic Tokens</td>
+            <td>Commercial competitor at the rails layer</td>
+          </tr>
+          <tr>
+            <td><b>Visa Intelligent Commerce / TAP</b></td>
+            <td><span class="pill pill-gray">Card-rail impl.</span></td>
+            <td>Network-specific</td>
+            <td>Commercial competitor at the rails layer</td>
+          </tr>
+          <tr>
+            <td><b>x402 / L402 / MPP</b></td>
+            <td><span class="pill pill-gray">Settlement (HTTP 402)</span></td>
+            <td>Rail-specific challenge</td>
+            <td>Complementary; bridge / settlement target</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid gap-grid">
+      <div class="gap-card gap-have">
+        <h4>✓ Largely addressed by the state of the art</h4>
+        <ul>
+          <li>Moving money: Open Payments, Lightning, stablecoin flows, MPP-style HTTP 402</li>
+          <li>Request integrity &amp; replay: HTTP Message Signatures (RFC 9421), DPoP (RFC 9449)</li>
+          <li>General-purpose portable identity: W3C DID &amp; VC standards</li>
+          <li>Internally-coherent mandate stacks: SD-JWT-VC (Verifiable Intent / AP2)</li>
+        </ul>
+      </div>
+      <div class="gap-card gap-need">
+        <h4>△ Still underspecified for cross-vendor agent commerce</h4>
+        <ul>
+          <li>Policy that <em>survives a rail change</em> (caps, allowlists, session budgets) as normative artifacts</li>
+          <li>Binding quotes, sessions, and accruals into one auditable story</li>
+          <li>A normative bridge so one agent's authority verifies on <em>either</em> stack</li>
+          <li>A cross-vendor, cryptographically-bound refund / reversal / chargeback flow</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ CONFORMANCE ════════════════════ -->
+<section class="section-dark" id="conformance">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Conformance</span>
+      <h2>Guarantees demonstrated, not just asserted</h2>
+      <p class="lead" style="color:#94a3b8">
+        A shared Python harness generates every signed test vector and validates all six bundles,
+        and a protocol simulator enforces the runtime behaviour static vectors can't.
+      </p>
+    </div>
+
+    <div class="grid conf-grid">
+      <div class="conf-card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg></div>
+        <h3>Signed test vectors</h3>
+        <p>Every normative requirement is exercised by deterministic, signed vectors generated by <code>generate.py</code> — across all six bundles.</p>
+      </div>
+      <div class="conf-card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <h3>Offline validation</h3>
+        <p><code>validate.py</code> checks Turtle, JSON-LD expansion, JSON Schema, and SHACL — fully offline, with vendored W3C contexts.</p>
+      </div>
+      <div class="conf-card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+        <h3>Protocol simulator</h3>
+        <p>Runs the full signed-message flow with real proofs and wallet-side policy against a play-money ledger — caps, replay, expiry, budgets, dispute lifecycle.</p>
+      </div>
+    </div>
+
+    <div class="badges">
+      <span class="badge">python spec/verify.py <span class="ok">PASS</span></span>
+      <span class="badge">python spec/validate.py <span class="ok">PASS</span></span>
+      <span class="badge">python spec/sim.py <span class="ok">PASS</span></span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="top">
+      <div>
+        <a class="brand" href="#top" style="color:#fff">
+          <img src="assets/logo.svg" alt="" width="26" height="26"> AVP-Micro
+        </a>
+        <p style="margin-top:14px">Vendor-neutral trust and authorization for AI-agent payments. A suite of formal W3C-based specifications, conformance tests, and signed test vectors.</p>
+      </div>
+      <div class="cols">
+        <div>
+          <h5>Specifications</h5>
+          <a href="spec/authority/">Delegated Spending Authority</a>
+          <a href="spec/payments/">AVP-Micro Payments</a>
+          <a href="spec/settlement/">On-Chain Settlement</a>
+          <a href="spec/disputes/">Refunds, Reversals &amp; Disputes</a>
+          <a href="spec/interop-sd-jwt-vc/">SD-JWT-VC Interop Profile</a>
+          <a href="spec/transport/">Transport &amp; Protocol</a>
+        </div>
+        <div>
+          <h5>Resources</h5>
+          <a href="https://github.com/geoknoesis/avp-micro-spec">GitHub repository</a>
+          <a href="spec/README.md">Suite overview</a>
+          <a href="docs/problem-challenges-and-sota.md">Problem, challenges &amp; SOTA</a>
+          <a href="https://geoknoesis.com">Geoknoesis LLC</a>
+        </div>
+        <div class="ns-list">
+          <h5>Namespaces</h5>
+          <code>w3id.org/spending-authority/v1#</code>
+          <code>w3id.org/avp-micro/v1#</code>
+          <code>w3id.org/avp-micro/settlement/v1#</code>
+          <code>w3id.org/avp-micro/disputes/v1#</code>
+          <code>w3id.org/avp-micro/interop/sd-jwt-vc/v1#</code>
+          <code>w3id.org/avp-micro/transport/v1#</code>
+        </div>
+      </div>
+    </div>
+    <div class="bar">
+      <span>© 2026 Geoknoesis LLC · Stephane Fellah · Licensed CC-BY 4.0</span>
+      <span>Unofficial draft — not reviewed by a W3C Working Group · namespace registration pending</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/avp.js" defer></script>
 </body>
 </html>

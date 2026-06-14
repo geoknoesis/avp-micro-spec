@@ -1,0 +1,12 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AVP-Micro">
+  <defs>
+    <linearGradient id="avpLogo" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#avpLogo)"/>
+  <path d="M16 7.5 L23.5 16 L16 24.5 L8.5 16 Z" fill="#ffffff" fill-opacity="0.95"/>
+  <path d="M16 7.5 L23.5 16 L16 16 Z" fill="#ffffff" fill-opacity="0.55"/>
+  <path d="M16 16 L23.5 16 L16 24.5 Z" fill="#0f172a" fill-opacity="0.12"/>
+</svg>

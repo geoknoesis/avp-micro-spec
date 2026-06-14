@@ -1,0 +1,35 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0b1224"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="120" y1="120" x2="220" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+    <linearGradient id="grad-text" x1="120" y1="300" x2="900" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#5eead4"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.85" cy="0.1" r="0.6">
+      <stop stop-color="#14b8a6" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#14b8a6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- logo mark -->
+  <rect x="120" y="120" width="100" height="100" rx="26" fill="url(#accent)"/>
+  <path d="M170 145 L197 195 L170 230 L143 195 Z" fill="#ffffff" fill-opacity="0.95"/>
+  <path d="M170 145 L197 195 L170 195 Z" fill="#ffffff" fill-opacity="0.55"/>
+  <text x="250" y="190" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="40" font-weight="800" fill="#ffffff">AVP-Micro</text>
+
+  <text x="120" y="350" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="76" font-weight="800" fill="#ffffff">The trust layer for</text>
+  <text x="120" y="436" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="76" font-weight="800" fill="url(#grad-text)">AI-agent payments</text>
+
+  <text x="122" y="506" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="32" fill="#94a3b8">Delegated, verifiable spending authority — above any settlement rail.</text>
+
+  <text x="122" y="566" font-family="SF Mono, Consolas, monospace" font-size="24" fill="#5eead4">W3C VC 2.0  ·  DIDs  ·  Data Integrity  ·  6 open specifications</text>
+</svg>
