@@ -4,8 +4,10 @@
 # The wire layer: a discovery document, an HTTP 402 payment challenge, the
 # client's authorization submission, and an RFC 9457 problem-details body.
 # Reused members (payee, payer, quote, quoteDigest, requestHash, amount,
-# currency, nonce, expires, authorization, timestamp, acceptedCredentialIssuers)
-# expand to avp:/dsa:/sec:; new members expand to txp:.
+# currency, nonce, expires, challenge, authorization, timestamp,
+# acceptedCredentialIssuers) expand to avp:/dsa:/sec:; new members expand to txp:.
+# Note: `challenge` reuses sec:challenge -- the same anti-replay challenge-nonce
+# term the Data Integrity proof scope defines -- so it cannot also be a txp: term.
 #
 # Namespace: https://w3id.org/avp-micro/transport/v1#  (prefix txp:)
 @prefix txp:  <https://w3id.org/avp-micro/transport/v1#> .
@@ -59,8 +61,6 @@ txp:endpoints a owl:DatatypeProperty ; rdfs:label "endpoints"@en ; rdfs:range rd
   rdfs:comment "A JSON object mapping operation names (quote, authorize, execute, receipt, settlementStatus, session, accruals, close, extend) to URL templates."@en .
 txp:supportedBundles a owl:DatatypeProperty ; rdfs:label "supported bundles"@en ; rdfs:range rdfs:Literal ;
   rdfs:comment "A JSON object mapping bundle context IRIs to the supported version string."@en .
-txp:challenge a owl:DatatypeProperty ; rdfs:label "challenge"@en ; rdfs:range xsd:string ;
-  rdfs:comment "Server-chosen anti-replay nonce; the client echoes it in the AuthorizationSubmission."@en .
 txp:authorizeEndpoint a owl:DatatypeProperty ; rdfs:label "authorize endpoint"@en ; rdfs:range xsd:anyURI ;
   rdfs:comment "URL the client submits the authorization to (or the gated resource to retry)."@en .
 txp:idempotencyKey a owl:DatatypeProperty ; rdfs:label "idempotency key"@en ; rdfs:range xsd:string ;

@@ -25,7 +25,7 @@ txp:PaymentChallengeShape a sh:NodeShape ;
   sh:property [ sh:path avp:payee ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path avp:quote ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path avp:quoteDigest ; sh:node txp:ContentDigest ; sh:minCount 1 ; sh:maxCount 1 ] ;
-  sh:property [ sh:path txp:challenge ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path sec:challenge ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path txp:authorizeEndpoint ; sh:nodeKind sh:Literal ; sh:minCount 1 ] ;
   sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path sec:expiration ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
@@ -36,7 +36,7 @@ txp:AuthorizationSubmissionShape a sh:NodeShape ;
   sh:property [ sh:path avp:payer ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path avp:authorization ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path txp:authorizationDigest ; sh:node txp:ContentDigest ; sh:minCount 1 ; sh:maxCount 1 ] ;
-  sh:property [ sh:path txp:challenge ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path sec:challenge ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path txp:idempotencyKey ; sh:nodeKind sh:Literal ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] .

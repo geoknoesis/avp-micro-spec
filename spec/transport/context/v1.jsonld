@@ -17,7 +17,7 @@
     "acceptedSettlementRails": { "@id": "txp:acceptedSettlementRails", "@container": "@set", "@type": "@id" },
     "supportedBundles": { "@id": "txp:supportedBundles", "@type": "@json" },
 
-    "challenge": { "@id": "txp:challenge" },
+    "challenge": "https://w3id.org/security#challenge",
     "authorizeEndpoint": { "@id": "txp:authorizeEndpoint", "@type": "xsd:anyURI" },
     "authorizationDigest": { "@id": "txp:authorizationDigest" },
     "idempotencyKey": { "@id": "txp:idempotencyKey" },
