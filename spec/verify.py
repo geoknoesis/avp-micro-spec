@@ -739,6 +739,9 @@ def main() -> int:
     check("challenge.quoteDigest matches resolved quote", challenge["quoteDigest"] == ac.jcs_digest(quote))
     check("402 body carries the byte-identical quote", body_402["quote"] == quote)
     check("402 body carries the byte-identical challenge", body_402["challenge"] == challenge)
+    check("challenge's quote binds the same request as the submitted authorization "
+          "(quote.requestHash == authz.requestHash)",
+          quote["requestHash"] == authz["requestHash"])
     check("challenge not expired at issuance (timestamp < expires)",
           challenge["timestamp"] < challenge["expires"])
 

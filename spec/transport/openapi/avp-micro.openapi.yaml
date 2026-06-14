@@ -121,6 +121,11 @@ paths:
       tags: [payment]
       operationId: execute
       summary: Execute a previously authorized payment.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
       requestBody:
         required: true
         content:

@@ -15,7 +15,7 @@ Six peer bundles live under `spec/`:
 - **`spec/settlement/`** — On-Chain Settlement Binding: maps AVP-Micro payments onto public-blockchain rails (EVM stablecoin, Coinbase x402, Bitcoin Lightning) via a rail-agnostic `SettlementInstruction`/`SettlementProof` core, an optional escrow lifecycle (`EscrowLock`/`EscrowRelease`/`EscrowRefund`), and a DID↔account binding (`PayeeAccountBinding`). Built on Payments + DSA, by reference. Namespace `https://w3id.org/avp-micro/settlement/v1#`.
 - **`spec/transport/`** — Transport & Protocol binding: the normative HTTP/REST wire binding (discovery + HTTP 402 challenge) that carries the payment objects between agent and payee; signed objects + OpenAPI 3.1. Namespace `https://w3id.org/avp-micro/transport/v1#`.
 
-Each bundle has: `context/v1.jsonld`, `schemas/*.schema.json`, `shapes/*.ttl`, `vocab/*.ttl`, and signed `test-vectors/`. A shared harness at `spec/` root generates and validates all four.
+Each bundle has: `context/v1.jsonld`, `schemas/*.schema.json`, `shapes/*.ttl`, `vocab/*.ttl`, and signed `test-vectors/`. A shared harness at `spec/` root generates and validates all six.
 
 Start at `spec/README.md`.
 
@@ -35,7 +35,7 @@ python spec/generate.py
 # verify crypto proofs + bindings + policy + interop round-trip (must report PASS)
 python spec/verify.py
 
-# validate Turtle / JSON-LD / JSON Schema / SHACL for all four bundles (must report PASS)
+# validate Turtle / JSON-LD / JSON Schema / SHACL for all six bundles (must report PASS)
 python spec/validate.py
 
 # run the protocol simulator over the declarative use cases (must report PASS)
