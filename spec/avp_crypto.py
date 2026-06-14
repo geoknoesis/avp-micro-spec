@@ -144,9 +144,11 @@ def public_from_did_key(did: str) -> ec.EllipticCurvePublicKey:
     """Resolve a did:key (or its #fragment vm) back to a P-256 public key."""
     mb = did.split("#", 1)[0]
     mb = mb[len("did:key:"):]
-    assert mb.startswith("z"), "expected base58btc multibase"
+    if not mb.startswith("z"):  # explicit raise (not assert -- survives python -O)
+        raise ValueError("expected base58btc multibase did:key")
     decoded = b58decode(mb[1:])
-    assert decoded[:2] == _P256_MULTICODEC, "not a p256-pub multikey"
+    if decoded[:2] != _P256_MULTICODEC:
+        raise ValueError("not a p256-pub multikey")
     return ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), decoded[2:])
 
 

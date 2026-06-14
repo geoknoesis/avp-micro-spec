@@ -21,7 +21,7 @@
   "securing": {
     "mode": "proof-preserving",
     "carrier": "sd-jwt-vc",
-    "embedded": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6dXNlci5leGFtcGxlI2tleS0xIiwidHlwIjoiZGMrc2Qtand0In0.eyJjYXJ0X2hhc2giOiJzaGEtMjU2Ok93eHR2azRvaThKaXR2eGtSLWJtWktZb1ZDR3lWU0JoYnd3SFBrVGFwUzAiLCJleHAiOjE3ODEyNjIzMDAsImlhdCI6MTc4MTI2MjAwMCwiaXNzIjoiZGlkOndlYjp1c2VyLmV4YW1wbGUiLCJzdWIiOiJkaWQ6a2V5OnpEbmFldzhORFU4Vmd2eFdwV1d4QmVMV2FWYkdORXVYWXlSRmsydUxNakNkaHhrU1UifQ.kN1eIkIrrnwot7ZvlJOtChUCEW9wZR2Lj4ZvWiXuEVhJhFHGg-rfWbNPTgAKTeMe8DSl8tf--KRIGI0e-D3Aww~",
+    "embedded": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI6dXNlci5leGFtcGxlI2tleS0xIiwidHlwIjoiZGMrc2Qtand0In0.eyJjYXJ0X2hhc2giOiJzaGEtMjU2Ok93eHR2azRvaThKaXR2eGtSLWJtWktZb1ZDR3lWU0JoYnd3SFBrVGFwUzAiLCJleHAiOjE3ODEyNjIzMDAsImlhdCI6MTc4MTI2MjAwMCwiaXNzIjoiZGlkOndlYjp1c2VyLmV4YW1wbGUiLCJzdWIiOiJkaWQ6a2V5OnpEbmFldzhORFU4Vmd2eFdwV1d4QmVMV2FWYkdORXVYWXlSRmsydUxNakNkaHhrU1UifQ.Inf702qlHD_KTTaoI5nGP4S0jDXoAVnMLCUFMn8UuP0_e2TIOQfvX7yokJdtArjCzxMipkJexdPu1Wmq8IJE-g~",
     "profileVersion": "0.1.0"
   }
 }

@@ -84,6 +84,8 @@ def _component_charge(component: dict, usage: dict) -> Decimal:
         charge = Decimal(component.get("upfront", "0"))
         recurring = component.get("recurring")
         if recurring:
+            if "amount" not in recurring:
+                raise PricingError("CommitmentRate.recurring requires an amount")
             charge += Decimal(recurring["amount"]) * _nonneg(usage.get("periods", 1), "periods")
         return charge
     qty = _qty(usage, component["dimension"])

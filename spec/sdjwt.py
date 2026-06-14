@@ -76,7 +76,9 @@ def p256_public_from_jwk(jwk: dict) -> ec.EllipticCurvePublicKey:
 
 def es256_sign(header: dict, payload: dict, priv: ec.EllipticCurvePrivateKey) -> str:
     signing_input = (_b64u_json(header) + "." + _b64u_json(payload)).encode("ascii")
-    der = priv.sign(signing_input, ec.ECDSA(hashes.SHA256()))
+    # Deterministic ECDSA (RFC 6979) so the SD-JWT-VC test vectors are byte-reproducible
+    # across runs/platforms, matching avp_crypto's ecdsa-jcs-2022 discipline.
+    der = priv.sign(signing_input, ec.ECDSA(hashes.SHA256(), deterministic_signing=True))
     r, s = decode_dss_signature(der)
     raw = r.to_bytes(32, "big") + s.to_bytes(32, "big")
     return signing_input.decode("ascii") + "." + b64u_encode(raw)
