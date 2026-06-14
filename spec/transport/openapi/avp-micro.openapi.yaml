@@ -1,0 +1,246 @@
+openapi: 3.1.0
+info:
+  title: AVP-Micro HTTP Transport
+  version: 0.1.0
+  description: >
+    Normative HTTP/REST binding for AVP-Micro: service discovery plus the
+    HTTP 402 "Payment Required" challenge flow. Request/response bodies are
+    the signed JSON-LD objects defined by the AVP-Micro bundles; this contract
+    only $refs their JSON Schemas so the two are one source of truth.
+servers:
+  - url: https://api.example.com/avp
+    description: Example payee deployment (placeholder).
+tags:
+  - name: discovery
+  - name: payment
+  - name: streaming
+  - name: settlement
+paths:
+  /.well-known/avp-micro:
+    get:
+      tags: [discovery]
+      operationId: getServiceDescription
+      summary: Discovery document (payee-signed ServiceDescription).
+      responses:
+        "200":
+          description: The signed service description.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../schemas/transport.schema.json#/$defs/ServiceDescription
+  /resource/{path}:
+    get:
+      tags: [payment]
+      operationId: getGatedResource
+      summary: A gated resource. First call yields 402; retry with an Authorization submission.
+      parameters:
+        - { name: path, in: path, required: true, schema: { type: string } }
+        - name: Authorization
+          in: header
+          required: false
+          description: "AVP-Micro <AuthorizationSubmission id>; present on the retry."
+          schema: { type: string }
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Access granted; the receipt accompanies the resource.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/PaymentReceipt
+        "402":
+          description: Payment required. Body is the 402 challenge envelope.
+          headers:
+            WWW-Authenticate:
+              schema: { type: string, example: AVP-Micro }
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../schemas/transport.schema.json#/$defs/Challenge402Body
+            application/problem+json:
+              schema:
+                $ref: ../schemas/transport.schema.json#/$defs/ProblemDetails
+  /quote:
+    post:
+      tags: [payment]
+      operationId: createQuote
+      summary: Request a PaymentQuote for a described request (carries requestHash).
+      responses:
+        "200":
+          description: A payee-signed quote.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/PaymentQuote
+  /authorize:
+    post:
+      tags: [payment]
+      operationId: submitAuthorization
+      summary: Submit an AuthorizationSubmission; returns an execution (or problem).
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/avp-micro+json:
+            schema:
+              $ref: ../schemas/transport.schema.json#/$defs/AuthorizationSubmission
+      responses:
+        "200":
+          description: The wallet-signed execution.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/PaymentExecution
+        "402":
+          description: Policy/budget rejection.
+          content:
+            application/problem+json:
+              schema:
+                $ref: ../schemas/transport.schema.json#/$defs/ProblemDetails
+        "409":
+          description: Idempotency conflict or double-spend.
+          content:
+            application/problem+json:
+              schema:
+                $ref: ../schemas/transport.schema.json#/$defs/ProblemDetails
+        "422":
+          description: Quote/authorization binding failure.
+          content:
+            application/problem+json:
+              schema:
+                $ref: ../schemas/transport.schema.json#/$defs/ProblemDetails
+  /execute:
+    post:
+      tags: [payment]
+      operationId: execute
+      summary: Execute a previously authorized payment.
+      requestBody:
+        required: true
+        content:
+          application/avp-micro+json:
+            schema:
+              $ref: ../schemas/transport.schema.json#/$defs/AuthorizationSubmission
+      responses:
+        "200":
+          description: The execution.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/PaymentExecution
+  /receipt/{id}:
+    get:
+      tags: [payment]
+      operationId: getReceipt
+      summary: Retrieve a PaymentReceipt by id.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The payee-signed receipt.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/PaymentReceipt
+  /settlement/{id}:
+    get:
+      tags: [settlement]
+      operationId: getSettlementStatus
+      summary: Poll async settlement; returns the execution, then the proof as finality advances.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Execution (pending) or settlement proof (final).
+          content:
+            application/avp-micro+json:
+              schema:
+                oneOf:
+                  - $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/PaymentExecution
+                  - $ref: ../../settlement/schemas/settlement.schema.json#/$defs/SettlementProof
+  /session:
+    post:
+      tags: [streaming]
+      operationId: openSession
+      summary: Open a streaming UsageSession.
+      responses:
+        "200":
+          description: The usage session.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/UsageSession
+  /session/{id}/budget:
+    post:
+      tags: [streaming]
+      operationId: authorizeSessionBudget
+      summary: Authorize (or re-authorize) the session budget.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/avp-micro+json:
+            schema:
+              $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/SessionBudgetAuthorization
+      responses:
+        "200":
+          description: Budget accepted.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/UsageSession
+  /session/{id}/accruals:
+    get:
+      tags: [streaming]
+      operationId: getAccruals
+      summary: List usage accruals for a session.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: An accrual.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/UsageAccrual
+  /session/{id}/extend:
+    post:
+      tags: [streaming]
+      operationId: extendSession
+      summary: Extend a session's budget or expiry.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/avp-micro+json:
+            schema:
+              $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/UsageSessionExtension
+      responses:
+        "200":
+          description: Extension accepted.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/UsageSession
+  /session/{id}/close:
+    post:
+      tags: [streaming]
+      operationId: closeSession
+      summary: Close a session; settle the metered total and issue a receipt.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The final execution + receipt.
+          content:
+            application/avp-micro+json:
+              schema:
+                $ref: ../../payments/schemas/avp-micro.schema.json#/$defs/PaymentReceipt
