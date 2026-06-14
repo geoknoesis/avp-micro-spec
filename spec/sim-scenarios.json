@@ -670,5 +670,48 @@
       {"action": "reverse_settle_proof", "expect": {"status": "completed", "settled": "1.00"}}
     ],
     "finalBalances": {"agent": "100.00", "payee": "0.00"}
+  },
+  {
+    "name": "settle-card-stripe",
+    "description": "closed-processor settlement: the authorization is settled over a card rail (Stripe) using authorize-then-capture; the payee returns a payee-attested SettlementProof and the money moves",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00", "request": {"resource": "tool-api/run", "input": "doc-card"}},
+      {"action": "authorize"},
+      {"action": "processor_binding", "rail": "card-stripe"},
+      {"action": "attested_instruct", "rail": "card-stripe", "mode": "escrow", "captureMode": "auth-capture"},
+      {"action": "attested_proof", "status": "captured", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "settle-rtp-push",
+    "description": "closed-processor settlement: the authorization is settled over an instant bank rail (FedNow/RTP) as a direct push; the payee returns a payee-attested SettlementProof and the money moves -- no escrow, RTP is irrevocable",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00", "request": {"resource": "tool-api/run", "input": "doc-rtp"}},
+      {"action": "authorize"},
+      {"action": "processor_binding", "rail": "bank-rtp"},
+      {"action": "attested_instruct", "rail": "bank-rtp", "mode": "direct", "scheme": "fednow"},
+      {"action": "attested_proof", "status": "settled", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "settle-card-redirection",
+    "description": "anti-redirection on a closed-processor rail: the card instruction names a processor account bound to an attacker, not the payee; the wallet refuses to settle",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "attested_instruct", "rail": "card-stripe", "mode": "escrow", "redirect": true, "expect": {"reject": "accountRedirection"}}
+    ],
+    "finalBalances": {"agent": "100.00"}
   }
 ]

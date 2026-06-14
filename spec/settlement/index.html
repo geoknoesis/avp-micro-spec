@@ -15,7 +15,7 @@
     const respecConfig = {
       specStatus: "unofficial",
       shortName: "avp-micro-settlement",
-      subtitle: "On-chain settlement binding for AVP-Micro payments (EVM stablecoin, x402, Lightning)",
+      subtitle: "Settlement binding for AVP-Micro payments (EVM stablecoin, x402, Lightning, card, bank/RTP)",
       editors: [
         { name: "Stephane Fellah", company: "Geoknoesis LLC", companyURL: "https://geoknoesis.com" },
       ],
@@ -56,15 +56,30 @@
       AVP-Micro On-Chain Settlement Binding &mdash; part of <strong>AVP-Micro</strong>
       (<em>Agent Verifiable Micropayments</em>) &mdash; covers the one step that the
       [[AVP-MICRO]] Payments specification deliberately scopes out: the movement of
-      value on a public blockchain. This bundle binds AVP-Micro payments to
-      <strong>three normative rail profiles</strong> &mdash; EVM stablecoin (USDC on
-      an L2), Coinbase x402, and Bitcoin Lightning &mdash; through a
-      <strong>rail-agnostic core</strong> of signed objects
-      (<a>SettlementInstruction</a>, <a>SettlementProof</a>,
+      value &mdash; whether on a public blockchain or inside a payment processor.
+      This bundle binds AVP-Micro payments to <strong>five rail profiles in two
+      families</strong> through a <strong>rail-agnostic core</strong> of signed
+      objects (<a>SettlementInstruction</a>, <a>SettlementProof</a>,
       <a>PayeeAccountBinding</a>) and an optional escrow lifecycle
-      (<a>EscrowLock</a>, <a>EscrowRelease</a>, <a>EscrowRefund</a>). It rides on
-      [[AVP-MICRO]] and [[DSA]] by reference, modifying neither. Every settlement
-      object is secured with the mandatory <code>ecdsa-jcs-2022</code>
+      (<a>EscrowLock</a>, <a>EscrowRelease</a>, <a>EscrowRefund</a>):
+    </p>
+    <ul>
+      <li><strong>On-chain rails</strong> (self-verifiable finality) &mdash; EVM
+        stablecoin (USDC on an L2), Coinbase x402, and Bitcoin Lightning. Finality is a
+        public artifact (block confirmations or a Lightning preimage) any party can
+        check against the ledger.</li>
+      <li><strong>Closed-processor rails</strong> (attested finality) &mdash; card via a
+        processor (Stripe) and instant bank credit transfers (<code>rail-bank-rtp</code>:
+        FedNow / RTP / SEPA Instant). Settlement happens inside a private processor, so
+        finality is <em>not</em> publicly verifiable: an <a>AttestedSettlementProof</a>
+        embeds a processor attestation and is signed by the payee (payee-attested) or the
+        processor (processor-attested), with a named <code>did:web</code> processor as the
+        trust root, and a <a>ProcessorAccountBinding</a> ties the payee DID to the
+        destination account.</li>
+    </ul>
+    <p>
+      It rides on [[AVP-MICRO]] and [[DSA]] by reference, modifying neither. Every
+      settlement object is secured with the mandatory <code>ecdsa-jcs-2022</code>
       cryptosuite ([[DSA]]).
     </p>
   </section>
@@ -149,12 +164,48 @@
       <dd>A wallet-signed record refunding a prior <a>EscrowLock</a> to the payer on
         timeout or dispute, carrying the settling <a>SettlementProof</a>.</dd>
 
+      <dt><dfn>ProcessorAccountBinding</dfn></dt>
+      <dd>A payee-signed assertion that a DID controls a processor or bank account (e.g.,
+        a Stripe connected account <code>stripe:acct_…</code> or a tokenized bank creditor
+        reference), naming the attesting <a>processor</a> and the <code>rail</code>. The
+        closed-processor analogue of a <a>PayeeAccountBinding</a>, used for
+        anti-redirection on rails that have no CAIP-10 account.</dd>
+
+      <dt><dfn>AttestedSettlementInstruction</dfn></dt>
+      <dd>A wallet-signed instruction binding a <code>PaymentAuthorization</code> to a
+        closed-processor rail (card / bank-RTP). Carries a decimal fiat <code>amount</code>
+        (no base units, no chain or asset), references a <a>ProcessorAccountBinding</a> for
+        the destination, and <em class="rfc2119">MAY</em> carry rail-specific fields
+        (<code>captureMode</code>, <code>processorIntent</code> for card;
+        <code>scheme</code> for bank-RTP).</dd>
+
+      <dt><dfn>AttestedSettlementProof</dfn></dt>
+      <dd>A proof that a closed-processor settlement reached finality, carrying an embedded
+        <a>attestation</a>, the decimal <code>settledAmount</code>, and a <a>finality</a>
+        state. It is <em>not</em> self-verifiable against a public ledger; trust roots in
+        the proof's signer (payee-attested) or the named processor (processor-attested).</dd>
+
+      <dt><dfn>attestation</dfn></dt>
+      <dd>An object embedded in an <a>AttestedSettlementProof</a> recording the processor's
+        result: the <code>mode</code> (<code>payee-attested</code> or
+        <code>processor-attested</code>), the <a>processor</a> (a <code>did:web</code> DID,
+        the named trust root), a processor <code>reference</code> (e.g., a Stripe
+        <code>PaymentIntent</code> id), a terminal <code>status</code> (e.g.,
+        <code>captured</code> / <code>settled</code>), and optional <code>evidence</code>.</dd>
+
+      <dt><dfn>processor</dfn></dt>
+      <dd>The settlement processor (e.g., <code>did:web:stripe.com</code>) that attests a
+        closed-processor settlement reached finality; the named trust root of an
+        <a>AttestedSettlementProof</a>.</dd>
+
       <dt><dfn>finality</dfn></dt>
-      <dd>The settlement certainty state of a <a>SettlementProof</a>. One of three
-        values: <code>pending</code> (broadcast; not yet included in a block),
-        <code>probabilistic</code> (included but not yet at the confirmation threshold),
-        or <code>final</code> (confirmation threshold reached, or preimage revealed for
-        Lightning).</dd>
+      <dd>The settlement certainty state of a <a>SettlementProof</a> or
+        <a>AttestedSettlementProof</a>. One of three values: <code>pending</code>
+        (broadcast / submitted; not yet settled), <code>probabilistic</code> (included but
+        not yet at the confirmation threshold), or <code>final</code>. On-chain rails reach
+        <code>final</code> by confirmation depth, or by preimage reveal for Lightning;
+        closed-processor rails reach <code>final</code> when the embedded
+        <a>attestation</a> reports a terminal status (card captured / bank settled).</dd>
 
       <dt><dfn>CAIP-2</dfn></dt>
       <dd>Chain Agnostic Improvement Proposal 2: a compact identifier for a blockchain
@@ -268,9 +319,11 @@
     <p>
       The <code>rail</code> field <em class="rfc2119">MUST</em> be a concept IRI in
       the extensible SKOS scheme <code>stl:RailScheme</code>
-      (see <a href="vocab/rails.ttl"><code>vocab/rails.ttl</code></a>):
-      <code>stl:rail-evm-stablecoin</code>, <code>stl:rail-x402</code>, or
-      <code>stl:rail-lightning</code>. Implementers
+      (see <a href="vocab/rails.ttl"><code>vocab/rails.ttl</code></a>): the on-chain
+      rails <code>stl:rail-evm-stablecoin</code>, <code>stl:rail-x402</code>,
+      <code>stl:rail-lightning</code>, or the closed-processor rails
+      <code>stl:rail-card-stripe</code> and <code>stl:rail-bank-rtp</code> (see
+      <a href="#attested-rails">Attested settlement rails</a>). Implementers
       <em class="rfc2119">MAY</em> mint additional rail concepts in their own scheme.
     </p>
     <p>
@@ -680,6 +733,112 @@
         <code>46-escrow-lock-lightning.json</code>,
         <code>47-settlement-proof-lightning.json</code>,
         <code>48-escrow-release-lightning.json</code>.
+      </p>
+    </section>
+  </section>
+
+  <section id="attested-rails">
+    <h2>Attested settlement rails</h2>
+    <p>
+      Closed-processor rails &mdash; card via a processor (<code>stl:rail-card-stripe</code>)
+      and instant bank credit transfers (<code>stl:rail-bank-rtp</code>: FedNow / TCH RTP /
+      SEPA Instant) &mdash; settle inside a private processor. Unlike the on-chain rails,
+      their finality is <strong>not</strong> a public artifact a verifier can independently
+      check. This section defines an <strong>attested-finality</strong> model for them. It
+      is additive: the authorization layer ([[AVP-MICRO]], [[DSA]]) is unchanged, and an
+      <a>AttestedSettlementInstruction</a> binds the same <code>PaymentAuthorization</code>
+      as an on-chain <a>SettlementInstruction</a> would.
+    </p>
+
+    <section>
+      <h3>Processor account binding</h3>
+      <p>
+        For a closed-processor rail the destination is not a CAIP-10 account, so the
+        on-chain <a>PayeeAccountBinding</a> does not apply. A
+        <a>ProcessorAccountBinding</a> <em class="rfc2119">MUST</em> instead bind the
+        payee. It <em class="rfc2119">MUST</em> be signed by its <code>subject</code> (the
+        payee DID), and that <code>subject</code> <em class="rfc2119">MUST</em> equal the
+        <code>payee</code> of the referenced authorization. It
+        <em class="rfc2119">MUST</em> carry the destination <code>account</code> (a
+        tokenized processor/bank reference such as <code>stripe:acct_…</code> &mdash; a raw
+        PAN or full IBAN <em class="rfc2119">MUST NOT</em> appear), the
+        <code>processor</code> (a <code>did:web</code> DID), and the <code>rail</code>.
+      </p>
+    </section>
+
+    <section>
+      <h3>Attested instruction</h3>
+      <p>
+        An <a>AttestedSettlementInstruction</a> <em class="rfc2119">MUST</em> reference the
+        <code>PaymentAuthorization</code> (<code>authorization</code> +
+        <code>authorizationDigest</code>) and <em class="rfc2119">MUST</em> match its
+        <code>amount</code>, <code>currency</code>, <code>payer</code>, and
+        <code>payee</code>, exactly as an on-chain <a>SettlementInstruction</a> does. The
+        <code>amount</code> is a decimal in the instruction <code>currency</code>; there is
+        <strong>no</strong> <code>amountBase</code>, <code>chain</code>, or
+        <code>asset</code>. It <em class="rfc2119">MUST</em> reference a
+        <a>ProcessorAccountBinding</a> via <code>payeeAccountBinding</code>, and a verifier
+        <em class="rfc2119">MUST</em> settle only to that bound account on the same
+        <code>rail</code> (anti-redirection). For card, <code>mode</code>
+        <em class="rfc2119">MAY</em> be <code>escrow</code> with
+        <code>captureMode == "auth-capture"</code> (authorize-then-capture), and a
+        <code>processorIntent</code> <em class="rfc2119">MAY</em> record the processor-side
+        reference (e.g., a Stripe <code>PaymentIntent</code> id). Bank-RTP is push and
+        irrevocable: <code>mode</code> <em class="rfc2119">MUST</em> be <code>direct</code>
+        (no escrow), and <code>scheme</code> <em class="rfc2119">MAY</em> name the network
+        (<code>fednow</code> / <code>rtp</code> / <code>sepa-instant</code>).
+      </p>
+    </section>
+
+    <section>
+      <h3>Attested proof and finality</h3>
+      <p>
+        An <a>AttestedSettlementProof</a> <em class="rfc2119">MUST</em> bind its
+        instruction (<code>instruction</code> + <code>instructionDigest</code>), match the
+        instruction's <code>settledAmount</code> and <code>currency</code>, and embed an
+        <a>attestation</a>. The attestation <em class="rfc2119">MUST</em> carry a
+        <code>mode</code> (<code>payee-attested</code> or <code>processor-attested</code>),
+        a <code>processor</code> that is a <code>did:web</code> DID, a non-empty
+        processor <code>reference</code>, and a <code>status</code>.
+      </p>
+      <p>
+        A verifier <em class="rfc2119">MUST NOT</em> treat the proof as
+        <code>final</code> unless <code>finality == "final"</code> <strong>and</strong> the
+        attestation is well-formed (recognized <code>mode</code>, <code>did:web</code>
+        processor, non-empty <code>reference</code>) <strong>and</strong> its
+        <code>status</code> is terminal for the rail (card <code>captured</code> /
+        <code>succeeded</code>; bank <code>settled</code>). In <code>payee-attested</code>
+        mode the proof is signed by the payee, who vouches for the processor result, so
+        trust roots in the payee DID; in <code>processor-attested</code> mode the proof
+        carries a verifiable processor signature and the relying party
+        <em class="rfc2119">MUST</em> explicitly trust the named <code>processor</code> as
+        a finality oracle. (A processor's shared-secret webhook, e.g., a Stripe HMAC event,
+        is <code>evidence</code> only, not a verifiable signature.)
+      </p>
+    </section>
+
+    <section>
+      <h3>Escrow and reversal mapping</h3>
+      <p>
+        Card authorize-then-capture maps onto the escrow lifecycle: authorize/hold =
+        <a>EscrowLock</a>, capture = <a>EscrowRelease</a>, void/expire = <a>EscrowRefund</a>.
+        Card refunds and chargebacks map onto [[AVP-DISPUTES]] (a chargeback is a
+        <code>Dispute → DisputeResolution → Reversal</code> instance with the network as the
+        de-facto arbiter). Bank-RTP is push and irrevocable, so it has <strong>no</strong>
+        native escrow; an RTP refund is a fresh credit transfer in the opposite direction,
+        referenced by a [[AVP-DISPUTES]] <code>Reversal</code>.
+      </p>
+      <p>
+        Compliance (PCI scope, KYC, network rules) stays in the settlement layer and is out
+        of scope; the processor owns it. AVP-Micro governs authorization and binds the proof.
+      </p>
+      <p>
+        Example vectors: <code>57-processor-account-binding-card.json</code>,
+        <code>58-settlement-instruction-card.json</code>,
+        <code>59-settlement-proof-card.json</code> (card);
+        <code>60-processor-account-binding-rtp.json</code>,
+        <code>61-settlement-instruction-rtp.json</code>,
+        <code>62-settlement-proof-rtp.json</code> (bank/RTP).
       </p>
     </section>
   </section>

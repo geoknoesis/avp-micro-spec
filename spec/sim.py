@@ -724,6 +724,105 @@ def _do_escrow_refund(world: World, step: dict) -> dict:
     return {"ok": True}
 
 
+# ---- attested (closed-processor) settlement: card via Stripe + bank/RTP ------
+# These rails settle inside a private processor, so finality is ATTESTED, not on-chain.
+# The wallet builds an AttestedSettlementInstruction (decimal fiat -- no chain/asset/base
+# units) bound to a payee-signed ProcessorAccountBinding, and the payee returns an
+# AttestedSettlementProof embedding the processor's result (payee-attested). The
+# anti-redirection, amount, and parties checks mirror the on-chain rails.
+
+_ATTESTED_RAIL_ID = {"card-stripe": "stl:rail-card-stripe", "bank-rtp": "stl:rail-bank-rtp"}
+_ATTESTED_PROCESSOR = {"card-stripe": "did:web:stripe.com", "bank-rtp": "did:web:bank.example"}
+
+
+def _do_processor_binding(world: World, step: dict) -> dict:
+    """The payee signs a ProcessorAccountBinding for its processor/bank account -- the
+    closed-processor analogue of a PayeeAccountBinding."""
+    rail = step.get("rail", "card-stripe")
+    payee = world.actor(_orig_payee_role(world))
+    prefix = "stripe:acct_" if rail == "card-stripe" else "bank:token:"
+    binding = {
+        "@context": SETTLE_CTX, "id": "urn:sim:proc-binding:1", "type": "ProcessorAccountBinding",
+        "subject": payee.did, "account": prefix + stl.fake_address("acct:" + payee.role)[2:14],
+        "processor": _ATTESTED_PROCESSOR[rail], "rail": _ATTESTED_RAIL_ID[rail],
+    }
+    world.ctx["procBinding"] = payee.sign(binding, world.clock.now())
+    return {"ok": True}
+
+
+def _do_attested_instruct(world: World, step: dict) -> dict:
+    """Bind the standing authorization to a closed-processor rail; refuse to settle to an
+    account not bound to the payee DID (anti-redirection)."""
+    authz = world.ctx["authz"]
+    rail = step.get("rail", "card-stripe")
+    payee = world.actor(_orig_payee_role(world))
+    if step.get("redirect"):                          # binding owned by an attacker, not the payee
+        attacker = world.actor("agent")
+        binding = payee.sign({
+            "@context": SETTLE_CTX, "id": "urn:sim:proc-binding:redir", "type": "ProcessorAccountBinding",
+            "subject": attacker.did, "account": "stripe:acct_attacker",
+            "processor": _ATTESTED_PROCESSOR[rail], "rail": _ATTESTED_RAIL_ID[rail],
+        }, world.clock.now())
+    else:
+        binding = world.ctx.get("procBinding")
+    instr = {
+        "@context": SETTLE_CTX, "id": "urn:sim:settle-instr:" + step.get("nonce", "1"),
+        "type": "AttestedSettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": ac.jcs_digest(authz),
+        "rail": _ATTESTED_RAIL_ID[rail], "payeeAccountBinding": (binding or {}).get("id"),
+        "payer": world.actor("agent").did, "payee": payee.did,
+        "amount": authz["amount"], "currency": authz["currency"],
+        "mode": step.get("mode", "direct"),
+        "nonce": "settle-" + step.get("nonce", "1"), "expires": world.clock.plus(1800),
+    }
+    if rail == "card-stripe":
+        instr["captureMode"] = step.get("captureMode", "auth-capture")
+        instr["processorIntent"] = "stripe:pi_" + step.get("nonce", "1")
+    else:
+        instr["scheme"] = step.get("scheme", "fednow")
+    instr = world.actor("wallet").sign(instr, world.clock.now())
+    wallet_verify(world, authz)                        # the authorization must still be valid + in policy
+    if not stl.attested_binding_ok(instr, binding):    # settle only to the payee-bound account
+        raise Reject("accountRedirection")
+    world.ctx["_settleRail"] = rail
+    world.ctx["instruction"] = instr
+    return {"ok": True}
+
+
+def _do_attested_proof(world: World, step: dict) -> dict:
+    """The payee returns an AttestedSettlementProof embedding the processor's result; the
+    wallet checks the binding, attested finality, and settled amount, then moves money
+    (card capture / RTP credit)."""
+    instr = world.ctx["instruction"]
+    rail = world.ctx.get("_settleRail", "card-stripe")
+    payee = world.actor(_orig_payee_role(world))
+    status = step.get("status", "captured" if rail == "card-stripe" else "settled")
+    ref_prefix = "stripe:pi_" if rail == "card-stripe" else "rtp:e2e:"
+    proof = {
+        "@context": SETTLE_CTX, "id": "urn:sim:settle-proof:" + step.get("nonce", "1"),
+        "type": "AttestedSettlementProof",
+        "instruction": instr["id"], "instructionDigest": ac.jcs_digest(instr),
+        "rail": instr["rail"], "settledAmount": instr["amount"], "currency": instr["currency"],
+        "attestation": {
+            "type": "ProcessorAttestation", "mode": "payee-attested",
+            "processor": _ATTESTED_PROCESSOR[rail], "reference": ref_prefix + step.get("nonce", "1"),
+            "status": status, "evidence": "processor-evidence:" + step.get("nonce", "1"),
+            "observedAt": world.clock.now(),
+        },
+        "finality": step.get("finality", "final"), "observedAt": world.clock.now(),
+    }
+    proof = payee.sign(proof, world.clock.now())       # payee-attested: the payee signs the proof
+    if proof["instruction"] != instr["id"] or proof["instructionDigest"] != ac.jcs_digest(instr):
+        raise Reject("settlementMismatch")
+    if not stl.attested_finality_ok(proof):
+        raise Reject("settlementNotFinal")
+    if proof["settledAmount"] != instr["amount"]:
+        raise Reject("settlementMismatch")
+    world.ctx["settleProof"] = proof
+    settled = _settle_onchain(world, instr)            # capture (card) / credit (RTP) moves money
+    return {"status": "completed" if settled == _d(instr["amount"]) else "partial", "settled": str(settled)}
+
+
 def _do_reverse_instruct(world: World, step: dict) -> dict:
     """A compensating on-chain transfer (payer/payee swapped) -- the settlement-layer image of
     a disputes Reversal. The original settlement must have happened."""
@@ -899,6 +998,9 @@ HANDLERS = {
     "extend": lambda w, s: {"ok": True, "_set": ("session", extend(w, s))},
     "close_session": lambda w, s: {"status": close_session(w, s)["status"]},
     "payee_binding": lambda w, s: {"ok": True, "_set": ("binding", build_payee_binding(w, s))},
+    "processor_binding": lambda w, s: _do_processor_binding(w, s),
+    "attested_instruct": lambda w, s: _do_attested_instruct(w, s),
+    "attested_proof": lambda w, s: _do_attested_proof(w, s),
     "settle_instruct": lambda w, s: _do_settle_instruct(w, s),
     "settle_proof": lambda w, s: _do_settle_proof(w, s),
     "escrow_lock": lambda w, s: _do_escrow_lock(w, s),
@@ -962,7 +1064,9 @@ _OBJECT_OF = {
     "execute": "execution", "replay": "execution", "receipt": "receipt",
     "open_session": "session", "budget_authorize": "sba", "accrue": "accrual",
     "close_session": "sessionExecution",
-    "payee_binding": "binding", "settle_instruct": "instruction", "settle_proof": "settleProof",
+    "payee_binding": "binding", "processor_binding": "procBinding",
+    "attested_instruct": "instruction", "attested_proof": "settleProof",
+    "settle_instruct": "instruction", "settle_proof": "settleProof",
     "escrow_lock": "lock", "escrow_release": "release", "escrow_refund": "escrowRefund",
     "reverse_settle_instruct": "reverseInstruction", "reverse_settle_proof": "reverseProof",
     "refund": "refund", "reversal": "reversal", "reversal_ack": "reversalAck",
