@@ -43,6 +43,40 @@
       "minItems": 3,
       "maxItems": 3
     },
+    "statusListContext": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "https://www.w3.org/ns/credentials/v2" },
+        { "const": "https://w3id.org/security/data-integrity/v2" }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "BitstringStatusListCredential": {
+      "type": "object",
+      "description": "A W3C Bitstring Status List v1.0 credential -- the status list a credentialStatus (BitstringStatusListEntry) resolves to.",
+      "required": ["@context", "id", "type", "issuer", "validFrom", "credentialSubject", "proof"],
+      "properties": {
+        "@context": { "$ref": "#/$defs/statusListContext" },
+        "id": { "$ref": "#/$defs/iri" },
+        "type": { "type": "array", "allOf": [ { "contains": { "const": "VerifiableCredential" } }, { "contains": { "const": "BitstringStatusListCredential" } } ] },
+        "issuer": { "$ref": "#/$defs/did" },
+        "validFrom": { "$ref": "#/$defs/dateTime" },
+        "validUntil": { "$ref": "#/$defs/dateTime" },
+        "credentialSubject": {
+          "type": "object",
+          "required": ["type", "statusPurpose", "encodedList"],
+          "properties": {
+            "id": { "type": "string" },
+            "type": { "const": "BitstringStatusList" },
+            "statusPurpose": { "type": "string", "minLength": 1 },
+            "encodedList": { "type": "string", "pattern": "^u[A-Za-z0-9_-]+$" },
+            "statusSize": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "proof": { "$ref": "#/$defs/proof" }
+      }
+    },
 
     "IssuerScope": {
       "type": "object",

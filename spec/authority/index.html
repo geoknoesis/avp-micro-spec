@@ -1364,8 +1364,25 @@
         <em class="rfc2119">MUST</em> precede <code>validUntil</code>.</li>
       <li><strong>Revocation.</strong> A verifier <em class="rfc2119">MUST</em>
         resolve the <code>credentialStatus</code> [[[BITSTRING-STATUS-LIST]]] entry and
-        reject a revoked credential. (Status-list resolution is performed out of band
-        and is not exercised by the offline reference harness.)</li>
+        reject a revoked credential. The referenced
+        <a>BitstringStatusListCredential</a> is itself a signed credential; the verifier
+        <em class="rfc2119">MUST</em> verify its proof and that its issuer is the same
+        authority (or a delegate trusted for status) before trusting its bits.</li>
+      <li><strong>Status freshness.</strong> The status-list credential carries
+        <code>validFrom</code>/<code>validUntil</code>. A verifier
+        <em class="rfc2119">MUST</em> reject a status list outside its validity window and
+        <em class="rfc2119">SHOULD</em> refetch a status list older than a
+        deployment-defined maximum age rather than rely on a stale cached copy.</li>
+      <li><strong>Re-check before settlement.</strong> Because a credential may be revoked
+        <em>between</em> authorization and settlement, the wallet
+        <em class="rfc2119">MUST</em> re-check <code>credentialStatus</code> at settlement
+        time, not only at authorization. A credential whose status bit is set at settlement
+        <em class="rfc2119">MUST</em> be refused (the transport binding surfaces this as
+        <code>credential-revoked</code>), even if it was active when the authorization was
+        signed.
+        <em>(Status-list resolution is performed out of band; the offline reference
+        harness ships an active and a revoked status list and verifies the bit, the issuer
+        signature, and the freshness window.)</em></li>
       <li><strong>Trust.</strong> For a <a>SpendingAuthorizationCredential</a>, the
         <code>issuer</code> <em class="rfc2119">MUST</em> be on the verifier's
         trusted-issuer list, and the <strong>more restrictive</strong> of the

@@ -11,6 +11,7 @@ import pricing
 import interop
 import sdjwt
 import settlement as st
+import status as stx
 
 SPEC = Path(__file__).parent
 AUTH = SPEC / "authority" / "test-vectors"
@@ -97,6 +98,27 @@ def main() -> int:
           spendauth["validFrom"] < spendauth["validUntil"])
     check("credential active at authorization (validFrom <= timestamp <= validUntil)",
           spendauth["validFrom"] <= authz["timestamp"] <= spendauth["validUntil"])
+
+    print("Credential status & freshness (Bitstring Status List):")
+    sl_active = load(AUTH, "status-list-active.json")
+    sl_revoked = load(AUTH, "status-list-revoked.json")
+    _sidx = int(spendauth["credentialStatus"]["statusListIndex"])
+    check("status list (active) proof verifies", ac.verify_ecdsa_jcs_2022(sl_active))
+    check("status list (revoked) proof verifies", ac.verify_ecdsa_jcs_2022(sl_revoked))
+    check("status lists signed by the credential issuer",
+          controller(sl_active) == issuer and controller(sl_revoked) == issuer)
+    check("active status list is the one the credentialStatus points to",
+          sl_active["id"] == spendauth["credentialStatus"]["statusListCredential"])
+    check("active list: credential bit is 0 (not revoked)",
+          not stx.is_revoked(sl_active["credentialSubject"]["encodedList"], _sidx))
+    check("revoked list: credential bit is 1 (revoked)",
+          stx.is_revoked(sl_revoked["credentialSubject"]["encodedList"], _sidx))
+    check("status list freshness window well-formed (validFrom < validUntil)",
+          sl_active["validFrom"] < sl_active["validUntil"])
+    check("active status list valid at authorization time",
+          sl_active["validFrom"] <= authz["timestamp"] <= sl_active["validUntil"])
+    check("revocation published after the authorization (revoked mid-flight)",
+          sl_revoked["validFrom"] > authz["timestamp"])
 
     print("Execution & receipt linkage:")
     check("execution.authorization == authz.id", execution.get("authorization") == authz["id"])

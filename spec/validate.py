@@ -42,6 +42,8 @@ AUTH_VECTORS = {
     "spending-authorization-credential.json": "SpendingAuthorizationCredential",
     "merchant-credential.json": "MerchantCredential",
     "payment-capability-credential.json": "PaymentCapabilityCredential",
+    "status-list-active.json": "BitstringStatusListCredential",
+    "status-list-revoked.json": "BitstringStatusListCredential",
 }
 PAY_VECTORS = {
     "00-payment-offer.json": "PaymentOffer",

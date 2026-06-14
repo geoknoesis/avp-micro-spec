@@ -14,6 +14,7 @@ import avp_crypto as ac
 import interop
 import settlement as st
 import sdjwt
+import status as stx
 
 SPEC = Path(__file__).parent
 AUTH = SPEC / "authority" / "test-vectors"
@@ -87,6 +88,45 @@ def main() -> None:
     }
     spendauth = ac.sign_ecdsa_jcs_2022(spendauth, issuer, "2026-03-25T20:00:01Z")
     write(AUTH, "spending-authorization-credential.json", spendauth)
+
+    # Bitstring Status List v1.0: the actual status list the SAC's credentialStatus points
+    # to, in two states. The active list has every bit 0; the revoked list sets the SAC's
+    # index and is published AFTER the authorization (a credential revoked mid-flight).
+    _sac_status = spendauth["credentialStatus"]
+    _sac_idx = int(_sac_status["statusListIndex"])
+    status_active = {
+        "@context": [VC2, DI],
+        "id": _sac_status["statusListCredential"],
+        "type": ["VerifiableCredential", "BitstringStatusListCredential"],
+        "issuer": DID_ISSUER,
+        "validFrom": "2026-03-25T19:00:00Z",
+        "validUntil": "2026-06-25T20:00:00Z",
+        "credentialSubject": {
+            "id": _sac_status["statusListCredential"] + "#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": stx.encode_status_list(set()),
+        },
+    }
+    status_active = ac.sign_ecdsa_jcs_2022(status_active, issuer, "2026-03-25T19:00:01Z")
+    write(AUTH, "status-list-active.json", status_active)
+
+    status_revoked = {
+        "@context": [VC2, DI],
+        "id": _sac_status["statusListCredential"] + "?ts=2026-03-26",
+        "type": ["VerifiableCredential", "BitstringStatusListCredential"],
+        "issuer": DID_ISSUER,
+        "validFrom": "2026-03-26T09:00:00Z",
+        "validUntil": "2026-06-25T20:00:00Z",
+        "credentialSubject": {
+            "id": _sac_status["statusListCredential"] + "#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": stx.encode_status_list({_sac_idx}),
+        },
+    }
+    status_revoked = ac.sign_ecdsa_jcs_2022(status_revoked, issuer, "2026-03-26T09:00:01Z")
+    write(AUTH, "status-list-revoked.json", status_revoked)
 
     merchant = {
         "@context": DSA_CTX,

@@ -1,0 +1,28 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2"
+  ],
+  "id": "https://issuer.example/status/3",
+  "type": [
+    "VerifiableCredential",
+    "BitstringStatusListCredential"
+  ],
+  "issuer": "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv",
+  "validFrom": "2026-03-25T19:00:00Z",
+  "validUntil": "2026-06-25T20:00:00Z",
+  "credentialSubject": {
+    "id": "https://issuer.example/status/3#list",
+    "type": "BitstringStatusList",
+    "statusPurpose": "revocation",
+    "encodedList": "uH4sIAAAAAAACCu3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+  },
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T19:00:01Z",
+    "verificationMethod": "did:key:zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv#zDnaekFd1ybjRXtmEJKwuDV4GQhHgQovoGbdVVDSwUwDuy8tv",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z4Vnk1wSbSmibZLS1y4SCJbqoh7CmdD3UGuECZZH9kEASLstwgGR22H4cCzxAHSQJojsGdtAtMSsWv7r2GAUyaNdR"
+  }
+}
