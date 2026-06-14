@@ -96,6 +96,8 @@ disp:refundDigest a owl:DatatypeProperty ; rdfs:label "refund digest"@en ; rdfs:
 disp:resolutionDigest a owl:DatatypeProperty ; rdfs:label "resolution digest"@en ; rdfs:range xsd:string .
 disp:reversalDigest a owl:DatatypeProperty ; rdfs:label "reversal digest"@en ; rdfs:range xsd:string .
 disp:supersedesDigest a owl:DatatypeProperty ; rdfs:label "supersedes digest"@en ; rdfs:range xsd:string .
+disp:settlementRefDigest a owl:DatatypeProperty ; rdfs:label "settlement reference digest"@en ;
+  rdfs:comment "JCS content digest of the on-chain settlement record (a settlement-bundle SettlementProof) named by settlementRef, pinning the cross-bundle link."@en ; rdfs:range xsd:string .
 disp:contentDigest a owl:DatatypeProperty ; rdfs:label "content digest"@en ; rdfs:range xsd:string .
 
 #################################################################

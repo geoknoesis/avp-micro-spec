@@ -195,6 +195,7 @@
         "currency": { "type": "string" },
         "status": { "enum": ["pending", "completed", "partial", "failed"] },
         "settlementRef": { "type": "string" },
+        "settlementRefDigest": { "$ref": "#/$defs/contentDigest" },
         "timestamp": { "$ref": "#/$defs/dateTime" },
         "proof": { "$ref": "#/$defs/proof" }
       }

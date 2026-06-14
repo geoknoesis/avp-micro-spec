@@ -33,6 +33,7 @@
     "resolutionDigest": { "@id": "disp:resolutionDigest" },
     "reversalDigest": { "@id": "disp:reversalDigest" },
     "supersedesDigest": { "@id": "disp:supersedesDigest" },
+    "settlementRefDigest": { "@id": "disp:settlementRefDigest" },
 
     "disputedAmount": { "@id": "disp:disputedAmount" },
     "resolvedAmount": { "@id": "disp:resolvedAmount" },

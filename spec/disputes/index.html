@@ -308,6 +308,18 @@ Adversarial: Dispute (payer)
       <em class="rfc2119">MUST</em> reject a Reversal whose cumulative settled value
       against one original execution would exceed that original's amount.
     </p>
+    <p>
+      <strong>Cross-bundle no-double-refund.</strong> Value can also flow back on-chain
+      via the AVP-Micro Settlement bundle (a reverse settlement or an
+      <code>EscrowRefund</code>). When a <a>Reversal</a> is settled on a rail, its
+      <code>settlementRef</code> <em class="rfc2119">SHOULD</em> name the settling
+      <code>SettlementProof</code> and carry a <code>settlementRefDigest</code> equal to
+      that proof's JCS digest, so the link is authenticated rather than an opaque string.
+      A verifier accounting for refunds against one original execution
+      <em class="rfc2119">MUST</em> count BOTH disputes <a>Reversal</a>s and settlement
+      reverse/refund records, so the total returned value cannot exceed the settled
+      amount by splitting it across the two bundles.
+    </p>
   </section>
 </body>
 </html>
