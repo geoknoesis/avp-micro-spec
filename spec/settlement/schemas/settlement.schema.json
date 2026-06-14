@@ -13,6 +13,8 @@
     "dateTime": { "type": "string", "format": "date-time" },
     "contentDigest": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[A-Za-z0-9_-]+$" },
     "caip2": { "type": "string", "pattern": "^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$" },
+    "caip10": { "type": "string", "pattern": "^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}:[-_a-zA-Z0-9]{1,128}$" },
+    "caip19": { "type": "string", "pattern": "^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}/[-a-z0-9]+:[-_a-zA-Z0-9]+$" },
     "proof": {
       "type": "object",
       "required": ["type", "cryptosuite", "created", "verificationMethod", "proofPurpose", "proofValue"],
@@ -46,8 +48,11 @@
         "id": { "$ref": "#/$defs/idValue" },
         "type": { "oneOf": [ { "const": "PayeeAccountBinding" }, { "type": "array", "contains": { "const": "PayeeAccountBinding" } } ] },
         "subject": { "$ref": "#/$defs/did" },
-        "account": { "type": "string", "minLength": 1 },
+        "account": { "$ref": "#/$defs/caip10" },
         "chain": { "$ref": "#/$defs/caip2" },
+        "validFrom": { "$ref": "#/$defs/dateTime" },
+        "validUntil": { "$ref": "#/$defs/dateTime" },
+        "credentialStatus": { "type": ["object", "array"] },
         "proof": { "$ref": "#/$defs/proof" }
       }
     },
@@ -64,7 +69,7 @@
         "rail": { "type": "string", "minLength": 1 },
         "chain": { "$ref": "#/$defs/caip2" },
         "payeeAccount": { "type": "string", "minLength": 1 },
-        "asset": { "type": "string", "minLength": 1 },
+        "asset": { "$ref": "#/$defs/caip19" },
         "payer": { "$ref": "#/$defs/did" },
         "payee": { "$ref": "#/$defs/did" },
         "amount": { "$ref": "#/$defs/positiveDecimal" },
@@ -94,7 +99,7 @@
         "transaction": { "type": "string", "minLength": 1 },
         "preimage": { "type": "string", "minLength": 1 },
         "settledAmountBase": { "$ref": "#/$defs/baseUnits" },
-        "asset": { "type": "string", "minLength": 1 },
+        "asset": { "$ref": "#/$defs/caip19" },
         "blockHeight": { "type": "integer", "minimum": 0 },
         "confirmations": { "type": "integer", "minimum": 0 },
         "finality": { "enum": ["pending", "probabilistic", "final"] },
@@ -114,7 +119,7 @@
         "instructionDigest": { "$ref": "#/$defs/contentDigest" },
         "lockRef": { "type": "string", "minLength": 1 },
         "lockedAmountBase": { "$ref": "#/$defs/baseUnits" },
-        "asset": { "type": "string", "minLength": 1 },
+        "asset": { "$ref": "#/$defs/caip19" },
         "timeout": { "$ref": "#/$defs/dateTime" },
         "proof": { "$ref": "#/$defs/proof" }
       }
@@ -146,7 +151,7 @@
         "lockDigest": { "$ref": "#/$defs/contentDigest" },
         "settlementProof": { "$ref": "#/$defs/idValue" },
         "settlementProofDigest": { "$ref": "#/$defs/contentDigest" },
-        "reason": { "type": "string", "minLength": 1 },
+        "reason": { "enum": ["timeout", "dispute"] },
         "proof": { "$ref": "#/$defs/proof" }
       }
     }
