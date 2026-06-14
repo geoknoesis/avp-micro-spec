@@ -1,6 +1,6 @@
 # AVP-Micro — specifications and conformance harness
 
-Formal W3C specifications and signed test vectors for the AVP-Micro trust and authorization layer for AI agent payments.
+Formal W3C specifications and signed test vectors for the **AVP-Micro** (*Agent Verifiable Micropayments*) trust and authorization layer for AI agent payments.
 
 ## What's here
 
