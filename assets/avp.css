@@ -200,24 +200,41 @@ section { padding: 84px 0; scroll-margin-top: calc(var(--nav-h) + 12px); }
 .notcard .x { color: #dc2626; font-weight: 800; flex: none; }
 
 /* ============================================================
-   INSIGHT — layer diagram
+   INSIGHT — architecture stack diagram
    ============================================================ */
-.layers { max-width: 760px; margin: 0 auto; }
-.layer {
-  border-radius: 14px; padding: 22px 24px; text-align: center;
-}
-.layer-top {
-  background: var(--grad); color: #fff; box-shadow: 0 14px 30px -14px rgba(29,78,216,.6);
-}
-.layer-top .t { font-weight: 700; font-size: 1.12rem; }
-.layer-top .d { opacity: .92; font-size: .95rem; }
-.layer-mid { text-align: center; color: var(--muted); font-size: .85rem; padding: 10px 0; font-weight: 600; letter-spacing: .04em; }
-.layer-bot {
-  background: #fff; border: 1px dashed #cbd5e1; color: var(--slate);
-}
-.layer-bot .t { font-weight: 700; color: var(--ink); }
-.layer-bot .rails { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
-.rail-pill { background: var(--soft); border: 1px solid var(--line); border-radius: 999px; padding: 5px 13px; font-size: .82rem; font-weight: 500; }
+.arch { max-width: 900px; margin: 0 auto; }
+.arch-layer { border-radius: 18px; padding: 24px 26px; }
+.arch-head { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 1.1rem; }
+.arch-head .tag { font: 700 .62rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; padding: 5px 9px; border-radius: 7px; flex: none; }
+.arch-layer .sub { font-size: .92rem; margin: 6px 0 18px; }
+
+/* trust layer (gradient, on top) */
+.arch-trust { background: var(--grad); color: #fff; box-shadow: 0 22px 48px -22px rgba(29,78,216,.7); }
+.arch-trust .tag { background: rgba(255,255,255,.2); color: #fff; }
+.arch-trust .sub { color: #fff; opacity: .92; }
+.arch-trust .sub em { font-style: normal; font-weight: 700; }
+.arch-pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+.arch-pillar { background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.28); border-radius: 12px; padding: 15px 16px; }
+.arch-pillar .pi { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: .94rem; color: #fff; margin-bottom: 6px; }
+.arch-pillar .pi svg { width: 19px; height: 19px; flex: none; }
+.arch-pillar p { margin: 0; font-size: .83rem; line-height: 1.5; color: #fff; opacity: .9; }
+
+/* settlement-agnostic interface boundary */
+.arch-interface { position: relative; display: flex; align-items: center; justify-content: center; padding: 18px 0; }
+.arch-interface::before { content: ""; position: absolute; left: 4%; right: 4%; top: 50%; border-top: 2px dashed #94a3b8; }
+.arch-interface .pill { position: relative; background: var(--soft); border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; font-size: .84rem; font-weight: 600; color: var(--slate); box-shadow: var(--shadow-sm); text-align: center; }
+.arch-interface .pill b { color: var(--blue); }
+
+/* settlement layer (neutral, pluggable) */
+.arch-settle { background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.arch-settle .arch-head { color: var(--ink); }
+.arch-settle .arch-head .muted { font-weight: 500; color: var(--muted); font-size: .85rem; }
+.arch-settle .tag { background: var(--soft); color: var(--muted); border: 1px solid var(--line); }
+.arch-settle .sub { color: var(--muted); }
+.arch-rails { display: flex; flex-wrap: wrap; gap: 10px; }
+.rail-mod { display: inline-flex; align-items: center; gap: 9px; background: var(--soft); border: 1px solid var(--line); border-radius: 11px; padding: 10px 14px; font-size: .86rem; font-weight: 500; color: var(--slate); transition: border-color .15s ease, transform .15s ease; }
+.rail-mod:hover { border-color: var(--teal); transform: translateY(-2px); }
+.rail-mod .dot { width: 9px; height: 9px; border-radius: 3px; background: var(--grad); flex: none; }
 
 /* ============================================================
    SPEC CARDS
@@ -387,7 +404,7 @@ table.cmp td b { color: var(--ink); }
   .nav-links.open { transform: translateY(0); visibility: visible; }
   .nav-links a { padding: 12px 12px; border-radius: 9px; }
   .nav-toggle { display: inline-flex; }
-  .grid-2, .grid-3, .spec-grid, .feat-grid, .chal, .conf-grid, .gap-grid { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .spec-grid, .feat-grid, .chal, .conf-grid, .gap-grid, .arch-pillars { grid-template-columns: 1fr; }
   .flow-arrow { transform: rotate(90deg); width: 100%; padding: 4px 0; }
   .flow-step { min-width: 0; }
   .hero-cta { flex-direction: column; align-items: stretch; }

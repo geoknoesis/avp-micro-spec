@@ -127,21 +127,40 @@
       </p>
     </div>
 
-    <div class="layers">
-      <div class="layer layer-top">
-        <div class="t">Trust &amp; authorization layer · AVP-Micro</div>
-        <div class="d">Portable DIDs · machine-verifiable delegation (VCs) · signed quotes &amp; authorizations bound to specific requests</div>
+    <div class="arch">
+      <div class="arch-layer arch-trust">
+        <div class="arch-head"><span class="tag">Layer 1</span> Trust &amp; authorization — AVP-Micro</div>
+        <div class="sub">Standardizes <em>who may spend, under what terms, and how it's proven</em> — independent of how value actually moves.</div>
+        <div class="arch-pillars">
+          <div class="arch-pillar">
+            <div class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg> Portable identity</div>
+            <p>Every party is a DID — globally resolvable and bound to keys.</p>
+          </div>
+          <div class="arch-pillar">
+            <div class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg> Verifiable delegation</div>
+            <p>Caps, payees, categories &amp; windows in a signed credential.</p>
+          </div>
+          <div class="arch-pillar">
+            <div class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 14l2 2 4-4"/></svg> Bound signed messages</div>
+            <p>Quotes, authorizations &amp; receipts tied to a specific request.</p>
+          </div>
+        </div>
       </div>
-      <div class="layer-mid">▼ &nbsp; sits above &nbsp; ▼</div>
-      <div class="layer layer-bot">
-        <div class="t">Settlement layer · any rail (out of scope by design)</div>
-        <div class="rails">
-          <span class="rail-pill">Lightning / L402</span>
-          <span class="rail-pill">EVM stablecoin</span>
-          <span class="rail-pill">Coinbase x402</span>
-          <span class="rail-pill">Open Payments / ILP</span>
-          <span class="rail-pill">Card rails</span>
-          <span class="rail-pill">Internal ledger</span>
+
+      <div class="arch-interface">
+        <span class="pill">One <b>settlement-agnostic</b> interface — the boundary AVP-Micro standardizes</span>
+      </div>
+
+      <div class="arch-layer arch-settle">
+        <div class="arch-head"><span class="tag">Layer 2</span> Settlement — any rail <span class="muted">(out of scope by design)</span></div>
+        <div class="sub">Pluggable and interchangeable: swap the rail and the authorization semantics above don't change.</div>
+        <div class="arch-rails">
+          <span class="rail-mod"><span class="dot"></span> Lightning / L402</span>
+          <span class="rail-mod"><span class="dot"></span> EVM stablecoin</span>
+          <span class="rail-mod"><span class="dot"></span> Coinbase x402</span>
+          <span class="rail-mod"><span class="dot"></span> Open Payments / ILP</span>
+          <span class="rail-mod"><span class="dot"></span> Card rails</span>
+          <span class="rail-mod"><span class="dot"></span> Internal ledger</span>
         </div>
       </div>
     </div>
