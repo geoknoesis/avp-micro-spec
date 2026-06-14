@@ -32,6 +32,11 @@ DISP_CTX = [VC2, DI, DSA, AVP, DISP_URL]
 SETTLE_URL = "https://w3id.org/avp-micro/settlement/v1"
 SETTLE_CTX = [VC2, DI, DSA, AVP, SETTLE_URL]
 SETTLE = SPEC / "settlement" / "test-vectors"
+TXP_URL = "https://w3id.org/avp-micro/transport/v1"
+TXP_CTX = [VC2, DI, DSA, AVP, TXP_URL]
+TXP = SPEC / "transport" / "test-vectors"
+RAIL_EVM = SETTLE_URL + "#rail-evm-stablecoin"
+RAIL_X402 = SETTLE_URL + "#rail-x402"
 
 issuer = ac.seed_key("issuer-acme-corp")
 agent = ac.seed_key("agent-buyer-01")
@@ -765,6 +770,129 @@ def main() -> None:
     }
     binding_agent = ac.sign_ecdsa_jcs_2022(binding_agent, agent, "2026-03-26T09:04:00Z")
     write(SETTLE, "55-payee-account-binding-agent.json", binding_agent)
+
+    # ---- Transport & protocol binding bundle ----
+    # Wraps the canonical payments objects. Reload them from disk so the digests
+    # bound here match the exact bytes validate.py / verify.py will read.
+    quote_c = json.loads((PAY / "01-payment-quote.json").read_text(encoding="utf-8"))
+    authz_c = json.loads((PAY / "02-payment-authorization.json").read_text(encoding="utf-8"))
+    receipt_c = json.loads((PAY / "04-payment-receipt.json").read_text(encoding="utf-8"))
+    offer_c = json.loads((PAY / "00-payment-offer.json").read_text(encoding="utf-8"))
+
+    service = {
+        "@context": TXP_CTX,
+        "id": "urn:avp:txp:service:tool-api",
+        "type": "ServiceDescription",
+        "payee": DID_PAYEE,
+        "offers": [offer_c["id"]],
+        "endpoints": {
+            "quote": "https://api.example.com/avp/quote",
+            "authorize": "https://api.example.com/avp/authorize",
+            "execute": "https://api.example.com/avp/execute",
+            "receipt": "https://api.example.com/avp/receipt/{id}",
+            "settlementStatus": "https://api.example.com/avp/settlement/{id}",
+            "session": "https://api.example.com/avp/session",
+            "accruals": "https://api.example.com/avp/session/{id}/accruals",
+            "close": "https://api.example.com/avp/session/{id}/close",
+            "extend": "https://api.example.com/avp/session/{id}/extend",
+        },
+        "acceptedCredentialIssuers": [DID_ISSUER],
+        "acceptedSettlementRails": [RAIL_EVM, RAIL_X402],
+        "supportedBundles": {
+            AVP: "0.1.0",
+            DISP_URL: "0.1.0",
+            SETTLE_URL: "0.1.0",
+            TXP_URL: "0.1.0",
+        },
+        "timestamp": "2026-03-25T21:29:00Z",
+    }
+    service = ac.sign_ecdsa_jcs_2022(service, payee, "2026-03-25T21:29:00Z")
+    write(TXP, "00-service-description.json", service)
+
+    challenge = {
+        "@context": TXP_CTX,
+        "id": "urn:avp:txp:challenge:abc123",
+        "type": "PaymentChallenge",
+        "payee": DID_PAYEE,
+        "quote": quote_c["id"],
+        "quoteDigest": ac.jcs_digest(quote_c),
+        "challenge": "txp-nonce-7f3a9c2e",
+        "authorizeEndpoint": "https://api.example.com/avp/resource/premium",
+        "acceptedSettlementRails": [RAIL_EVM, RAIL_X402],
+        "timestamp": "2026-03-25T21:31:00Z",
+        "expires": "2026-03-25T21:36:00Z",
+    }
+    challenge = ac.sign_ecdsa_jcs_2022(challenge, payee, "2026-03-25T21:31:00Z")
+    write(TXP, "10-payment-challenge.json", challenge)
+
+    # The actual HTTP 402 body: the signed challenge plus the referenced quote.
+    body_402 = {"challenge": challenge, "quote": quote_c}
+    write(TXP, "11-challenge-402-body.json", body_402)
+
+    submission = {
+        "@context": TXP_CTX,
+        "id": "urn:avp:txp:submission:def456",
+        "type": "AuthorizationSubmission",
+        "payer": DID_AGENT,
+        "authorization": authz_c["id"],
+        "authorizationDigest": ac.jcs_digest(authz_c),
+        "challenge": challenge["challenge"],
+        "idempotencyKey": "idemp-2026-03-25-0001",
+        "callbackUrl": "https://agent.example.com/avp/callback",
+        "timestamp": "2026-03-25T21:32:00Z",
+    }
+    submission = ac.sign_ecdsa_jcs_2022(submission, agent, "2026-03-25T21:32:00Z")
+    write(TXP, "20-authorization-submission.json", submission)
+
+    problem = {
+        "type": TXP_URL + "#over-cap",
+        "title": "Amount exceeds per-transaction cap",
+        "status": 402,
+        "detail": "The authorized amount 0.10 exceeds the credential maxPerTransaction 0.05.",
+        "field": "amount",
+    }
+    write(TXP, "30-problem-details.json", problem)
+
+    flow = {
+        "description": "Core HTTP 402 challenge flow: gated GET -> 402 challenge -> authorized retry -> 200 + receipt.",
+        "steps": [
+            {
+                "request": {"method": "GET", "path": "/resource/premium",
+                            "headers": {"Accept": "application/avp-micro+json"}},
+                "response": {"status": 402,
+                             "headers": {"WWW-Authenticate": "AVP-Micro",
+                                         "Content-Type": "application/avp-micro+json"},
+                             "body": body_402},
+            },
+            {
+                "request": {"method": "GET", "path": "/resource/premium",
+                            "headers": {"Authorization": "AVP-Micro " + submission["id"],
+                                        "Idempotency-Key": submission["idempotencyKey"],
+                                        "Content-Type": "application/avp-micro+json"},
+                            "body": submission},
+                "response": {"status": 200,
+                             "headers": {"Content-Type": "application/avp-micro+json"},
+                             "body": receipt_c},
+            },
+        ],
+    }
+    write(TXP, "40-exchange-402-flow.json", flow)
+
+    over_cap = {
+        "description": "Policy rejection: authorized amount exceeds the credential cap -> 402 + ProblemDetails.",
+        "steps": [
+            {
+                "request": {"method": "GET", "path": "/resource/premium",
+                            "headers": {"Authorization": "AVP-Micro " + submission["id"],
+                                        "Idempotency-Key": "idemp-2026-03-25-0002",
+                                        "Content-Type": "application/avp-micro+json"}},
+                "response": {"status": 402,
+                             "headers": {"Content-Type": "application/problem+json"},
+                             "body": problem},
+            },
+        ],
+    }
+    write(TXP, "41-exchange-over-cap.json", over_cap)
 
     # ---- Interop (SD-JWT-VC) bundle ----
     # Two P-256 (ES256) test keys: a bridge that signs export envelopes, and a

@@ -1,0 +1,29 @@
+{
+  "description": "Policy rejection: authorized amount exceeds the credential cap -> 402 + ProblemDetails.",
+  "steps": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/resource/premium",
+        "headers": {
+          "Authorization": "AVP-Micro urn:avp:txp:submission:def456",
+          "Idempotency-Key": "idemp-2026-03-25-0002",
+          "Content-Type": "application/avp-micro+json"
+        }
+      },
+      "response": {
+        "status": 402,
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "body": {
+          "type": "https://w3id.org/avp-micro/transport/v1#over-cap",
+          "title": "Amount exceeds per-transaction cap",
+          "status": 402,
+          "detail": "The authorized amount 0.10 exceeds the credential maxPerTransaction 0.05.",
+          "field": "amount"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "challenge": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://w3id.org/security/data-integrity/v2",
+      "https://w3id.org/spending-authority/v1",
+      "https://w3id.org/avp-micro/v1",
+      "https://w3id.org/avp-micro/transport/v1"
+    ],
+    "id": "urn:avp:txp:challenge:abc123",
+    "type": "PaymentChallenge",
+    "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "quote": "urn:avp:quote:789",
+    "quoteDigest": "sha-256:EuScAr2qixUd_K3KSPlSR0HAlToOR7tuPZODlQZMbFg",
+    "challenge": "txp-nonce-7f3a9c2e",
+    "authorizeEndpoint": "https://api.example.com/avp/resource/premium",
+    "acceptedSettlementRails": [
+      "https://w3id.org/avp-micro/settlement/v1#rail-evm-stablecoin",
+      "https://w3id.org/avp-micro/settlement/v1#rail-x402"
+    ],
+    "timestamp": "2026-03-25T21:31:00Z",
+    "expires": "2026-03-25T21:36:00Z",
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "ecdsa-jcs-2022",
+      "created": "2026-03-25T21:31:00Z",
+      "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z53jFJTKxsrGxeGqfx3K3a7L2ayxFPVjF5s3Kz9ZHVMVBhyTwEgWhPZ6ba6oNab9UA7G1XTqy6H4JGK39P1NphEAM"
+    }
+  },
+  "quote": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://w3id.org/security/data-integrity/v2",
+      "https://w3id.org/spending-authority/v1",
+      "https://w3id.org/avp-micro/v1"
+    ],
+    "id": "urn:avp:quote:789",
+    "type": "PaymentQuote",
+    "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+    "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "requestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
+    "amount": "0.001",
+    "currency": "USD",
+    "settlementMethod": "internal-ledger",
+    "settlementTarget": "https://wallet.example.com/tool-api-addr",
+    "expires": "2026-03-25T21:35:00Z",
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "ecdsa-jcs-2022",
+      "created": "2026-03-25T21:30:00Z",
+      "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z5MbMnuTG3AtHt1ScEfDaKp2ptWL6MZNm949zivVAe6Huji7iwScH1CX4pXd9LYwrKALsktKVUsT8xm7im25VhKmt"
+    }
+  }
+}

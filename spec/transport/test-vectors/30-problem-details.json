@@ -1,0 +1,7 @@
+{
+  "type": "https://w3id.org/avp-micro/transport/v1#over-cap",
+  "title": "Amount exceeds per-transaction cap",
+  "status": 402,
+  "detail": "The authorized amount 0.10 exceeds the credential maxPerTransaction 0.05.",
+  "field": "amount"
+}
