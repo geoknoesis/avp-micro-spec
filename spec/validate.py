@@ -14,6 +14,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import rdflib
+import yaml
 from pyld import jsonld
 from pyld.documentloader import requests as pyld_requests
 from jsonschema import Draft202012Validator
@@ -27,12 +28,14 @@ PAY = SPEC / "payments"
 INTEROP = SPEC / "interop-sd-jwt-vc"
 DISP = SPEC / "disputes"
 SETTLE = SPEC / "settlement"
+TRANSPORT = SPEC / "transport"
 SEC_PROOF = "https://w3id.org/security#proof"
 DSA_NS = "https://w3id.org/spending-authority/v1#"
 AVP_NS = "https://w3id.org/avp-micro/v1#"
 IOP_NS = "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1#"
 DISP_NS = "https://w3id.org/avp-micro/disputes/v1#"
 SETTLE_NS = "https://w3id.org/avp-micro/settlement/v1#"
+TXP_NS = "https://w3id.org/avp-micro/transport/v1#"
 
 # vector file -> ($def name, schema bundle path, shapes path, namespace, dir)
 AUTH_VECTORS = {
@@ -108,6 +111,19 @@ SETTLEMENT_VECTORS = {
     "55-payee-account-binding-agent.json": "PayeeAccountBinding",
     "56-payee-account-binding-evm.json": "PayeeAccountBinding",
 }
+# Signed transport objects: full expand + schema + SHACL coverage.
+TRANSPORT_VECTORS = {
+    "00-service-description.json": "ServiceDescription",
+    "10-payment-challenge.json": "PaymentChallenge",
+    "20-authorization-submission.json": "AuthorizationSubmission",
+}
+# Unsigned transport artifacts: JSON Schema only (no proof, not JSON-LD-expanded).
+TRANSPORT_UNSIGNED_VECTORS = {
+    "11-challenge-402-body.json": "Challenge402Body",
+    "30-problem-details.json": "ProblemDetails",
+    "40-exchange-402-flow.json": "HttpExchangeLog",
+    "41-exchange-over-cap.json": "HttpExchangeLog",
+}
 
 failures = []
 
@@ -124,6 +140,7 @@ _avp_ctx = json.loads((PAY / "context" / "v1.jsonld").read_text(encoding="utf-8"
 _iop_ctx = json.loads((INTEROP / "context" / "v1.jsonld").read_text(encoding="utf-8"))
 _disp_ctx = json.loads((DISP / "context" / "v1.jsonld").read_text(encoding="utf-8"))
 _settle_ctx = json.loads((SETTLE / "context" / "v1.jsonld").read_text(encoding="utf-8"))
+_txp_ctx = json.loads((TRANSPORT / "context" / "v1.jsonld").read_text(encoding="utf-8"))
 _ctx_dir = SPEC / "contexts"
 # Stable external W3C contexts are vendored locally so validation is offline and
 # deterministic (w3.org content-negotiation via the pyld requests loader is flaky --
@@ -134,6 +151,7 @@ _LOCAL = {
     "https://w3id.org/avp-micro/interop/sd-jwt-vc/v1": _iop_ctx,
     "https://w3id.org/avp-micro/disputes/v1": _disp_ctx,
     "https://w3id.org/avp-micro/settlement/v1": _settle_ctx,
+    "https://w3id.org/avp-micro/transport/v1": _txp_ctx,
     "https://www.w3.org/ns/credentials/v2":
         json.loads((_ctx_dir / "credentials-v2.jsonld").read_text(encoding="utf-8")),
     "https://w3id.org/security/data-integrity/v2":
@@ -235,7 +253,44 @@ _SCHEMA_FILES = {
     "interop": INTEROP / "schemas" / "interop.schema.json",
     "disputes": DISP / "schemas" / "disputes.schema.json",
     "settlement": SETTLE / "schemas" / "settlement.schema.json",
+    "transport": TRANSPORT / "schemas" / "transport.schema.json",
 }
+
+
+def openapi_ref_check():
+    oa = TRANSPORT / "openapi" / "avp-micro.openapi.yaml"
+    try:
+        doc = yaml.safe_load(oa.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001
+        ok("OpenAPI document parses as YAML", False, str(e))
+        return
+    ok("OpenAPI document parses as YAML", isinstance(doc, dict))
+    ok("OpenAPI version is 3.1.x", str(doc.get("openapi", "")).startswith("3.1"))
+    ok("OpenAPI declares paths", bool(doc.get("paths")))
+
+    refs = []
+    def walk(node):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k == "$ref" and isinstance(v, str) and "#/$defs/" in v:
+                    refs.append(v)
+                else:
+                    walk(v)
+        elif isinstance(node, list):
+            for x in node:
+                walk(x)
+    walk(doc)
+    ok("OpenAPI references bundle $defs", bool(refs))
+
+    cache = {}
+    for ref in sorted(set(refs)):
+        rel, frag = ref.split("#/$defs/", 1)
+        target = (oa.parent / rel).resolve()
+        if target not in cache:
+            cache[target] = (json.loads(target.read_text(encoding="utf-8")).get("$defs", {})
+                             if target.exists() else None)
+        defs = cache[target]
+        ok(f"OpenAPI $ref resolves: {ref}", defs is not None and frag in defs)
 
 
 def shared_defs_check():
@@ -265,7 +320,9 @@ def main():
                 DISP / "vocab" / "disputes.ttl", DISP / "vocab" / "reasons.ttl",
                 DISP / "shapes" / "disputes-shapes.ttl",
                 SETTLE / "vocab" / "settlement.ttl", SETTLE / "vocab" / "rails.ttl",
-                SETTLE / "shapes" / "settlement-shapes.ttl"]:
+                SETTLE / "shapes" / "settlement-shapes.ttl",
+                TRANSPORT / "vocab" / "transport.ttl", TRANSPORT / "vocab" / "errors.ttl",
+                TRANSPORT / "shapes" / "transport-shapes.ttl"]:
         try:
             g = rdflib.Graph().parse(ttl.as_posix(), format="turtle")
             ok(f"{ttl.parent.parent.name}/{ttl.name} parses", True)
@@ -327,6 +384,14 @@ def main():
         "48-escrow-release-lightning.json": [(SETTLE_NS + "settlementProof", "stl:settlementProof")],
         "52-escrow-refund-evm.json": [(SETTLE_NS + "reason", "stl:reason")],
     })
+    expand_check(TRANSPORT, TRANSPORT_VECTORS, {
+        "00-service-description.json": [(TXP_NS + "acceptedSettlementRails", "txp:acceptedSettlementRails"),
+                                        (TXP_NS + "offers", "txp:offers")],
+        "10-payment-challenge.json": [("https://w3id.org/security#challenge", "sec:challenge"),
+                                      ("https://w3id.org/avp-micro/v1#quoteDigest", "avp:quoteDigest")],
+        "20-authorization-submission.json": [(TXP_NS + "authorizationDigest", "txp:authorizationDigest"),
+                                             (TXP_NS + "idempotencyKey", "txp:idempotencyKey")],
+    })
 
     section("JSON Schema validation")
     schema_check(AUTH, AUTH_VECTORS, "dsa.schema.json")
@@ -334,8 +399,12 @@ def main():
     schema_check(INTEROP, INTEROP_VECTORS, "interop.schema.json")
     schema_check(DISP, DISP_VECTORS, "disputes.schema.json")
     schema_check(SETTLE, SETTLEMENT_VECTORS, "settlement.schema.json")
+    schema_check(TRANSPORT, TRANSPORT_VECTORS, "transport.schema.json")
+    schema_check(TRANSPORT, TRANSPORT_UNSIGNED_VECTORS, "transport.schema.json")
     section("Shared $def consistency (no cross-bundle drift)")
     shared_defs_check()
+    section("OpenAPI contract")
+    openapi_ref_check()
     negative_schema_check(AUTH, "dsa.schema.json", [
         ("DSA proof type", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
          lambda obj: (obj["proof"].__setitem__("type", "NotDataIntegrityProof") or obj)),
@@ -433,6 +502,20 @@ def main():
         ("binding missing subject", "40-payee-account-binding.json", "PayeeAccountBinding",
          lambda obj: (obj.pop("subject", None), obj)[1]),
     ])
+    negative_schema_check(TRANSPORT, "transport.schema.json", [
+        ("challenge missing quoteDigest", "10-payment-challenge.json", "PaymentChallenge",
+         lambda obj: (obj.pop("quoteDigest", None), obj)[1]),
+        ("challenge context order", "10-payment-challenge.json", "PaymentChallenge",
+         lambda obj: (obj.__setitem__("@context", list(reversed(obj["@context"]))) or obj)),
+        ("submission missing echoed challenge", "20-authorization-submission.json", "AuthorizationSubmission",
+         lambda obj: (obj.pop("challenge", None), obj)[1]),
+        ("submission missing idempotencyKey", "20-authorization-submission.json", "AuthorizationSubmission",
+         lambda obj: (obj.pop("idempotencyKey", None), obj)[1]),
+        ("problem-details type not an IRI", "30-problem-details.json", "ProblemDetails",
+         lambda obj: (obj.__setitem__("type", "over-cap") or obj)),
+        ("service description missing acceptedSettlementRails", "00-service-description.json", "ServiceDescription",
+         lambda obj: (obj.pop("acceptedSettlementRails", None), obj)[1]),
+    ])
 
     section("SHACL validation")
     shacl_check(AUTH, AUTH_VECTORS, "dsa-shapes.ttl")
@@ -440,6 +523,7 @@ def main():
     shacl_check(INTEROP, INTEROP_VECTORS, "interop-shapes.ttl")
     shacl_check(DISP, DISP_VECTORS, "disputes-shapes.ttl")
     shacl_check(SETTLE, SETTLEMENT_VECTORS, "settlement-shapes.ttl")
+    shacl_check(TRANSPORT, TRANSPORT_VECTORS, "transport-shapes.ttl")
 
     print()
     if failures:
