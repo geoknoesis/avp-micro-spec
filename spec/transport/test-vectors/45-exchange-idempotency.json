@@ -1,0 +1,186 @@
+{
+  "description": "Idempotency: a repeated key returns the same execution; a different body under the same key is a 409 conflict.",
+  "steps": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/authorize",
+        "headers": {
+          "Content-Type": "application/avp-micro+json",
+          "Idempotency-Key": "idemp-2026-03-25-0001"
+        },
+        "body": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://w3id.org/security/data-integrity/v2",
+            "https://w3id.org/spending-authority/v1",
+            "https://w3id.org/avp-micro/v1",
+            "https://w3id.org/avp-micro/transport/v1"
+          ],
+          "id": "urn:avp:txp:submission:def456",
+          "type": "AuthorizationSubmission",
+          "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+          "authorization": "urn:avp:authz:999",
+          "authorizationDigest": "sha-256:A7Rd5gGcJ5qHLPtGg3NXCi9fd1G3QO4I29W6g6xq_jQ",
+          "challenge": "txp-nonce-7f3a9c2e",
+          "idempotencyKey": "idemp-2026-03-25-0001",
+          "callbackUrl": "https://agent.example.com/avp/callback",
+          "timestamp": "2026-03-25T21:32:00Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "ecdsa-jcs-2022",
+            "created": "2026-03-25T21:32:00Z",
+            "verificationMethod": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU#zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "zZfxiYkhD4Puj5n9pe6nrPN3ZRMdrc71WvRRWPDo6qVzwdGMg9g2s15orcWAuDquS8whgGo6HbvjKFJcf1K4qVPx"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/avp-micro+json"
+        },
+        "body": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://w3id.org/security/data-integrity/v2",
+            "https://w3id.org/spending-authority/v1",
+            "https://w3id.org/avp-micro/v1"
+          ],
+          "id": "urn:avp:exec:555",
+          "type": "PaymentExecution",
+          "authorization": "urn:avp:authz:999",
+          "amount": "0.001",
+          "currency": "USD",
+          "status": "completed",
+          "settlementRef": "internal-ledger://txn/abc123",
+          "timestamp": "2026-03-25T21:30:03Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "ecdsa-jcs-2022",
+            "created": "2026-03-25T21:30:03Z",
+            "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3iejaVcejnHCDyA3sxNSbhyivtGFZRub1fXJyAR34St4hQmvHFPumU2XN3FWRBPDBduY15eLPYGkEWFh8Mh1iDoE"
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/authorize",
+        "headers": {
+          "Content-Type": "application/avp-micro+json",
+          "Idempotency-Key": "idemp-2026-03-25-0001"
+        },
+        "body": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://w3id.org/security/data-integrity/v2",
+            "https://w3id.org/spending-authority/v1",
+            "https://w3id.org/avp-micro/v1",
+            "https://w3id.org/avp-micro/transport/v1"
+          ],
+          "id": "urn:avp:txp:submission:def456",
+          "type": "AuthorizationSubmission",
+          "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+          "authorization": "urn:avp:authz:999",
+          "authorizationDigest": "sha-256:A7Rd5gGcJ5qHLPtGg3NXCi9fd1G3QO4I29W6g6xq_jQ",
+          "challenge": "txp-nonce-7f3a9c2e",
+          "idempotencyKey": "idemp-2026-03-25-0001",
+          "callbackUrl": "https://agent.example.com/avp/callback",
+          "timestamp": "2026-03-25T21:32:00Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "ecdsa-jcs-2022",
+            "created": "2026-03-25T21:32:00Z",
+            "verificationMethod": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU#zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "zZfxiYkhD4Puj5n9pe6nrPN3ZRMdrc71WvRRWPDo6qVzwdGMg9g2s15orcWAuDquS8whgGo6HbvjKFJcf1K4qVPx"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/avp-micro+json"
+        },
+        "body": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://w3id.org/security/data-integrity/v2",
+            "https://w3id.org/spending-authority/v1",
+            "https://w3id.org/avp-micro/v1"
+          ],
+          "id": "urn:avp:exec:555",
+          "type": "PaymentExecution",
+          "authorization": "urn:avp:authz:999",
+          "amount": "0.001",
+          "currency": "USD",
+          "status": "completed",
+          "settlementRef": "internal-ledger://txn/abc123",
+          "timestamp": "2026-03-25T21:30:03Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "ecdsa-jcs-2022",
+            "created": "2026-03-25T21:30:03Z",
+            "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3iejaVcejnHCDyA3sxNSbhyivtGFZRub1fXJyAR34St4hQmvHFPumU2XN3FWRBPDBduY15eLPYGkEWFh8Mh1iDoE"
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/authorize",
+        "headers": {
+          "Content-Type": "application/avp-micro+json",
+          "Idempotency-Key": "idemp-2026-03-25-0001"
+        },
+        "body": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://w3id.org/security/data-integrity/v2",
+            "https://w3id.org/spending-authority/v1",
+            "https://w3id.org/avp-micro/v1",
+            "https://w3id.org/avp-micro/transport/v1"
+          ],
+          "id": "urn:avp:txp:submission:def457",
+          "type": "AuthorizationSubmission",
+          "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+          "authorization": "urn:avp:authz:999",
+          "authorizationDigest": "sha-256:A7Rd5gGcJ5qHLPtGg3NXCi9fd1G3QO4I29W6g6xq_jQ",
+          "challenge": "txp-nonce-7f3a9c2e",
+          "idempotencyKey": "idemp-2026-03-25-0001",
+          "callbackUrl": "https://agent.example.com/avp/callback-2",
+          "timestamp": "2026-03-25T21:32:00Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "ecdsa-jcs-2022",
+            "created": "2026-03-25T21:33:00Z",
+            "verificationMethod": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU#zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3EK5t6DBnWuMNKuYZ8TCJmZPKyvbnibSBz3mkyzGTJNSSab635mk9WqD1GzrtR3WDJZ4XAmNLqTfKNAPRiR2RXNt"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "Content-Type": "application/problem+json"
+        },
+        "body": {
+          "type": "https://w3id.org/avp-micro/transport/v1#idempotency-conflict",
+          "title": "Idempotency key reused with a different request",
+          "status": 409,
+          "detail": "The Idempotency-Key was already used for a different AuthorizationSubmission.",
+          "field": "Idempotency-Key"
+        }
+      }
+    }
+  ]
+}

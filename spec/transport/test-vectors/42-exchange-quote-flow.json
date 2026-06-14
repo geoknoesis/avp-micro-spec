@@ -1,0 +1,154 @@
+{
+  "description": "Explicit (non-gated) flow: request a quote, submit the authorization, fetch the receipt.",
+  "steps": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/quote",
+        "headers": {
+          "Accept": "application/avp-micro+json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/avp-micro+json"
+        },
+        "body": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://w3id.org/security/data-integrity/v2",
+            "https://w3id.org/spending-authority/v1",
+            "https://w3id.org/avp-micro/v1"
+          ],
+          "id": "urn:avp:quote:789",
+          "type": "PaymentQuote",
+          "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+          "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+          "requestHash": "sha-256:-DqOvoa765J-FBX-pPUw99dctpyyMeGTKO6vC6IO_0M",
+          "amount": "0.001",
+          "currency": "USD",
+          "settlementMethod": "internal-ledger",
+          "settlementTarget": "https://wallet.example.com/tool-api-addr",
+          "expires": "2026-03-25T21:35:00Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "ecdsa-jcs-2022",
+            "created": "2026-03-25T21:30:00Z",
+            "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5MbMnuTG3AtHt1ScEfDaKp2ptWL6MZNm949zivVAe6Huji7iwScH1CX4pXd9LYwrKALsktKVUsT8xm7im25VhKmt"
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/authorize",
+        "headers": {
+          "Content-Type": "application/avp-micro+json",
+          "Idempotency-Key": "idemp-2026-03-25-0001"
+        },
+        "body": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://w3id.org/security/data-integrity/v2",
+            "https://w3id.org/spending-authority/v1",
+            "https://w3id.org/avp-micro/v1",
+            "https://w3id.org/avp-micro/transport/v1"
+          ],
+          "id": "urn:avp:txp:submission:def456",
+          "type": "AuthorizationSubmission",
+          "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+          "authorization": "urn:avp:authz:999",
+          "authorizationDigest": "sha-256:A7Rd5gGcJ5qHLPtGg3NXCi9fd1G3QO4I29W6g6xq_jQ",
+          "challenge": "txp-nonce-7f3a9c2e",
+          "idempotencyKey": "idemp-2026-03-25-0001",
+          "callbackUrl": "https://agent.example.com/avp/callback",
+          "timestamp": "2026-03-25T21:32:00Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "ecdsa-jcs-2022",
+            "created": "2026-03-25T21:32:00Z",
+            "verificationMethod": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU#zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "zZfxiYkhD4Puj5n9pe6nrPN3ZRMdrc71WvRRWPDo6qVzwdGMg9g2s15orcWAuDquS8whgGo6HbvjKFJcf1K4qVPx"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/avp-micro+json"
+        },
+        "body": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://w3id.org/security/data-integrity/v2",
+            "https://w3id.org/spending-authority/v1",
+            "https://w3id.org/avp-micro/v1"
+          ],
+          "id": "urn:avp:exec:555",
+          "type": "PaymentExecution",
+          "authorization": "urn:avp:authz:999",
+          "amount": "0.001",
+          "currency": "USD",
+          "status": "completed",
+          "settlementRef": "internal-ledger://txn/abc123",
+          "timestamp": "2026-03-25T21:30:03Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "ecdsa-jcs-2022",
+            "created": "2026-03-25T21:30:03Z",
+            "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3iejaVcejnHCDyA3sxNSbhyivtGFZRub1fXJyAR34St4hQmvHFPumU2XN3FWRBPDBduY15eLPYGkEWFh8Mh1iDoE"
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/receipt/urn:avp:receipt:222",
+        "headers": {
+          "Accept": "application/avp-micro+json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/avp-micro+json"
+        },
+        "body": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://w3id.org/security/data-integrity/v2",
+            "https://w3id.org/spending-authority/v1",
+            "https://w3id.org/avp-micro/v1"
+          ],
+          "id": "urn:avp:receipt:222",
+          "type": "PaymentReceipt",
+          "quote": "urn:avp:quote:789",
+          "execution": "urn:avp:exec:555",
+          "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+          "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+          "amount": "0.001",
+          "currency": "USD",
+          "status": "fulfilled",
+          "outputHash": "sha-256:AI165K-wh9c53UMnbMaVqTrjZWRcmo6YQaApGYzxQ-k",
+          "fulfilledAt": "2026-03-25T21:30:05Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "ecdsa-jcs-2022",
+            "created": "2026-03-25T21:30:05Z",
+            "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z46yRjVyxBJaE9zcn5f44Nipt2KMXSXB43ei8JViJctcMrJ53RTFBnjEQReRYHAdimj8bnP2XEVVkJJmKSgSPRnSH"
+          }
+        }
+      }
+    }
+  ]
+}

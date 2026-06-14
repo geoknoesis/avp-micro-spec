@@ -894,6 +894,97 @@ def main() -> None:
     }
     write(TXP, "41-exchange-over-cap.json", over_cap)
 
+    # ---- additional flow exchanges (explicit-quote, streaming, async, idempotency) ----
+    exec_c = json.loads((PAY / "03-payment-execution.json").read_text(encoding="utf-8"))
+    sess_c = json.loads((PAY / "05-usage-session.json").read_text(encoding="utf-8"))
+    budget_c = json.loads((PAY / "06-session-budget-authorization.json").read_text(encoding="utf-8"))
+    accrual_c = json.loads((PAY / "07-usage-accrual.json").read_text(encoding="utf-8"))
+    sess_receipt_c = json.loads((PAY / "09-payment-receipt-session.json").read_text(encoding="utf-8"))
+    settle_proof_c = json.loads((SETTLE / "42-settlement-proof-evm.json").read_text(encoding="utf-8"))
+    JCT = {"Content-Type": "application/avp-micro+json"}
+    PCT = {"Content-Type": "application/problem+json"}
+
+    quote_flow = {
+        "description": "Explicit (non-gated) flow: request a quote, submit the authorization, fetch the receipt.",
+        "steps": [
+            {"request": {"method": "POST", "path": "/quote",
+                         "headers": {"Accept": "application/avp-micro+json"}},
+             "response": {"status": 200, "headers": JCT, "body": quote_c}},
+            {"request": {"method": "POST", "path": "/authorize",
+                         "headers": {**JCT, "Idempotency-Key": submission["idempotencyKey"]},
+                         "body": submission},
+             "response": {"status": 200, "headers": JCT, "body": exec_c}},
+            {"request": {"method": "GET", "path": "/receipt/" + receipt_c["id"],
+                         "headers": {"Accept": "application/avp-micro+json"}},
+             "response": {"status": 200, "headers": JCT, "body": receipt_c}},
+        ],
+    }
+    write(TXP, "42-exchange-quote-flow.json", quote_flow)
+
+    streaming = {
+        "description": "Streaming session: open, commit a budget, report accruals, then close and settle.",
+        "steps": [
+            {"request": {"method": "POST", "path": "/session", "headers": JCT},
+             "response": {"status": 200, "headers": JCT, "body": sess_c}},
+            {"request": {"method": "POST", "path": "/session/" + sess_c["id"] + "/budget",
+                         "headers": JCT, "body": budget_c},
+             "response": {"status": 200, "headers": JCT, "body": sess_c}},
+            {"request": {"method": "GET", "path": "/session/" + sess_c["id"] + "/accruals",
+                         "headers": {"Accept": "application/avp-micro+json"}},
+             "response": {"status": 200, "headers": JCT, "body": accrual_c}},
+            {"request": {"method": "POST", "path": "/session/" + sess_c["id"] + "/close", "headers": JCT},
+             "response": {"status": 200, "headers": JCT, "body": sess_receipt_c}},
+        ],
+    }
+    write(TXP, "43-exchange-streaming.json", streaming)
+
+    settle_loc = "/settlement/" + settle_proof_c["id"]
+    async_settle = {
+        "description": "Async settlement: execute returns 200 + Location; poll /settlement/{id} until the proof is final.",
+        "steps": [
+            {"request": {"method": "POST", "path": "/authorize",
+                         "headers": {**JCT, "Idempotency-Key": submission["idempotencyKey"]},
+                         "body": submission},
+             "response": {"status": 200, "headers": {**JCT, "Location": settle_loc}, "body": exec_c}},
+            {"request": {"method": "GET", "path": settle_loc,
+                         "headers": {"Accept": "application/avp-micro+json"}},
+             "response": {"status": 200, "headers": JCT, "body": exec_c}},
+            {"request": {"method": "GET", "path": settle_loc,
+                         "headers": {"Accept": "application/avp-micro+json"}},
+             "response": {"status": 200, "headers": JCT, "body": settle_proof_c}},
+        ],
+    }
+    write(TXP, "44-exchange-async-settlement.json", async_settle)
+
+    # a genuinely distinct, validly-signed submission for the conflict step
+    submission_alt = json.loads(json.dumps(submission))
+    submission_alt.pop("proof", None)
+    submission_alt["id"] = "urn:avp:txp:submission:def457"
+    submission_alt["callbackUrl"] = "https://agent.example.com/avp/callback-2"
+    submission_alt = ac.sign_ecdsa_jcs_2022(submission_alt, agent, "2026-03-25T21:33:00Z")
+    conflict = {
+        "type": TXP_URL + "#idempotency-conflict",
+        "title": "Idempotency key reused with a different request",
+        "status": 409,
+        "detail": "The Idempotency-Key was already used for a different AuthorizationSubmission.",
+        "field": "Idempotency-Key",
+    }
+    idem = {
+        "description": "Idempotency: a repeated key returns the same execution; a different body under the same key is a 409 conflict.",
+        "steps": [
+            {"request": {"method": "POST", "path": "/authorize",
+                         "headers": {**JCT, "Idempotency-Key": "idemp-2026-03-25-0001"}, "body": submission},
+             "response": {"status": 200, "headers": JCT, "body": exec_c}},
+            {"request": {"method": "POST", "path": "/authorize",
+                         "headers": {**JCT, "Idempotency-Key": "idemp-2026-03-25-0001"}, "body": submission},
+             "response": {"status": 200, "headers": JCT, "body": exec_c}},
+            {"request": {"method": "POST", "path": "/authorize",
+                         "headers": {**JCT, "Idempotency-Key": "idemp-2026-03-25-0001"}, "body": submission_alt},
+             "response": {"status": 409, "headers": PCT, "body": conflict}},
+        ],
+    }
+    write(TXP, "45-exchange-idempotency.json", idem)
+
     # ---- Interop (SD-JWT-VC) bundle ----
     # Two P-256 (ES256) test keys: a bridge that signs export envelopes, and a
     # foreign issuer modelling a Verifiable-Intent / AP2 origin, resolved by DID.
