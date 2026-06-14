@@ -536,10 +536,18 @@ def main() -> None:
     usdc = st.RAILS["evm-stablecoin"]["asset"]
     evm_threshold = st.RAILS["evm-stablecoin"]["threshold"]
 
-    # EVM payee identified by did:pkh (binding archetype (a): the DID *is* the account).
+    # EVM payee: the AUTHORIZED payee (did:key DID_PAYEE) bound to its chain account by
+    # a payee-signed PayeeAccountBinding. Settlement MUST pay the authorized payee, so the
+    # instruction names that payee and the binding proves which account is theirs (a
+    # did:pkh that is NOT the authorized payee would let a wallet redirect funds).
     evm_addr = st.fake_address("payee-evm")
     evm_account = "eip155:8453:" + evm_addr
-    evm_payee_did = "did:pkh:eip155:8453:" + evm_addr
+    binding_evm = {
+        "@context": SETTLE_CTX, "id": "urn:avp:payee-binding:evm", "type": "PayeeAccountBinding",
+        "subject": DID_PAYEE, "account": evm_account, "chain": "eip155:8453",
+    }
+    binding_evm = ac.sign_ecdsa_jcs_2022(binding_evm, payee, "2026-03-25T21:29:20Z")
+    write(SETTLE, "56-payee-account-binding-evm.json", binding_evm)
 
     # 41: EVM stablecoin SettlementInstruction (direct), did:pkh payee.
     instr_evm = {
@@ -547,10 +555,11 @@ def main() -> None:
         "authorization": authz["id"], "authorizationDigest": authz_digest,
         "rail": "stl:rail-evm-stablecoin", "chain": "eip155:8453",
         "payeeAccount": evm_account, "asset": usdc,
-        "payer": DID_AGENT, "payee": evm_payee_did,
+        "payer": DID_AGENT, "payee": DID_PAYEE,
         "amount": amount, "currency": currency,
         "amountBase": st.to_base_units(amount, st.decimals_for_asset(usdc)),
         "confirmationThreshold": evm_threshold, "mode": "direct",
+        "payeeAccountBinding": binding_evm["id"],
         "nonce": "settle-evm-1", "expires": "2026-03-25T22:00:00Z",
     }
     instr_evm = ac.sign_ecdsa_jcs_2022(instr_evm, wallet, "2026-03-25T21:30:10Z")
@@ -674,10 +683,11 @@ def main() -> None:
         "authorization": authz["id"], "authorizationDigest": authz_digest,
         "rail": "stl:rail-evm-stablecoin", "chain": "eip155:8453",
         "payeeAccount": evm_account, "asset": usdc,
-        "payer": DID_AGENT, "payee": evm_payee_did,
+        "payer": DID_AGENT, "payee": DID_PAYEE,
         "amount": amount, "currency": currency,
         "amountBase": st.to_base_units(amount, st.decimals_for_asset(usdc)),
         "confirmationThreshold": evm_threshold, "mode": "escrow",
+        "payeeAccountBinding": binding_evm["id"],
         "nonce": "settle-evm-esc-1", "expires": "2026-03-25T22:00:00Z",
     }
     instr_evm_esc = ac.sign_ecdsa_jcs_2022(instr_evm_esc, wallet, "2026-03-25T21:30:13Z")
@@ -725,7 +735,7 @@ def main() -> None:
         "authorization": authz["id"], "authorizationDigest": authz_digest,
         "rail": "stl:rail-evm-stablecoin", "chain": "eip155:8453",
         "payeeAccount": agent_evm_account, "asset": usdc,
-        "payer": evm_payee_did, "payee": DID_AGENT,
+        "payer": DID_PAYEE, "payee": DID_AGENT,
         "amount": amount, "currency": currency,
         "amountBase": st.to_base_units(amount, st.decimals_for_asset(usdc)),
         "confirmationThreshold": evm_threshold, "mode": "direct",

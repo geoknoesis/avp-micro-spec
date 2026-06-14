@@ -41,10 +41,28 @@ RAILS = {
 }
 
 
+# Wire rail identifier -> minimum confirmation depth a verifier MUST require for
+# finality. A self-set instruction threshold below this floor is a finality downgrade.
+_RAIL_THRESHOLD_FLOOR = {
+    "stl:rail-evm-stablecoin": 12,
+    "stl:rail-x402": 12,
+    "stl:rail-lightning": 0,
+}
+
+
+def rail_threshold_floor(rail: str) -> int:
+    """Minimum confirmation threshold a verifier MUST enforce for a rail (anti-downgrade)."""
+    return _RAIL_THRESHOLD_FLOOR.get(rail, 12)  # conservative default for unknown rails
+
+
 def decimals_for_asset(asset: str) -> int:
-    if asset not in _ASSET_DECIMALS:
-        raise SettlementError(f"unknown asset decimals: {asset}")
-    return _ASSET_DECIMALS[asset]
+    # CAIP-19 chain namespace/reference are case-insensitive; normalize before lookup.
+    if asset in _ASSET_DECIMALS:
+        return _ASSET_DECIMALS[asset]
+    low = {k.lower(): v for k, v in _ASSET_DECIMALS.items()}
+    if asset.lower() in low:
+        return low[asset.lower()]
+    raise SettlementError(f"unknown asset decimals: {asset}")
 
 
 def to_base_units(amount: str, decimals: int) -> str:
@@ -69,6 +87,8 @@ def parse_caip10(account: str) -> tuple[str, str]:
         ns, ref, addr = account.split(":", 2)
     except ValueError:
         raise SettlementError(f"invalid CAIP-10 account: {account!r}")
+    if not (ns and ref and addr) or any(c.isspace() for c in account):
+        raise SettlementError(f"malformed CAIP-10 account: {account!r}")
     return f"{ns}:{ref}", addr
 
 
@@ -99,12 +119,23 @@ def account_binding_ok(instruction: dict, binding: dict | None) -> bool:
             and binding.get("chain") == chain)
 
 
-def finality_ok(proof: dict, threshold: int) -> bool:
-    """Finality predicate. Lightning (preimage present): sha256(preimage)==payment_hash
-    and finality=='final'. Confirmation rails: confirmations>=threshold and finality=='final'."""
+def finality_ok(proof: dict, threshold: int, *, rail: str | None = None) -> bool:
+    """Finality predicate. Lightning: sha256(preimage)==payment_hash and finality=='final'.
+    Confirmation rails: confirmations>=threshold and finality=='final'.
+
+    When `rail` is supplied (verifiers SHOULD always supply it), the finality METHOD is
+    selected by the rail, not merely by the presence of a `preimage`: a `preimage` on a
+    confirmation rail is rejected (it must not let a 0-confirmation proof masquerade as
+    final), and a confirmation rail still requires confirmations>=threshold.
+    """
     if proof.get("finality") != "final":
         return False
-    if "preimage" in proof:
+    is_lightning = rail is not None and rail.endswith("lightning")
+    if rail is not None and not is_lightning and "preimage" in proof:
+        return False  # SECURITY: a preimage is not a finality signal on a confirmation rail
+    if is_lightning or (rail is None and "preimage" in proof):
+        if "preimage" not in proof:
+            return False
         digest = hashlib.sha256(bytes.fromhex(proof["preimage"])).hexdigest()
         return digest == proof.get("transaction")
     return int(proof.get("confirmations", -1)) >= threshold  # -1 sentinel: absent == never confirmed

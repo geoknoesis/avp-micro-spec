@@ -9,7 +9,7 @@
   "id": "urn:avp:settle-proof:evm",
   "type": "SettlementProof",
   "instruction": "urn:avp:settle-instr:evm",
-  "instructionDigest": "sha-256:Hz5PpKbMiVR3ohwx2x2aDrR7fnh9usk6TVuigB0zp_o",
+  "instructionDigest": "sha-256:aaLSV3PksHjIP_yDupktfHK8sI7Hh_qStBG2A82LdoA",
   "execution": "urn:avp:exec:555",
   "chain": "eip155:8453",
   "transaction": "0x5329ecf0cf53c26547caf86ffc774cd9211e2e6845b1497d0137ecbbc0d1aedb",
@@ -25,6 +25,6 @@
     "created": "2026-03-25T21:33:00Z",
     "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z5cAb75tNPvA4pFzVR21ozgouCUWnCPiWPj9ciTLk3MJYXW5SfoTCzZ7uX32GF6AEULjyc8NTxmyPcJkr5tQzsV1c"
+    "proofValue": "z22vE8mBxUvioyCEANHc1ZSQzqB9gPS4W8k9gpUcL6o44h3g4tZSxtcu4wu2xp9YVxn5Fh17y2KafsyDiUnLiLbSG"
   }
 }

@@ -9,7 +9,7 @@
   "id": "urn:avp:escrow-lock:evm",
   "type": "EscrowLock",
   "instruction": "urn:avp:settle-instr:evm-escrow",
-  "instructionDigest": "sha-256:kUkuvPYG_GBfqRnKW1Qfy1d7MvQzz0eZqZXF1BmU22M",
+  "instructionDigest": "sha-256:KGwTcK437Ai5WNbnCyM7mKVXG2IlMk_zy2WaTU6xnsM",
   "lockRef": "0x181238ce58162c4457d1f0002a6f3d8a86f3afce:42",
   "lockedAmountBase": "1000",
   "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -20,6 +20,6 @@
     "created": "2026-03-25T21:31:00Z",
     "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
     "proofPurpose": "assertionMethod",
-    "proofValue": "zQNPBzie5P8GcweBQbcZZVyAeRTG1kS34UN5HfVaPH2WUrbF9owcemxr9Fnf7gBSLLjBpuu4Xi3R7q9xkWa4fK9a"
+    "proofValue": "zoKjyxCSD8TafBHgoTR5g7bXfD3SP5TLj51rkx3vbw17AL2v48ko5kx1DgtSLVEicY5wwjE4NY1VhhMYgcHthMor"
   }
 }

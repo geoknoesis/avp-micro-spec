@@ -9,9 +9,9 @@
   "id": "urn:avp:escrow-refund:evm",
   "type": "EscrowRefund",
   "lock": "urn:avp:escrow-lock:evm",
-  "lockDigest": "sha-256:rM0qy-U6jgTsxniJpZD32cGyA_ECZ3j-3bLCCYF11p4",
+  "lockDigest": "sha-256:JrmZ5WE-mw5Hvj6OThbdmz4R80lXds73zRdfsjAlcPs",
   "settlementProof": "urn:avp:settle-proof:evm-refund",
-  "settlementProofDigest": "sha-256:okL6y8zIOHjstFsw1YhifjuyFBYFd69SXrZTvFrK-fg",
+  "settlementProofDigest": "sha-256:Tlo-JeoSg2xugYCGd72K2XueF-zJNLSx1xPpCCf1VG4",
   "reason": "timeout",
   "proof": {
     "type": "DataIntegrityProof",
@@ -19,6 +19,6 @@
     "created": "2026-03-25T21:46:10Z",
     "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z3fWBcvEd3LTRBUJZUCKdwF78A8NskHaFMPDCvCwb8eRbAiQTofg4iqzqBccaG8QF8paj9XyBt7GPnkwuNHFeuQUm"
+    "proofValue": "zZ4cTys1veuRBqsUxEtWfT7s9LqVkUnUUgWPe3fNtVD66xHzh98FbTMz3CVYkbRUE3QLiqRnzyZsYDzXdC9ek58u"
   }
 }

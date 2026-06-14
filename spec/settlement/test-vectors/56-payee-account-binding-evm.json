@@ -1,0 +1,22 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:payee-binding:evm",
+  "type": "PayeeAccountBinding",
+  "subject": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "account": "eip155:8453:0xada66eeb99f6382dd7dccb903144257b49b43270",
+  "chain": "eip155:8453",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:29:20Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z5uDS5GYt8zjJ8wzTVNi4BVAFnq3Np6Y3ZkawqBR9XpZmaFqVMaet8wVEXaj8i6oaDPmJnmbNB6pq5wMBUwRG9ZTi"
+  }
+}

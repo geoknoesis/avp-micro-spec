@@ -9,7 +9,7 @@
   "id": "urn:avp:settle-proof:evm-refund",
   "type": "SettlementProof",
   "instruction": "urn:avp:settle-instr:evm-escrow",
-  "instructionDigest": "sha-256:kUkuvPYG_GBfqRnKW1Qfy1d7MvQzz0eZqZXF1BmU22M",
+  "instructionDigest": "sha-256:KGwTcK437Ai5WNbnCyM7mKVXG2IlMk_zy2WaTU6xnsM",
   "chain": "eip155:8453",
   "transaction": "0xfded1c5e03e00aad3f01279e6ef86b72168e7e665ada27d10390d985e38eaaea",
   "settledAmountBase": "1000",
@@ -24,6 +24,6 @@
     "created": "2026-03-25T21:46:00Z",
     "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z5hRt8Spg93UAKrPEj4yMcJ7BDQ2tN6xbv65Y1jYh1EgYuH71GDVzKyWhLDRjpYpV6uM2aGbMFYyLhMqWfpducg2p"
+    "proofValue": "z41KUdPsPvQuPyL1zU47LqYVw66RQrXg1aMNt36iLYMreMNyKyTm6yR2YZnNFiAKKzuKQEHzLB1aBNCVsU75Dqy6v"
   }
 }

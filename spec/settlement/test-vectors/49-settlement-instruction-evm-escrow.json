@@ -15,12 +15,13 @@
   "payeeAccount": "eip155:8453:0xada66eeb99f6382dd7dccb903144257b49b43270",
   "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
-  "payee": "did:pkh:eip155:8453:0xada66eeb99f6382dd7dccb903144257b49b43270",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
   "amount": "0.001",
   "currency": "USD",
   "amountBase": "1000",
   "confirmationThreshold": 12,
   "mode": "escrow",
+  "payeeAccountBinding": "urn:avp:payee-binding:evm",
   "nonce": "settle-evm-esc-1",
   "expires": "2026-03-25T22:00:00Z",
   "proof": {
@@ -29,6 +30,6 @@
     "created": "2026-03-25T21:30:13Z",
     "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
     "proofPurpose": "assertionMethod",
-    "proofValue": "ze6r3XuNz9R3HCMCwx3K51ju46CPE9BCPfPT2pMifguMDgRAzjMo5wCEHnzYMcU8ZuWR9MdBYtXJdhZwhT4wEQKL"
+    "proofValue": "z32XJQVa9Kn4Yfn3J5C8RCcG3ijCYyssVRVKH5AnZY3gLRjqH4QdgQYVmp2uGPtUafS9a2UGbj5t52ZABCKTP5GoT"
   }
 }

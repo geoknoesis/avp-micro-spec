@@ -14,7 +14,7 @@
   "chain": "eip155:8453",
   "payeeAccount": "eip155:8453:0xbb29327b0260c91ec5d5e0c913b5291e0f722ecb",
   "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  "payer": "did:pkh:eip155:8453:0xada66eeb99f6382dd7dccb903144257b49b43270",
+  "payer": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
   "payee": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
   "amount": "0.001",
   "currency": "USD",
@@ -30,6 +30,6 @@
     "created": "2026-03-26T09:05:00Z",
     "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z3L3F2HNsKvm598ocrcJBZBGiXPXfWxV3AxQGzkevLVtXH5mvqUUH5UJm9G2HypmxYyVKAqfB3YCGaPn7WTcEqAMB"
+    "proofValue": "z58hQdwP6zrynb9FAauY4ypkrobuRPyneVw3bfqoVutAGM8EX5Uv49i7fZ7WT3uo2qYsSHFhB515ho7YofvaW8pjP"
   }
 }

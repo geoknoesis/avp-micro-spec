@@ -106,6 +106,7 @@ SETTLEMENT_VECTORS = {
     "53-reverse-settlement-instruction.json": "SettlementInstruction",
     "54-reverse-settlement-proof.json": "SettlementProof",
     "55-payee-account-binding-agent.json": "PayeeAccountBinding",
+    "56-payee-account-binding-evm.json": "PayeeAccountBinding",
 }
 
 failures = []
