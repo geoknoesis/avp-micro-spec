@@ -123,7 +123,17 @@ TRANSPORT_UNSIGNED_VECTORS = {
     "30-problem-details.json": "ProblemDetails",
     "40-exchange-402-flow.json": "HttpExchangeLog",
     "41-exchange-over-cap.json": "HttpExchangeLog",
+    "42-exchange-quote-flow.json": "HttpExchangeLog",
+    "43-exchange-streaming.json": "HttpExchangeLog",
+    "44-exchange-async-settlement.json": "HttpExchangeLog",
+    "45-exchange-idempotency.json": "HttpExchangeLog",
 }
+# Exchange logs whose every step is cross-checked against the OpenAPI contract.
+EXCHANGE_VECTORS = [
+    "40-exchange-402-flow.json", "41-exchange-over-cap.json",
+    "42-exchange-quote-flow.json", "43-exchange-streaming.json",
+    "44-exchange-async-settlement.json", "45-exchange-idempotency.json",
+]
 
 failures = []
 
@@ -293,6 +303,87 @@ def openapi_ref_check():
         ok(f"OpenAPI $ref resolves: {ref}", defs is not None and frag in defs)
 
 
+def openapi_exchange_check():
+    """Validate every exchange step body against the schema the OpenAPI documents for
+    that path+status+content-type. Responses are fully validated; request bodies are
+    validated only where the operation documents a requestBody."""
+    oa = TRANSPORT / "openapi" / "avp-micro.openapi.yaml"
+    doc = yaml.safe_load(oa.read_text(encoding="utf-8"))
+
+    schema_paths = [TRANSPORT / "schemas" / "transport.schema.json",
+                    PAY / "schemas" / "avp-micro.schema.json",
+                    SETTLE / "schemas" / "settlement.schema.json"]
+    registry = Registry()
+    fileid = {}
+    for p in schema_paths:
+        s = json.loads(p.read_text(encoding="utf-8"))
+        registry = registry.with_resource(uri=s["$id"], resource=Resource(contents=s, specification=DRAFT202012))
+        fileid[p.resolve()] = s["$id"]
+
+    def rewrite(ref):
+        rel, name = ref.split("#/$defs/", 1)
+        sid = fileid.get((oa.parent / rel).resolve())
+        return {"$ref": f"{sid}#/$defs/{name}"} if sid else None
+
+    def to_schema(node):
+        if not isinstance(node, dict):
+            return None
+        if "$ref" in node:
+            return rewrite(node["$ref"])
+        if "oneOf" in node:
+            subs = [rewrite(x["$ref"]) for x in node["oneOf"] if isinstance(x, dict) and "$ref" in x]
+            return {"oneOf": subs} if subs and all(s is not None for s in subs) else None
+        return None
+
+    def match_path(concrete):
+        cseg = concrete.split("/")
+        for tmpl in doc.get("paths", {}):
+            tseg = tmpl.split("/")
+            if len(tseg) == len(cseg) and all(
+                    t == c or (t.startswith("{") and t.endswith("}")) for t, c in zip(tseg, cseg)):
+                return tmpl
+        return None
+
+    def validate_body(label, schema_node, body):
+        sch = to_schema(schema_node)
+        if sch is None:
+            ok(label, False, f"could not resolve OpenAPI schema {schema_node}")
+            return
+        v = Draft202012Validator(sch, registry=registry,
+                                 format_checker=Draft202012Validator.FORMAT_CHECKER)
+        errs = sorted(v.iter_errors(body), key=lambda e: e.json_path)
+        ok(label, not errs, "; ".join(f"{e.json_path}: {e.message}" for e in errs[:3]))
+
+    for name in EXCHANGE_VECTORS:
+        log = json.loads((TRANSPORT / "test-vectors" / name).read_text(encoding="utf-8"))
+        for i, step in enumerate(log["steps"], 1):
+            req, res = step["request"], step["response"]
+            tmpl = match_path(req["path"])
+            ok(f"{name} step {i}: path '{req['path']}' is documented", tmpl is not None)
+            if tmpl is None:
+                continue
+            op = doc["paths"][tmpl].get(req["method"].lower())
+            ok(f"{name} step {i}: {req['method']} {tmpl} is documented", op is not None)
+            if op is None:
+                continue
+            resp = (op.get("responses") or {}).get(str(res["status"]))
+            ok(f"{name} step {i}: {res['status']} documented on {req['method']} {tmpl}", resp is not None)
+            if resp is not None and "body" in res:
+                ct = res.get("headers", {}).get("Content-Type", "application/avp-micro+json")
+                content = resp.get("content") or {}
+                media = content.get(ct) or (next(iter(content.values()), None))
+                if media and "schema" in media:
+                    validate_body(f"{name} step {i}: response body conforms "
+                                  f"({req['method']} {tmpl} -> {res['status']})", media["schema"], res["body"])
+            if "body" in req and op.get("requestBody"):
+                ct = req.get("headers", {}).get("Content-Type", "application/avp-micro+json")
+                content = op["requestBody"].get("content") or {}
+                media = content.get(ct) or (next(iter(content.values()), None))
+                if media and "schema" in media:
+                    validate_body(f"{name} step {i}: request body conforms ({req['method']} {tmpl})",
+                                  media["schema"], req["body"])
+
+
 def shared_defs_check():
     def _norm(d):  # functional identity: ignore the non-normative description text
         return json.dumps({k: v for k, v in d.items() if k != "description"}, sort_keys=True)
@@ -405,6 +496,7 @@ def main():
     shared_defs_check()
     section("OpenAPI contract")
     openapi_ref_check()
+    openapi_exchange_check()
     negative_schema_check(AUTH, "dsa.schema.json", [
         ("DSA proof type", "spending-authorization-credential.json", "SpendingAuthorizationCredential",
          lambda obj: (obj["proof"].__setitem__("type", "NotDataIntegrityProof") or obj)),
