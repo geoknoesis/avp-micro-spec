@@ -18,6 +18,7 @@ PAY = SPEC / "payments" / "test-vectors"
 INTEROP = SPEC / "interop-sd-jwt-vc" / "test-vectors"
 DISP = SPEC / "disputes" / "test-vectors"
 SETTLE = SPEC / "settlement" / "test-vectors"
+TXP = SPEC / "transport" / "test-vectors"
 _failed = []
 
 
@@ -710,6 +711,64 @@ def main() -> int:
     # on-chain reversal: a compensating transfer with payer/payee swapped vs the original
     check("reverse instruction swaps payer/payee vs the original payment",
           instr_rev["payer"] == instr_evm["payee"] and instr_rev["payee"] == instr_evm["payer"])
+
+    print("Transport & protocol binding:")
+    service = load(TXP, "00-service-description.json")
+    challenge = load(TXP, "10-payment-challenge.json")
+    body_402 = load(TXP, "11-challenge-402-body.json")
+    submission = load(TXP, "20-authorization-submission.json")
+    problem = load(TXP, "30-problem-details.json")
+    flow = load(TXP, "40-exchange-402-flow.json")
+    over_cap = load(TXP, "41-exchange-over-cap.json")
+
+    for label, obj in [("service-description", service), ("payment-challenge", challenge),
+                       ("authorization-submission", submission)]:
+        check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
+    check("service description signed by payee", controller(service) == payee)
+    check("payment challenge signed by payee", controller(challenge) == payee)
+    check("authorization submission signed by payer agent", controller(submission) == agent)
+
+    # discovery advertises the mandatory endpoints
+    for ep in ("quote", "authorize", "execute", "receipt", "settlementStatus"):
+        check(f"service advertises '{ep}' endpoint", ep in service.get("endpoints", {}))
+    check("service advertises the transport bundle version",
+          service.get("supportedBundles", {}).get("https://w3id.org/avp-micro/transport/v1") is not None)
+
+    # challenge binds the resolved quote (IRI + content digest)
+    check("challenge.quote == quote.id", challenge["quote"] == quote["id"])
+    check("challenge.quoteDigest matches resolved quote", challenge["quoteDigest"] == ac.jcs_digest(quote))
+    check("402 body carries the byte-identical quote", body_402["quote"] == quote)
+    check("402 body carries the byte-identical challenge", body_402["challenge"] == challenge)
+    check("challenge not expired at issuance (timestamp < expires)",
+          challenge["timestamp"] < challenge["expires"])
+
+    # submission binds the authorization and echoes the challenge nonce (freshness)
+    check("submission.authorization == authz.id", submission["authorization"] == authz["id"])
+    check("submission.authorizationDigest matches resolved authorization",
+          submission["authorizationDigest"] == ac.jcs_digest(authz))
+    check("submission echoes the challenge nonce (freshness binding)",
+          submission["challenge"] == challenge["challenge"])
+    check("submission.payer == authz.payer", submission["payer"] == authz["payer"])
+
+    # problem-details type resolves to a concept in the transport error scheme
+    errors_ttl = (SPEC / "transport" / "vocab" / "errors.ttl").read_text(encoding="utf-8")
+    check("problem-details type is a transport error IRI",
+          problem["type"].startswith("https://w3id.org/avp-micro/transport/v1#"))
+    check("problem-details type resolves to a SKOS concept in txp:ErrorScheme",
+          (problem["type"].rsplit("#", 1)[1] + " a skos:Concept") in errors_ttl)
+    check("problem-details status is an HTTP status int", isinstance(problem["status"], int))
+
+    # example HTTP exchanges embed the canonical signed objects byte-for-byte
+    flow_steps = flow["steps"]
+    check("402-flow step 1 response is the canonical 402 body", flow_steps[0]["response"]["body"] == body_402)
+    check("402-flow step 1 status is 402", flow_steps[0]["response"]["status"] == 402)
+    check("402-flow step 2 request carries the canonical submission",
+          flow_steps[1]["request"]["body"] == submission)
+    check("402-flow step 2 response is the canonical receipt", flow_steps[1]["response"]["body"] == receipt)
+    check("402-flow step 2 status is 200", flow_steps[1]["response"]["status"] == 200)
+    check("over-cap exchange response is the canonical problem-details",
+          over_cap["steps"][0]["response"]["body"] == problem)
+    check("over-cap exchange status is 402", over_cap["steps"][0]["response"]["status"] == 402)
 
     print("Negative control (tamper detection):")
     tampered = json.loads(json.dumps(authz))
