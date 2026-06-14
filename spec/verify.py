@@ -773,6 +773,46 @@ def main() -> int:
           over_cap["steps"][0]["response"]["body"] == problem)
     check("over-cap exchange status is 402", over_cap["steps"][0]["response"]["status"] == 402)
 
+    # additional flow exchanges (explicit-quote, streaming, async settlement, idempotency)
+    exec_c = load(PAY, "03-payment-execution.json")
+    sess_c = load(PAY, "05-usage-session.json")
+    accrual_c = load(PAY, "07-usage-accrual.json")
+    sess_receipt_c = load(PAY, "09-payment-receipt-session.json")
+    settle_proof_c = load(SETTLE, "42-settlement-proof-evm.json")
+    qflow = load(TXP, "42-exchange-quote-flow.json")
+    stream = load(TXP, "43-exchange-streaming.json")
+    asett = load(TXP, "44-exchange-async-settlement.json")
+    idem = load(TXP, "45-exchange-idempotency.json")
+
+    check("quote-flow embeds the canonical quote, execution, and receipt",
+          qflow["steps"][0]["response"]["body"] == quote
+          and qflow["steps"][1]["response"]["body"] == exec_c
+          and qflow["steps"][2]["response"]["body"] == receipt)
+    check("quote-flow receipt binds the execution", receipt["execution"] == exec_c["id"])
+    check("streaming opens the session and closes with the session receipt",
+          stream["steps"][0]["response"]["body"] == sess_c
+          and stream["steps"][3]["response"]["body"] == sess_receipt_c)
+    check("streaming reports a usage accrual", stream["steps"][2]["response"]["body"] == accrual_c)
+    check("async settlement returns a Location and polls to a final proof",
+          bool(asett["steps"][0]["response"]["headers"].get("Location"))
+          and asett["steps"][1]["response"]["body"] == exec_c
+          and asett["steps"][2]["response"]["body"] == settle_proof_c)
+    check("async settlement final proof has finality=final", settle_proof_c["finality"] == "final")
+    _k0 = idem["steps"][0]["request"]["headers"]["Idempotency-Key"]
+    check("idempotency replay returns the same execution under the same key",
+          idem["steps"][1]["request"]["headers"]["Idempotency-Key"] == _k0
+          and idem["steps"][0]["response"]["body"] == exec_c
+          and idem["steps"][1]["response"]["body"] == exec_c)
+    _conf = idem["steps"][2]
+    check("idempotency conflict: same key + different body -> 409",
+          _conf["request"]["headers"]["Idempotency-Key"] == _k0
+          and _conf["request"]["body"] != idem["steps"][0]["request"]["body"]
+          and _conf["response"]["status"] == 409)
+    check("idempotency conflict body is an idempotency-conflict ProblemDetails",
+          _conf["response"]["body"]["type"].rsplit("#", 1)[-1] == "idempotency-conflict")
+    check("the conflict submission is a valid, distinct signed AuthorizationSubmission",
+          ac.verify_ecdsa_jcs_2022(_conf["request"]["body"]))
+
     print("Negative control (tamper detection):")
     tampered = json.loads(json.dumps(authz))
     tampered["amount"] = "0.05"
