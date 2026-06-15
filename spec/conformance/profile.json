@@ -161,6 +161,15 @@
      "scenario": "settle-paypal", "decisive": {"status": "completed", "settled": "1.00"}},
     {"id": "WCP-PSP-005", "category": "Closed-processor settlement", "level": "MUST",
      "statement": "Settle over Visa Direct push-to-card (OCT credit push, no auth/capture) with a payee-attested SettlementProof (OCT approved).",
-     "scenario": "settle-visa-direct", "decisive": {"status": "completed", "settled": "1.00"}}
+     "scenario": "settle-visa-direct", "decisive": {"status": "completed", "settled": "1.00"}},
+    {"id": "WCP-PSP-006", "category": "Closed-processor settlement", "level": "MUST",
+     "statement": "Settle over a card rail through the Adyen processor (authorize-then-capture) with a payee-attested SettlementProof (captured).",
+     "scenario": "settle-adyen", "decisive": {"status": "completed", "settled": "1.00"}},
+    {"id": "WCP-PSP-007", "category": "Closed-processor settlement", "level": "MUST",
+     "statement": "Settle over bank rails orchestrated by Zum Rails (Interac credit push) with a payee-attested SettlementProof (settled).",
+     "scenario": "settle-zum", "decisive": {"status": "completed", "settled": "1.00"}},
+    {"id": "WCP-PSP-008", "category": "Closed-processor settlement", "level": "MUST",
+     "statement": "Settle over Mastercard Send push-to-card (MoneySend credit push, no auth/capture) with a payee-attested SettlementProof (approved).",
+     "scenario": "settle-mc-send", "decisive": {"status": "completed", "settled": "1.00"}}
   ]
 }

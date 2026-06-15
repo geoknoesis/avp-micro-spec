@@ -191,7 +191,7 @@
         "mode": { "enum": ["direct", "escrow"] },
         "captureMode": { "enum": ["auth-capture", "immediate"] },
         "processorIntent": { "type": "string", "minLength": 1 },
-        "scheme": { "enum": ["fednow", "rtp", "sepa-instant"] },
+        "scheme": { "enum": ["fednow", "rtp", "sepa-instant", "interac", "eft"] },
         "nonce": { "type": "string", "minLength": 1 },
         "expires": { "$ref": "#/$defs/dateTime" },
         "proof": { "$ref": "#/$defs/proof" }

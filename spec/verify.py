@@ -747,6 +747,11 @@ def main() -> int:
     binding_visa = load(SETTLE, "66-processor-account-binding-visa-direct.json")
     instr_visa = load(SETTLE, "67-settlement-instruction-visa-direct.json")
     proof_visa = load(SETTLE, "68-settlement-proof-visa-direct.json")
+    # adyen (card), zum (bank), mc-send (push-to-card) -- same attested shape, loaded by tag
+    _more = {tag: (load(SETTLE, f"{n}-processor-account-binding-{tag}.json"),
+                   load(SETTLE, f"{n + 1}-settlement-instruction-{tag}.json"),
+                   load(SETTLE, f"{n + 2}-settlement-proof-{tag}.json"))
+             for tag, n in (("adyen", 69), ("zum", 72), ("mc-send", 75))}
 
     # signers: bindings + attested proofs are PAYEE-signed (payee-attested); the wallet
     # still signs the instructions. (Unlike on-chain proofs, which the wallet signs.)
@@ -757,14 +762,17 @@ def main() -> int:
                 ("65 proof(paypal)", proof_paypal, payee),
                 ("66 binding(visa-direct)", binding_visa, payee), ("67 instr(visa-direct)", instr_visa, wallet),
                 ("68 proof(visa-direct)", proof_visa, payee)]
+    for tag, (b, i, p) in _more.items():
+        attested += [(f"binding({tag})", b, payee), (f"instr({tag})", i, wallet), (f"proof({tag})", p, payee)]
     for label, obj, signer in attested:
         check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
         check(f"{label} signed by expected key", controller(obj) == signer)
 
-    for label, binding, instr, proof in [("card", binding_card, instr_card, proof_card),
-                                         ("rtp", binding_rtp, instr_rtp, proof_rtp),
-                                         ("paypal", binding_paypal, instr_paypal, proof_paypal),
-                                         ("visa-direct", binding_visa, instr_visa, proof_visa)]:
+    for label, binding, instr, proof in ([("card", binding_card, instr_card, proof_card),
+                                          ("rtp", binding_rtp, instr_rtp, proof_rtp),
+                                          ("paypal", binding_paypal, instr_paypal, proof_paypal),
+                                          ("visa-direct", binding_visa, instr_visa, proof_visa)]
+                                         + [(tag, b, i, p) for tag, (b, i, p) in _more.items()]):
         # binding: payee-signed, subject == the AUTHORIZED payee (anti-redirection root),
         # naming a did:web processor as the trust root, on the instruction's rail.
         check(f"{label} processor-account binding signed by its subject (payee==authz.payee)",

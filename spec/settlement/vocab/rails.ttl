@@ -47,3 +47,18 @@ stl:rail-visa-direct a skos:Concept ; skos:inScheme stl:RailScheme ;
   skos:prefLabel "Visa Direct (push-to-card)"@en ;
   skos:definition "Push-to-card credit transfer via Visa Direct (Original Credit Transaction, OCT)."@en ;
   skos:note "Attested finality; network/processor did:web:visa.com; OCT terminal status approved (action code 00). A credit push with NO authorize/capture and NO native escrow, settling to a tokenized PAN; the ProcessorAccountBinding binds the payee DID to the receiving card credential. Mastercard Send (stl:rail-mc-send) is the analogous network."@en .
+
+stl:rail-mc-send a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "Mastercard Send (push-to-card)"@en ;
+  skos:definition "Push-to-card credit transfer via Mastercard Send (MoneySend)."@en ;
+  skos:note "Attested finality; network/processor did:web:mastercard.com; terminal status approved. A credit push with NO authorize/capture and NO native escrow, settling to a tokenized PAN. The push-to-card analogue of Visa Direct (stl:rail-visa-direct)."@en .
+
+stl:rail-card-adyen a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "Card via processor (Adyen)"@en ;
+  skos:definition "Card settlement executed through the Adyen processor, authorize-then-capture."@en ;
+  skos:note "Attested finality; processor did:web:adyen.com; escrow maps to auth/capture; terminal status captured. The card-acquirer analogue of stl:rail-card-stripe."@en .
+
+stl:rail-bank-zum a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "Bank rails via Zum Rails"@en ;
+  skos:definition "Account-to-account settlement orchestrated by Zum Rails (Interac / EFT / ACH / RTP)."@en ;
+  skos:note "Attested finality; processor did:web:zumrails.com; push credit transfer (default scheme interac), so NO native escrow; terminal status settled. The bank-rail analogue of stl:rail-bank-rtp."@en .

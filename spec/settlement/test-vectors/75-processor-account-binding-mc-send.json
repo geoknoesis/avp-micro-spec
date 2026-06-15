@@ -1,0 +1,23 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:proc-binding:mc-send",
+  "type": "ProcessorAccountBinding",
+  "subject": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "account": "card:token:mc:555544xxxxxx4444",
+  "processor": "did:web:mastercard.com",
+  "rail": "stl:rail-mc-send",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:30:06Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z42XFx4FWGUo9MEeGGQ12Pzqz9zf4jtKFNFtzu4cYxLXVLbzxMjdAMFSd2uFQeUkWgCPKuCn599Co5h2CaT7jMpm6"
+  }
+}

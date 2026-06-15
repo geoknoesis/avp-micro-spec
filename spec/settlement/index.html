@@ -15,7 +15,7 @@
     const respecConfig = {
       specStatus: "unofficial",
       shortName: "avp-micro-settlement",
-      subtitle: "Settlement binding for AVP-Micro payments (EVM stablecoin, x402, Lightning, card, bank/RTP, PayPal, Visa Direct)",
+      subtitle: "Settlement binding for AVP-Micro payments (EVM stablecoin, x402, Lightning, card, bank/RTP, PayPal, Visa Direct, Mastercard Send, Adyen, Zum Rails)",
       editors: [
         { name: "Stephane Fellah", company: "Geoknoesis LLC", companyURL: "https://geoknoesis.com" },
       ],
@@ -71,12 +71,14 @@
       <li><strong>Closed-processor rails</strong> (attested finality) &mdash; card via a
         processor (Stripe), instant bank credit transfers (<code>rail-bank-rtp</code>:
         FedNow / RTP / SEPA Instant), the PayPal wallet (<code>rail-paypal</code>), and
-        Visa Direct push-to-card (<code>rail-visa-direct</code>: an Original Credit
-        Transaction &mdash; a credit push with no authorize/capture, settling to a
-        tokenized PAN, network-attested by <code>did:web:visa.com</code>). The same shape
-        fits other closed processors (Adyen, Zum Rails) and Mastercard Send by minting a
-        rail concept and naming the processor <code>did:web</code>. Settlement happens
-        inside a private processor, so
+        Visa Direct and Mastercard Send push-to-card (<code>rail-visa-direct</code> /
+        <code>rail-mc-send</code>: an Original Credit Transaction / MoneySend &mdash; a
+        credit push with no authorize/capture, settling to a tokenized PAN, network-attested
+        by <code>did:web:visa.com</code> / <code>did:web:mastercard.com</code>), card via the
+        Adyen processor (<code>rail-card-adyen</code>), and bank rails orchestrated by Zum
+        Rails (<code>rail-bank-zum</code>: Interac / EFT / ACH / RTP). New processors are
+        added by minting a rail concept and naming the processor <code>did:web</code>.
+        Settlement happens inside a private processor, so
         finality is <em>not</em> publicly verifiable: an <a>AttestedSettlementProof</a>
         embeds a processor attestation and is signed by the payee (payee-attested) or the
         processor (processor-attested), with a named <code>did:web</code> processor as the

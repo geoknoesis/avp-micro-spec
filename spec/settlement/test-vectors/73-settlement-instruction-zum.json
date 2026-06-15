@@ -1,0 +1,31 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:settle-instr:zum",
+  "type": "AttestedSettlementInstruction",
+  "authorization": "urn:avp:authz:999",
+  "authorizationDigest": "sha-256:A7Rd5gGcJ5qHLPtGg3NXCi9fd1G3QO4I29W6g6xq_jQ",
+  "rail": "stl:rail-bank-zum",
+  "payeeAccountBinding": "urn:avp:proc-binding:zum",
+  "payer": "did:key:zDnaew8NDU8VgvxWpWWxBeLWaVbGNEuXYyRFk2uLMjCdhxkSU",
+  "payee": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "amount": "0.001",
+  "currency": "USD",
+  "mode": "direct",
+  "scheme": "interac",
+  "nonce": "settle-zum-1",
+  "expires": "2026-03-25T22:00:00Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:30:46Z",
+    "verificationMethod": "did:key:zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P#zDnaewEjk4E5N6FinFs4YxANAsKEzQTdcYHP2GndUKJsPMR2P",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z29wgdo5pW9esehszP56gL2j8VriMxaiATrpLdALAVEdusYYox4KcG5iYg8NCA76tN6PRSNUepVHxW48egr16Dqmc"
+  }
+}

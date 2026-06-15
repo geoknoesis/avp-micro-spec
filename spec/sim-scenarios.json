@@ -743,5 +743,50 @@
       {"action": "attested_proof", "status": "approved", "expect": {"status": "completed", "settled": "1.00"}}
     ],
     "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "settle-adyen",
+    "description": "closed-processor settlement over a card rail through Adyen (authorize-then-capture); the payee returns a payee-attested SettlementProof (captured) and the money moves",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "processor_binding", "rail": "card-adyen"},
+      {"action": "attested_instruct", "rail": "card-adyen", "mode": "escrow", "captureMode": "auth-capture"},
+      {"action": "attested_proof", "status": "captured", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "settle-zum",
+    "description": "closed-processor settlement over bank rails orchestrated by Zum Rails (Interac credit push); the payee returns a payee-attested SettlementProof (settled) and the money moves",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "processor_binding", "rail": "bank-zum"},
+      {"action": "attested_instruct", "rail": "bank-zum", "mode": "direct", "scheme": "interac"},
+      {"action": "attested_proof", "status": "settled", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "settle-mc-send",
+    "description": "closed-processor settlement over Mastercard Send push-to-card (MoneySend credit push, no authorize/capture); the payee returns a payee-attested SettlementProof (approved) and the money moves",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "processor_binding", "rail": "mc-send"},
+      {"action": "attested_instruct", "rail": "mc-send", "mode": "direct"},
+      {"action": "attested_proof", "status": "approved", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
   }
 ]

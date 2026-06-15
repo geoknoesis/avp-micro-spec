@@ -1,0 +1,36 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:settle-proof:mc-send",
+  "type": "AttestedSettlementProof",
+  "instruction": "urn:avp:settle-instr:mc-send",
+  "instructionDigest": "sha-256:7HHWblZ3XXusHVUpKn0T9s3ibCsreoXfOE9ZTLWUgo8",
+  "execution": "urn:avp:exec:555",
+  "rail": "stl:rail-mc-send",
+  "settledAmount": "0.001",
+  "currency": "USD",
+  "attestation": {
+    "type": "ProcessorAttestation",
+    "mode": "payee-attested",
+    "processor": "did:web:mastercard.com",
+    "reference": "mc-send:ref:7766554433221100",
+    "status": "approved",
+    "evidence": "mc-send-evidence:mc-send:ref:7766554433221100",
+    "observedAt": "2026-03-25T21:34:50Z"
+  },
+  "finality": "final",
+  "observedAt": "2026-03-25T21:34:51Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:34:51Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z5Ra43ujLwPL1u19dqnLi8vVaME5XLJ3gqqi3tyMLKfvqirCn9vazQG5KezeG1wUk2zjvQZwHFp2vfDZv6bUrLePA"
+  }
+}

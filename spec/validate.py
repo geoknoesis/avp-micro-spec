@@ -124,6 +124,15 @@ SETTLEMENT_VECTORS = {
     "66-processor-account-binding-visa-direct.json": "ProcessorAccountBinding",
     "67-settlement-instruction-visa-direct.json": "AttestedSettlementInstruction",
     "68-settlement-proof-visa-direct.json": "AttestedSettlementProof",
+    "69-processor-account-binding-adyen.json": "ProcessorAccountBinding",
+    "70-settlement-instruction-adyen.json": "AttestedSettlementInstruction",
+    "71-settlement-proof-adyen.json": "AttestedSettlementProof",
+    "72-processor-account-binding-zum.json": "ProcessorAccountBinding",
+    "73-settlement-instruction-zum.json": "AttestedSettlementInstruction",
+    "74-settlement-proof-zum.json": "AttestedSettlementProof",
+    "75-processor-account-binding-mc-send.json": "ProcessorAccountBinding",
+    "76-settlement-instruction-mc-send.json": "AttestedSettlementInstruction",
+    "77-settlement-proof-mc-send.json": "AttestedSettlementProof",
 }
 # Signed transport objects: full expand + schema + SHACL coverage.
 TRANSPORT_VECTORS = {

@@ -975,6 +975,55 @@ def main() -> None:
     proof_visa = ac.sign_ecdsa_jcs_2022(proof_visa, payee, "2026-03-25T21:34:46Z")
     write(SETTLE, "68-settlement-proof-visa-direct.json", proof_visa)
 
+    # Remaining closed-processor rails, all the same attested shape:
+    #   - Adyen: card-via-processor (auth/capture), like Stripe -> did:web:adyen.com
+    #   - Zum Rails: bank rails (Interac/EFT/ACH/RTP), like bank-RTP -> did:web:zumrails.com
+    #   - Mastercard Send: push-to-card (MoneySend), like Visa Direct -> did:web:mastercard.com
+    # (rail, processor, account, instr-extra, proof reference, proof status, vector trio)
+    _more_rails = [
+        ("adyen", "stl:rail-card-adyen", "did:web:adyen.com", "adyen:acct:CGSXXXX001",
+         {"mode": "escrow", "captureMode": "auth-capture", "processorIntent": "adyen:psp_8915XYZADYEN01"},
+         "adyen:psp_8915XYZADYEN01", "captured"),
+        ("zum", "stl:rail-bank-zum", "did:web:zumrails.com", "zum:funds-transfer:ACME-PAYEE-01",
+         {"mode": "direct", "scheme": "interac"},
+         "zum:txn:9f3a-interac-0001", "settled"),
+        ("mc-send", "stl:rail-mc-send", "did:web:mastercard.com", "card:token:mc:555544xxxxxx4444",
+         {"mode": "direct", "processorIntent": "mc-send:request:MS-20260325-0001"},
+         "mc-send:ref:7766554433221100", "approved"),
+    ]
+    _seq = 69
+    for tag, rail_iri, proc, acct, extra, ref, status in _more_rails:
+        b = {
+            "@context": SETTLE_CTX, "id": "urn:avp:proc-binding:" + tag, "type": "ProcessorAccountBinding",
+            "subject": DID_PAYEE, "account": acct, "processor": proc, "rail": rail_iri,
+        }
+        b = ac.sign_ecdsa_jcs_2022(b, payee, "2026-03-25T21:30:06Z")
+        write(SETTLE, f"{_seq}-processor-account-binding-{tag}.json", b)
+        ins = {
+            "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:" + tag, "type": "AttestedSettlementInstruction",
+            "authorization": authz["id"], "authorizationDigest": authz_digest,
+            "rail": rail_iri, "payeeAccountBinding": b["id"],
+            "payer": DID_AGENT, "payee": DID_PAYEE, "amount": amount, "currency": currency,
+            **extra, "nonce": "settle-" + tag + "-1", "expires": "2026-03-25T22:00:00Z",
+        }
+        ins = ac.sign_ecdsa_jcs_2022(ins, wallet, "2026-03-25T21:30:46Z")
+        write(SETTLE, f"{_seq + 1}-settlement-instruction-{tag}.json", ins)
+        pr = {
+            "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:" + tag, "type": "AttestedSettlementProof",
+            "instruction": ins["id"], "instructionDigest": ac.jcs_digest(ins),
+            "execution": execution["id"], "rail": rail_iri,
+            "settledAmount": amount, "currency": currency,
+            "attestation": {
+                "type": "ProcessorAttestation", "mode": "payee-attested", "processor": proc,
+                "reference": ref, "status": status, "evidence": tag + "-evidence:" + ref,
+                "observedAt": "2026-03-25T21:34:50Z",
+            },
+            "finality": "final", "observedAt": "2026-03-25T21:34:51Z",
+        }
+        pr = ac.sign_ecdsa_jcs_2022(pr, payee, "2026-03-25T21:34:51Z")
+        write(SETTLE, f"{_seq + 2}-settlement-proof-{tag}.json", pr)
+        _seq += 3
+
     # ---- Transport & protocol binding bundle ----
     # Wraps the canonical payments objects. Reload them from disk so the digests
     # bound here match the exact bytes validate.py / verify.py will read.
