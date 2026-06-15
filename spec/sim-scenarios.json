@@ -788,5 +788,31 @@
       {"action": "attested_proof", "status": "approved", "expect": {"status": "completed", "settled": "1.00"}}
     ],
     "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "policy-survives-rail-change",
+    "description": "one SpendingAuthorizationCredential, three rails: the same mandate authorizes a payment that settles on EVM stablecoin (on-chain finality), then a second that settles on a card processor (Stripe, attested finality) -- and the shared daily budget, enforced by the same wallet checks regardless of rail, then blocks a third payment on Lightning. Caps, allowlist and the running budget survive the rail change because policy lives above settlement, not in it",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "dailyLimit": "7.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "issue", "expect": "ok"},
+
+      {"action": "quote", "amount": "3.00", "request": {"resource": "tool-api/run", "input": "doc-evm"}},
+      {"action": "authorize", "nonce": "n-1"},
+      {"action": "settle_instruct", "rail": "evm-stablecoin", "archetype": "pkh", "nonce": "1"},
+      {"action": "settle_proof", "confirmations": 12, "nonce": "1", "expect": {"status": "completed", "settled": "3.00"}},
+
+      {"action": "quote", "amount": "3.00", "request": {"resource": "tool-api/run", "input": "doc-card"}},
+      {"action": "authorize", "nonce": "n-2"},
+      {"action": "processor_binding", "rail": "card-stripe"},
+      {"action": "attested_instruct", "rail": "card-stripe", "mode": "escrow", "captureMode": "auth-capture", "nonce": "2"},
+      {"action": "attested_proof", "status": "captured", "nonce": "2", "expect": {"status": "completed", "settled": "3.00"}},
+
+      {"action": "quote", "amount": "3.00", "request": {"resource": "tool-api/run", "input": "doc-ln"}},
+      {"action": "authorize", "nonce": "n-3"},
+      {"action": "settle_instruct", "rail": "lightning", "mode": "escrow", "nonce": "3", "expect": {"reject": "dailyLimitExceeded"}}
+    ],
+    "finalBalances": {"agent": "94.00", "payee": "6.00"}
   }
 ]
