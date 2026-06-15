@@ -320,6 +320,20 @@
       preimage reveal, not by block depth).
     </p>
     <p>
+      To prevent a finality <dfn>downgrade</dfn>, a verifier <em class="rfc2119">MUST</em>
+      enforce a rail-specific <em>minimum</em> confirmation threshold (a <em>floor</em>)
+      independent of the value an instruction declares, and treat a self-declared
+      <code>confirmationThreshold</code> below that floor as if it were the floor: a
+      <a>SettlementProof</a> establishes <code>finality == "final"</code> only when
+      <code>confirmations &ge; max(confirmationThreshold, railFloor)</code>. An instruction
+      that sets <code>confirmationThreshold</code> below its rail's floor
+      <em class="rfc2119">MUST NOT</em> be honored as final on the strength of that lower
+      value. Conventional floors are 12 confirmations for the EVM stablecoin and x402 rails;
+      Lightning's floor is <code>0</code> (finality is the preimage reveal, never a low block
+      depth, so a <code>preimage</code> on a confirmation rail
+      <em class="rfc2119">MUST NOT</em> be treated as a finality signal).
+    </p>
+    <p>
       The <code>mode</code> field <em class="rfc2119">MUST</em> be present and
       <em class="rfc2119">MUST</em> be one of <code>direct</code> or
       <code>escrow</code>.

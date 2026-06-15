@@ -796,7 +796,11 @@
         <code>ES256</code> over its JWS signing input. A verifier <em>MUST NOT</em>
         accept a signature valid under one layer's construction as satisfying the other
         (cross-serialization confusion), even though one key may legitimately produce
-        both.</li>
+        both. Both signatures <em>MUST</em> additionally use canonical low-<code>s</code>
+        encoding, and a verifier <em>MUST</em> reject the high-<code>s</code> (malleable)
+        variant of either &mdash; matching the <code>ecdsa-jcs-2022</code> non-malleability
+        discipline &mdash; so a valid signature cannot be replayed as a
+        distinct-but-equally-valid twin.</li>
       <li><strong>Explicit bridge trust.</strong> A verifier <em>MUST NOT</em> honor an
         <code>attested</code> object unless the <code>iop:attestingBridge</code> DID is
         on an explicit, operator-configured trust list. Authority obtained in
