@@ -38,9 +38,12 @@ disp:DisputeShape a sh:NodeShape ;
   sh:property [ sh:path avp:timestamp ; sh:datatype xsd:dateTime ; sh:minCount 1 ] ;
   sh:property [ sh:path sec:proof ; sh:minCount 1 ] ;
   sh:or (
-    [ sh:property [ sh:path disp:receipt ; sh:minCount 1 ] ]
-    [ sh:property [ sh:path avp:execution ; sh:minCount 1 ] ]
-    [ sh:property [ sh:path avp:authorization ; sh:minCount 1 ] ]
+    [ sh:property [ sh:path disp:receipt ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+      sh:property [ sh:path disp:receiptDigest ; sh:node disp:ContentDigest ; sh:minCount 1 ] ]
+    [ sh:property [ sh:path avp:execution ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+      sh:property [ sh:path disp:executionDigest ; sh:node disp:ContentDigest ; sh:minCount 1 ] ]
+    [ sh:property [ sh:path avp:authorization ; sh:nodeKind sh:IRI ; sh:minCount 1 ] ;
+      sh:property [ sh:path disp:authorizationDigest ; sh:node disp:ContentDigest ; sh:minCount 1 ] ]
   ) .
 
 disp:DisputeEvidenceShape a sh:NodeShape ;

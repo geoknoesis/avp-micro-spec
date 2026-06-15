@@ -80,6 +80,8 @@ def es256_sign(header: dict, payload: dict, priv: ec.EllipticCurvePrivateKey) ->
     # across runs/platforms, matching avp_crypto's ecdsa-jcs-2022 discipline.
     der = priv.sign(signing_input, ec.ECDSA(hashes.SHA256(), deterministic_signing=True))
     r, s = decode_dss_signature(der)
+    if s > _P256_N // 2:                      # canonical low-s -> non-malleable (matches avp_crypto)
+        s = _P256_N - s
     raw = r.to_bytes(32, "big") + s.to_bytes(32, "big")
     return signing_input.decode("ascii") + "." + b64u_encode(raw)
 
@@ -93,9 +95,11 @@ def es256_verify(jws: str, pub: ec.EllipticCurvePublicKey) -> bool:
         raw = b64u_decode(sig_b64)
         if len(raw) != 64:
             return False
-        der = encode_dss_signature(
-            int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big")
-        )
+        r = int.from_bytes(raw[:32], "big")
+        s = int.from_bytes(raw[32:], "big")
+        if not (1 <= r < _P256_N and 1 <= s <= _P256_N // 2):
+            return False  # range-check + canonical low-s: reject the malleable high-s twin
+        der = encode_dss_signature(r, s)
         pub.verify(der, signing_input, ec.ECDSA(hashes.SHA256()))
         return True
     except Exception:

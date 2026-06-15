@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -66,10 +67,17 @@ class ReferenceAdapter(WalletAdapter):
         return CaseResult(bool(res["ok"]), decisive=decisive)
 
 
+def _amt(x) -> str:
+    """Canonical decimal rendering so numerically-equal amounts ('0' vs '0.00',
+    '1' vs '1.00') compare equal; 'f' format avoids scientific notation."""
+    return format(Decimal(str(x)).normalize(), "f")
+
+
 def _decisive_str(o) -> str:
     """Render a decisive outcome as a short string. Handles both the catalog form
     ("ok" | {"reject": code} | {"status","settled"}) and the engine's observed form
-    ({"outcome": "ok"|"reject", "code"|"status"|"settled": ...})."""
+    ({"outcome": "ok"|"reject", "code"|"status"|"settled": ...}). Settled amounts are
+    normalized so a numeric match isn't defeated by trailing-zero formatting."""
     if o is None or o == "ok":
         return "ok"
     if isinstance(o, dict):
@@ -79,7 +87,7 @@ def _decisive_str(o) -> str:
             return f"reject:{o.get('code')}"
         if "status" in o:
             s = o["status"]
-            return f"{s} {o['settled']}" if o.get("settled") is not None else s
+            return f"{s} {_amt(o['settled'])}" if o.get("settled") is not None else s
     return "ok"
 
 
@@ -94,12 +102,17 @@ def evaluate(adapter: WalletAdapter | None = None, profile_path=None) -> dict:
     rows = []
     for req in profile["requirements"]:
         cr = adapter.run_case(req["scenario"])
+        expected = _decisive_str(req.get("decisive"))
+        observed = _decisive_str(cr.decisive)
         rows.append({
             "id": req["id"], "category": req["category"], "level": req["level"],
             "statement": req["statement"], "scenario": req["scenario"],
-            "expected": _decisive_str(req.get("decisive")),
-            "observed": _decisive_str(cr.decisive),
-            "passed": bool(cr.passed) and cr.error is None,
+            "expected": expected,
+            "observed": observed,
+            # a requirement is satisfied only when the wallet's OBSERVED decisive outcome
+            # matches the catalog's normative one -- not merely that the adapter self-reported
+            # every step met its own expectation.
+            "passed": bool(cr.passed) and cr.error is None and observed == expected,
             "error": cr.error,
         })
     satisfied = sum(1 for r in rows if r["passed"])

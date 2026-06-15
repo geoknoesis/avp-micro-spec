@@ -35,6 +35,16 @@ def _nonneg(value, label: str) -> Decimal:
     return q
 
 
+def _rate(value, label: str) -> Decimal:
+    """Coerce a model-side amount (rate / freeQuantity / upfront) to Decimal, rejecting
+    negatives -- a negative rate yields a credit charge and a negative freeQuantity inflates
+    usage; neither is a valid operator-authored model."""
+    d = Decimal(str(value))
+    if d < 0:
+        raise PricingError(f"negative pricing amount for {label}: {d}")
+    return d
+
+
 def _qty(usage: dict, dimension: str) -> Decimal:
     return _nonneg(usage.get(dimension, 0), dimension)
 
@@ -47,13 +57,13 @@ def _tier_charge(component: dict, qty: Decimal) -> Decimal:
     if mode == "volume":
         for tier in tiers:
             if "upTo" not in tier or qty <= Decimal(tier["upTo"]):
-                return Decimal(tier["amount"]) * qty
-        return Decimal(tiers[-1]["amount"]) * qty
+                return _rate(tier["amount"], "tier") * qty
+        return _rate(tiers[-1]["amount"], "tier") * qty
     # graduated
     total = Decimal(0)
     lower = Decimal(0)
     for tier in tiers:
-        rate = Decimal(tier["amount"])
+        rate = _rate(tier["amount"], "tier")
         if "upTo" in tier:
             upper = Decimal(tier["upTo"])
             band = min(qty, upper) - lower
@@ -79,18 +89,18 @@ def _component_charge(component: dict, usage: dict) -> Decimal:
     if ctype == "Allowance":
         return Decimal(0)
     if ctype == "PerCall":
-        return Decimal(component["amount"]) * _nonneg(usage.get("calls", 1), "calls")
+        return _rate(component["amount"], "PerCall") * _nonneg(usage.get("calls", 1), "calls")
     if ctype == "CommitmentRate":
-        charge = Decimal(component.get("upfront", "0"))
+        charge = _rate(component.get("upfront", "0"), "upfront")
         recurring = component.get("recurring")
         if recurring:
             if "amount" not in recurring:
                 raise PricingError("CommitmentRate.recurring requires an amount")
-            charge += Decimal(recurring["amount"]) * _nonneg(usage.get("periods", 1), "periods")
+            charge += _rate(recurring["amount"], "recurring") * _nonneg(usage.get("periods", 1), "periods")
         return charge
     qty = _qty(usage, component["dimension"])
     if ctype == "PerUnit":
-        return Decimal(component["amount"]) * qty
+        return _rate(component["amount"], "PerUnit") * qty
     if ctype == "TieredRate":
         return _tier_charge(component, qty)
     raise PricingError(f"unknown component type: {ctype}")
@@ -101,7 +111,7 @@ def _apply_allowances(components: list, usage: dict) -> dict:
     for component in components:
         if component["type"] == "Allowance":
             dim = component["dimension"]
-            remaining = _qty(adjusted, dim) - Decimal(component["freeQuantity"])
+            remaining = _qty(adjusted, dim) - _rate(component["freeQuantity"], "freeQuantity")
             adjusted[dim] = remaining if remaining > 0 else Decimal(0)
     return adjusted
 
@@ -116,6 +126,7 @@ def assert_single_currency(model: dict) -> None:
 
 
 def evaluate(model: dict, usage: dict) -> Decimal:
+    assert_single_currency(model)            # a computed total must not mix currencies
     components = _components(model)
     adjusted = _apply_allowances(components, usage)
     total = sum((_component_charge(c, adjusted) for c in components), Decimal(0))

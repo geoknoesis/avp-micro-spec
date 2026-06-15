@@ -61,8 +61,6 @@ iop:embedded a owl:DatatypeProperty ;
   rdfs:label "embedded carrier"@en ;
   rdfs:comment "The byte-faithful compact serialization of the original foreign signed object -- the provenance source the bridged object prov:wasDerivedFrom. In proof-preserving mode this carries the authenticated authority."@en .
 
-iop:attestingBridge rdfs:subPropertyOf prov:wasAttributedTo .
-
 iop:sourceVct a owl:DatatypeProperty ;
   rdfs:domain iop:SecuringDescriptor ;
   rdfs:range xsd:string ;
@@ -71,6 +69,7 @@ iop:sourceVct a owl:DatatypeProperty ;
 
 iop:attestingBridge a owl:ObjectProperty ;
   rdfs:domain iop:SecuringDescriptor ;
+  rdfs:subPropertyOf prov:wasAttributedTo ;
   rdfs:label "attesting bridge"@en ;
   rdfs:comment "In 'attested' mode only, the DID of the bridge that re-signed the outer object. A relying party MUST independently trust this DID; in 'proof-preserving' and 'co-issued' modes this property is absent."@en .
 

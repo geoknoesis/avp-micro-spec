@@ -81,7 +81,7 @@ stl:settlementProofDigest a owl:DatatypeProperty ; rdfs:label "settlement proof 
 stl:chain a owl:DatatypeProperty ; rdfs:label "chain"@en ; rdfs:range xsd:string ;
   rdfs:comment "CAIP-2 chain id (e.g. eip155:8453)."@en .
 stl:payeeAccount a owl:DatatypeProperty ; rdfs:label "payee account"@en ; rdfs:range xsd:string ;
-  rdfs:comment "CAIP-10 account or Lightning destination (BOLT11/LNURL/node id)."@en .
+  rdfs:comment "CAIP-10 account or Lightning destination (BOLT11/LNURL/node id). This is the same account a PayeeAccountBinding asserts control of via its dsa:account property; the two names denote one value (the binding proves the payee controls this destination)."@en .
 stl:amountBase a owl:DatatypeProperty ; rdfs:label "amount (base units)"@en ; rdfs:range xsd:string ;
   rdfs:comment "Integer minor units / sats / msat as a string."@en .
 stl:settledAmountBase a owl:DatatypeProperty ; rdfs:label "settled amount (base units)"@en ; rdfs:range xsd:string .
@@ -116,6 +116,6 @@ stl:captureMode a owl:DatatypeProperty ; rdfs:label "capture mode"@en ; rdfs:ran
 stl:processorIntent a owl:DatatypeProperty ; rdfs:label "processor intent"@en ; rdfs:range xsd:string ;
   rdfs:comment "Processor-side reference for the intended settlement (e.g. a Stripe PaymentIntent id)."@en .
 stl:scheme a owl:DatatypeProperty ; rdfs:label "scheme"@en ; rdfs:range xsd:string ;
-  rdfs:comment "Instant-bank-transfer scheme: 'fednow', 'rtp', or 'sepa-instant'."@en .
+  rdfs:comment "Instant-bank-transfer scheme: 'fednow', 'rtp', 'sepa-instant', 'interac', or 'eft'."@en .
 stl:attestation a owl:DatatypeProperty ; rdfs:label "attestation"@en ; rdfs:range rdfs:Literal ;
-  rdfs:comment "Embedded processor attestation (JSON literal): mode, processor, reference, status, evidence."@en .
+  rdfs:comment "Embedded processor attestation, carried as an opaque JSON literal (context @type @json): mode, processor, reference, status, evidence. Its inner members are validated by the JSON Schema only -- they are not expanded to RDF predicates, so SHACL does not constrain them."@en .

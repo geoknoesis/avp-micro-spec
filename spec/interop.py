@@ -383,14 +383,19 @@ def _subject_within(outer: dict, inner: dict) -> bool:
     """No-widening (§11.2): True iff `outer` grants no more authority than `inner`.
     Ensures a bridged / projected credentialSubject can never broaden the embedded,
     authoritative mandate it claims to represent (numeric limits <=, payee/category
-    sets subset, currency equal)."""
+    sets subset, currency equal). Authority is broadened not only by *relaxing* a
+    restriction but by *dropping* it: for every one of these fields an absent value is
+    "unrestricted" downstream, so a restriction present on `inner` MUST also be present
+    (and no less restrictive) on `outer` -- otherwise a projection could strip the
+    embedded mandate's caps or payee allow-list and verify as equivalent."""
     for fld in ("maxPerTransaction", "dailyLimit", "requiresApprovalAbove"):
-        if fld in outer and not (fld in inner and _le(outer[fld], inner[fld])):
+        if fld in inner and not (fld in outer and _le(outer[fld], inner[fld])):
             return False
-    if "currency" in outer and outer.get("currency") != inner.get("currency"):
+    if "currency" in inner and outer.get("currency") != inner.get("currency"):
         return False
     for listfld in ("allowedPayees", "allowedCategories"):
-        if listfld in outer and not set(outer[listfld]).issubset(set(inner.get(listfld, []))):
+        if listfld in inner and not (
+                listfld in outer and set(outer[listfld]).issubset(set(inner[listfld]))):
             return False
     return True
 
@@ -551,8 +556,11 @@ def _verify_imported(vc: dict, did_web_resolver: dict) -> bool:
         # it uses for the ecdsa-jcs-2022 Data Integrity proof.
         if "proof" not in vc or not ac.verify_ecdsa_jcs_2022(vc):
             return False
+        # the same issuer co-signed the embedded SD-JWT with the same key, so the embedded
+        # ES256 MUST be present and verify -- a missing resolver key is a hard failure, not a
+        # silent skip (otherwise a forged embedded representation passes on the outer proof alone).
         jwk = did_web_resolver.get(payload.get("iss"))
-        if jwk is not None and not sdjwt.es256_verify(jws, sdjwt.p256_public_from_jwk(jwk)):
+        if jwk is None or not sdjwt.es256_verify(jws, sdjwt.p256_public_from_jwk(jwk)):
             return False
         return True
     return False
@@ -633,10 +641,23 @@ def verify_presentation(presentation: str, did_web_resolver: dict | None = None,
             secured = json.loads(sdjwt.b64u_decode(mp["avp_vc"]))
             if not ac.verify_ecdsa_jcs_2022(secured):
                 return False
+            # holder binding: the cnf key that signs the L3 KB-JWT MUST be the verified
+            # credential subject's did:key. On the avp_vc path the trust anchor is the
+            # native data-integrity proof, NOT the SD-JWT envelope (which is not checked
+            # here), so cnf/sub are otherwise attacker-controllable -- an observer of an
+            # exported mandate could re-wrap it with their own cnf and spend it. Pin both
+            # to the subject the proof actually authorizes.
+            subject = secured["credentialSubject"]["id"]
+            if mp["cnf"]["jwk"] != sdjwt.p256_public_jwk(ac.public_from_did_key(subject)):
+                return False
+            if mp.get("sub") != subject:
+                return False
         else:
             jwk = (did_web_resolver or {}).get(mp.get("iss"))
             if jwk is None or not sdjwt.es256_verify(issuer_jws, sdjwt.p256_public_from_jwk(jwk)):
                 return False
+            # foreign path: the issuer JWS signature (verified above) covers cnf and sub,
+            # so the issuer vouches for the holder binding.
         # 2. holder key-binding JWT (L3) signed by the cnf holder key (the agent)
         holder = sdjwt.p256_public_from_jwk(mp["cnf"]["jwk"])
         if not sdjwt.es256_verify(kbjwt, holder):

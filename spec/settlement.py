@@ -66,16 +66,26 @@ def decimals_for_asset(asset: str) -> int:
 
 
 def to_base_units(amount: str, decimals: int) -> str:
-    """Exact decimal -> integer base units. Raises if not representable."""
-    scaled = Decimal(amount).scaleb(decimals)
+    """Exact decimal -> integer base units. Raises if negative, non-finite, or not representable."""
+    amt = Decimal(amount)
+    if not amt.is_finite() or amt < 0:
+        raise SettlementError(f"invalid settlement amount: {amount!r}")
+    scaled = amt.scaleb(decimals)
     if scaled != scaled.to_integral_value():
         raise SettlementError(f"{amount} not representable in {decimals} base-unit decimals")
     return str(int(scaled))
 
 
 def usd_to_msat(amount_usd: str, rate_usd_per_btc: str) -> str:
-    """Exact USD -> msat at an agreed USD/BTC rate. Raises if not an integer msat."""
-    msat = Decimal(amount_usd) / Decimal(rate_usd_per_btc) * MSAT_PER_BTC
+    """Exact USD -> msat at an agreed USD/BTC rate. Raises if negative, non-finite, the rate is
+    not positive, or the result is not an integer msat."""
+    amt = Decimal(amount_usd)
+    rate = Decimal(rate_usd_per_btc)
+    if not amt.is_finite() or amt < 0:
+        raise SettlementError(f"invalid USD amount: {amount_usd!r}")
+    if not rate.is_finite() or rate <= 0:
+        raise SettlementError(f"invalid USD/BTC rate: {rate_usd_per_btc!r}")
+    msat = amt / rate * MSAT_PER_BTC
     if msat != msat.to_integral_value():
         raise SettlementError(f"{amount_usd} USD @ {rate_usd_per_btc} is not an integer msat")
     return str(int(msat))
@@ -93,11 +103,13 @@ def parse_caip10(account: str) -> tuple[str, str]:
 
 
 def did_pkh_account(did: str) -> tuple[str, str]:
-    """did:pkh:NS:REF:ADDR -> (chain_id, CAIP-10 account)."""
+    """did:pkh:NS:REF:ADDR -> (chain_id, CAIP-10 account). Raises SettlementError on
+    malformed input (missing/empty/whitespace segments) -- never a bare ValueError."""
     if not did.startswith("did:pkh:"):
         raise SettlementError(f"not a did:pkh: {did}")
-    ns, ref, addr = did[len("did:pkh:"):].split(":", 2)
-    return f"{ns}:{ref}", f"{ns}:{ref}:{addr}"
+    account = did[len("did:pkh:"):]
+    chain, _addr = parse_caip10(account)  # validates NS:REF:ADDR, rejects empty/whitespace
+    return chain, account
 
 
 def account_binding_ok(instruction: dict, binding: dict | None) -> bool:
@@ -111,7 +123,10 @@ def account_binding_ok(instruction: dict, binding: dict | None) -> bool:
     account = instruction["payeeAccount"]
     chain = instruction["chain"]
     if payee.startswith("did:pkh:"):
-        bchain, baccount = did_pkh_account(payee)
+        try:
+            bchain, baccount = did_pkh_account(payee)
+        except SettlementError:
+            return False  # a malformed did:pkh payee is not bound to any account
         return bchain == chain and baccount == account
     if binding is None:
         return False
@@ -130,6 +145,10 @@ def finality_ok(proof: dict, threshold: int, *, rail: str | None = None) -> bool
     """
     if proof.get("finality") != "final":
         return False
+    if rail is not None:
+        # anti-downgrade: a self-set instruction threshold may never sit below the rail's
+        # floor (e.g. a 1-confirmation EVM proof must not pass as final).
+        threshold = max(threshold, rail_threshold_floor(rail))
     is_lightning = rail is not None and rail.endswith("lightning")
     if rail is not None and not is_lightning and "preimage" in proof:
         return False  # SECURITY: a preimage is not a finality signal on a confirmation rail

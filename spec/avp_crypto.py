@@ -87,6 +87,26 @@ def b64url_nopad(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
+def _jcs_guard(obj: Any) -> None:
+    """Fail closed on inputs this canonicalizer does not serialize per RFC 8785, rather than
+    silently producing a signature a strict RFC 8785 implementation would reject:
+      * JSON floats -- the profile carries amounts as decimal STRINGS (json.dumps would emit
+        a platform-dependent float repr, not RFC 8785 ECMAScript number serialization);
+      * object keys outside the BMP -- Python sorts keys by code point, RFC 8785 by UTF-16
+        code unit, and the two orderings differ above U+FFFF.
+    (bool is a subclass of int, so JSON true/false pass; integers and strings pass.)"""
+    if isinstance(obj, float):
+        raise ValueError("JCS: float values are not allowed; use a decimal string")
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and any(ord(ch) > 0xFFFF for ch in k):
+                raise ValueError(f"JCS: non-BMP object key is not supported: {k!r}")
+            _jcs_guard(v)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            _jcs_guard(v)
+
+
 def jcs(obj: Any) -> bytes:
     """RFC 8785 canonical JSON for the value types used by AVP-Micro.
 
@@ -94,7 +114,9 @@ def jcs(obj: Any) -> bytes:
     U+2029 (PARAGRAPH SEPARATOR) raw, but RFC 8785 (per ECMAScript serialization)
     requires them escaped. Fix that up so a document containing those code points
     canonicalizes — and therefore signs/verifies — identically across implementations.
+    Inputs outside the supported value space (floats, non-BMP keys) are rejected.
     """
+    _jcs_guard(obj)
     s = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     _bs = chr(92)
     s = s.replace(chr(0x2028), _bs + "u2028").replace(chr(0x2029), _bs + "u2029")

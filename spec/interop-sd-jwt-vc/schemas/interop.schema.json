@@ -10,6 +10,11 @@
       "description": "Non-negative decimal amount as a string.",
       "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$"
     },
+    "positiveDecimal": {
+      "type": "string",
+      "description": "Strictly positive decimal amount as a string (matches the DSA bundle; a spend limit of \"0\" is rejected).",
+      "pattern": "^(0\\.[0-9]*[1-9][0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$"
+    },
     "compactSdJwt": {
       "type": "string",
       "description": "An SD-JWT (optionally with disclosures and a key-binding JWT), compact serialization: base64url segments joined by '.', disclosures joined by '~'.",
@@ -152,10 +157,10 @@
           "properties": {
             "id": { "$ref": "#/$defs/did" },
             "currency": { "type": "string" },
-            "maxPerTransaction": { "$ref": "#/$defs/decimal" },
-            "dailyLimit": { "$ref": "#/$defs/decimal" },
+            "maxPerTransaction": { "$ref": "#/$defs/positiveDecimal" },
+            "dailyLimit": { "$ref": "#/$defs/positiveDecimal" },
             "limitTimezone": { "type": "string" },
-            "requiresApprovalAbove": { "$ref": "#/$defs/decimal" },
+            "requiresApprovalAbove": { "$ref": "#/$defs/positiveDecimal" },
             "allowedPayees": { "type": "array", "items": { "$ref": "#/$defs/did" } },
             "allowedCategories": { "type": "array", "items": { "type": "string", "format": "uri" } }
           }

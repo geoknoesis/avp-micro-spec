@@ -53,10 +53,16 @@ Rejection codes are listed in REJECTIONS below.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
+
+try:
+    from zoneinfo import ZoneInfo
+except Exception:  # zoneinfo / tzdata unavailable -> fixed UTC-offset zones still work
+    ZoneInfo = None
 
 import avp_crypto as ac
 import interop
@@ -84,7 +90,7 @@ REJECTIONS = {
     "badSignature", "badCredential", "credentialExpired", "credentialRevoked",
     "holderMismatch", "quoteMismatch",
     "amountMismatch", "currencyMismatch", "overCap", "payeeNotAllowed",
-    "categoryNotAllowed", "dailyLimitExceeded", "expired", "nonceReuse",
+    "categoryNotAllowed", "dailyLimitExceeded", "expired", "quoteExpired", "nonceReuse",
     "doubleSpend", "budgetExceeded", "missingConfirmation", "forgedConfirmation",
     "overRefund", "noReversalBasis",
     "accountRedirection", "settlementNotFinal", "settlementMismatch",
@@ -126,6 +132,23 @@ class Clock:
 
     def date(self) -> str:
         return self.t.strftime("%Y-%m-%d")
+
+    def date_in_tz(self, tz: str | None) -> str:
+        """Calendar day (YYYY-MM-DD) in the named zone; UTC when tz is absent. Accepts an
+        IANA name (when zoneinfo/tzdata is available) or a fixed offset like '+05:00'."""
+        if not tz:
+            return self.date()
+        if ZoneInfo is not None:
+            try:
+                return self.t.astimezone(ZoneInfo(tz)).strftime("%Y-%m-%d")
+            except Exception:
+                pass
+        m = re.fullmatch(r"([+-])(\d{2}):?(\d{2})", tz.strip())
+        if m:
+            off = timedelta(hours=int(m.group(2)), minutes=int(m.group(3)))
+            off = off if m.group(1) == "+" else -off
+            return self.t.astimezone(timezone(off)).strftime("%Y-%m-%d")
+        return self.date()  # unknown tz -> UTC (fail-safe)
 
 
 class SettlementRail:
@@ -184,7 +207,8 @@ class World:
         self.ctx: dict = {}                 # last quote/authz/confirmation/session...
         self.nonces: set = set()            # replay protection
         self.executed: set = set()          # one-off single-use (consumed instances)
-        self.daily: list = []               # (date, settled) for dailyLimit windows
+        self.confirmations_used: set = set()  # single-use human-present confirmations
+        self.daily: list = []               # (date, authorized) for dailyLimit windows
         self.session_committed = Decimal(0)
         self.session_accrued = Decimal(0)
         self.session_units = Decimal(0)
@@ -363,6 +387,15 @@ def build_confirmation(world: World, step: dict) -> dict:
 
 # ---- the wallet: verification + policy enforcement + settlement -------------
 
+def _consume_confirmation(world: World) -> None:
+    """A human-present PurchaseConfirmation authorizes exactly one charge (single-use)."""
+    if not world.requires_confirmation:
+        return
+    conf = world.ctx.get("confirmation") or {}
+    if conf.get("nonce") is not None:
+        world.confirmations_used.add(conf["nonce"])
+
+
 def _verify_confirmation(world: World, conf: dict, authz: dict):
     if conf.get("confirmedBy") == conf["payer"]:          # must name a principal != the agent
         raise Reject("forgedConfirmation")
@@ -377,6 +410,9 @@ def _verify_confirmation(world: World, conf: dict, authz: dict):
         raise Reject("missingConfirmation")
     if "expires" in conf and world.clock.after(conf["expires"]):
         raise Reject("expired")
+    nonce = conf.get("nonce")                             # single-use: refuse a replayed approval
+    if nonce is not None and nonce in world.confirmations_used:
+        raise Reject("missingConfirmation")
 
 
 def wallet_verify(world: World, authz: dict) -> dict:
@@ -405,7 +441,13 @@ def wallet_verify(world: World, authz: dict) -> dict:
     # 3. holder binding: the agent that signed is the credential subject and the payer
     if subj["id"] != authz["payer"] or _controller(authz) != authz["payer"]:
         raise Reject("holderMismatch")
-    # 4. quote binding
+    # 4. quote: the payee's own signature on it, its freshness, then the bindings the
+    #    authorization commits to. An unsigned/forged quote, or one redeemed after it
+    #    expired, is refused before any binding check.
+    if not ac.verify_ecdsa_jcs_2022(quote) or _controller(quote) != quote["payee"]:
+        raise Reject("badSignature")
+    if world.clock.after(quote["expires"]):
+        raise Reject("quoteExpired")
     clean_quote = {k: v for k, v in quote.items() if not k.startswith("_")}
     if authz["quoteDigest"] != ac.jcs_digest(clean_quote):
         raise Reject("quoteMismatch")
@@ -413,6 +455,9 @@ def wallet_verify(world: World, authz: dict) -> dict:
         raise Reject("quoteMismatch")
     if authz["amount"] != quote["amount"] or authz["currency"] != quote["currency"]:
         raise Reject("amountMismatch")
+    if authz["settlementMethod"] != quote["settlementMethod"] \
+            or authz["settlementTarget"] != quote["settlementTarget"]:
+        raise Reject("quoteMismatch")         # settlement routing must match the signed quote
     # 5. economic policy from the signed credential
     if authz["currency"] != subj.get("currency"):
         raise Reject("currencyMismatch")
@@ -423,7 +468,8 @@ def wallet_verify(world: World, authz: dict) -> dict:
     if "allowedServiceCategories" in subj and authz.get("category") not in subj["allowedServiceCategories"]:
         raise Reject("categoryNotAllowed")
     if "dailyLimit" in subj:
-        today = sum((amt for d, amt in world.daily if d == world.clock.date()), Decimal(0))
+        bucket = world.clock.date_in_tz(subj.get("limitTimezone"))
+        today = sum((amt for d, amt in world.daily if d == bucket), Decimal(0))
         if today + _d(authz["amount"]) > _d(subj["dailyLimit"]):
             raise Reject("dailyLimitExceeded")
     # 6. freshness + single use
@@ -451,8 +497,11 @@ def wallet_process(world: World, authz: dict) -> dict:
     ref, settled = world.ledger.settle(payer_role, payee_role, authz["amount"], authz["id"])
     world.nonces.add(authz["nonce"])
     world.executed.add(authz["id"])
+    _consume_confirmation(world)
     if settled > 0:
-        world.daily.append((world.clock.date(), settled))
+        # reserve the AUTHORIZED amount against the daily window, not merely what settled --
+        # a partial settlement still consumes the full authorization's headroom.
+        world.daily.append((world.clock.date_in_tz(world.policy.get("limitTimezone")), _d(authz["amount"])))
     status = "completed" if settled == _d(authz["amount"]) else ("partial" if settled > 0 else "failed")
     execution = {
         "@context": PAY_CTX, "id": "urn:sim:exec:" + authz["nonce"], "type": "PaymentExecution",
@@ -571,15 +620,19 @@ def _amount_base(rail: str, amount: str):
 def _settle_onchain(world: World, instr: dict) -> Decimal:
     """Move play money agent -> payee to reflect a verified on-chain settlement, and
     consume the underlying authorization (single use)."""
+    authz = world.ctx.get("authz") or {}
+    if authz:                       # re-verify lifecycle/policy at the money-moving step:
+        wallet_verify(world, authz)  # a credential revoked/expired between instruct and proof must not settle
     payee_role = _orig_payee_role(world)
     _ref, settled = world.ledger.settle("agent", payee_role, instr["amount"], "settle:" + instr["id"])
-    authz = world.ctx.get("authz") or {}
     if authz.get("nonce"):
         world.nonces.add(authz["nonce"])
     if authz.get("id"):
         world.executed.add(authz["id"])
+    _consume_confirmation(world)
     if settled > 0:
-        world.daily.append((world.clock.date(), settled))
+        world.daily.append((world.clock.date_in_tz(world.policy.get("limitTimezone")),
+                            _d(authz.get("amount") or settled)))
     world.ctx["_settled"] = str(settled)
     return settled
 
@@ -670,7 +723,7 @@ def _do_settle_proof(world: World, step: dict) -> dict:
     proof = world.actor("wallet").sign(proof, world.clock.now())
     if proof["instruction"] != instr["id"] or proof["instructionDigest"] != ac.jcs_digest(instr):
         raise Reject("settlementMismatch")
-    if not stl.finality_ok(proof, threshold):
+    if not stl.finality_ok(proof, threshold, rail=instr["rail"]):
         raise Reject("settlementNotFinal")
     if proof["settledAmountBase"] != instr["amountBase"]:
         raise Reject("settlementMismatch")
@@ -873,7 +926,7 @@ def _do_reverse_proof(world: World, step: dict) -> dict:
         "observedAt": world.clock.now(),
     }
     proof = world.actor("wallet").sign(proof, world.clock.now())
-    if not stl.finality_ok(proof, threshold) or proof["settledAmountBase"] != instr["amountBase"]:
+    if not stl.finality_ok(proof, threshold, rail=instr["rail"]) or proof["settledAmountBase"] != instr["amountBase"]:
         raise Reject("settlementMismatch")
     world.ctx["reverseProof"] = proof
     world.ledger.settle(_orig_payee_role(world), "agent", orig["amount"], "reverse:" + instr["id"])
@@ -1063,8 +1116,13 @@ def _build_receipt(world):
 
 
 def _tamper_quote(world, step):
+    q = world.ctx["quote"]
     for k, v in step["set"].items():        # mutate the quote AFTER the authz committed its digest
-        world.ctx["quote"][k] = v
+        q[k] = v
+    # re-sign as the payee so the mutated quote is validly signed but no longer matches the
+    # digest the authorization already committed -- the binding (not the signature) catches it.
+    payee = world.actor(q["_payeeRole"])
+    world.ctx["quote"] = payee.sign({k: v for k, v in q.items() if k != "proof"}, world.clock.now())
     return {"ok": True}
 
 

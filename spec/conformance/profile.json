@@ -40,6 +40,9 @@
     {"id": "WCP-LIM-007", "category": "Spending limits", "level": "MUST",
      "statement": "Refuse an authorization presented after its validity window has passed.",
      "scenario": "authorization-expired", "decisive": {"reject": "expired"}},
+    {"id": "WCP-LIM-008", "category": "Spending limits", "level": "MUST",
+     "statement": "Enforce mandate limits identically across settlement rails: a shared daily budget consumed on an EVM rail then a card processor blocks a further charge on Lightning (policy survives a rail change).",
+     "scenario": "policy-survives-rail-change", "decisive": {"reject": "dailyLimitExceeded"}},
 
     {"id": "WCP-BND-001", "category": "Binding & integrity", "level": "MUST",
      "statement": "Refuse a re-presented (replayed) authorization (single-use enforcement).",

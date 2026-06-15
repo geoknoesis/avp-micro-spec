@@ -33,6 +33,18 @@ def check(label: str, ok: bool) -> None:
         _failed.append(label)
 
 
+def _rejects(fn) -> bool:
+    """True iff fn() raises a settlement.SettlementError -- i.e. malformed input is rejected
+    on the documented error path rather than returning a value or crashing."""
+    try:
+        fn()
+        return False
+    except st.SettlementError:
+        return True
+    except Exception:
+        return False
+
+
 def controller(obj):
     return obj["proof"]["verificationMethod"].split("#", 1)[0]
 
@@ -46,6 +58,8 @@ def main() -> int:
     merchant = load(AUTH, "merchant-credential.json")
     capability = load(AUTH, "payment-capability-credential.json")
     offer = load(PAY, "00-payment-offer.json")
+    offer_compute = load(PAY, "12-payment-offer-compute.json")
+    offer_storage = load(PAY, "13-payment-offer-storage.json")
     quote = load(PAY, "01-payment-quote.json")
     authz = load(PAY, "02-payment-authorization.json")
     execution = load(PAY, "03-payment-execution.json")
@@ -56,6 +70,7 @@ def main() -> int:
                        ("merchant credential", merchant),
                        ("payment-capability credential", capability),
                        ("offer", offer),
+                       ("offer-compute", offer_compute), ("offer-storage", offer_storage),
                        ("quote", quote), ("authorization", authz),
                        ("execution", execution), ("receipt", receipt)]:
         check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
@@ -733,6 +748,31 @@ def main() -> int:
     # on-chain reversal: a compensating transfer with payer/payee swapped vs the original
     check("reverse instruction swaps payer/payee vs the original payment",
           instr_rev["payer"] == instr_evm["payee"] and instr_rev["payee"] == instr_evm["payer"])
+
+    # --- negative settlement checks: the predicates MUST REJECT adversarial input, not only
+    #     accept valid input (exercise the reject-invalid direction the happy-path checks omit).
+    _redirect = dict(instr_evm)
+    _redirect["payeeAccount"] = instr_evm["chain"] + ":0xattacker0000000000000000000000000000dead"
+    check("settlement(neg): a redirected payeeAccount is NOT bound to the payee",
+          not st.account_binding_ok(_redirect, binding_evm))
+    _sub = dict(proof_evm)
+    _sub["confirmations"] = st.rail_threshold_floor(instr_evm["rail"]) - 1
+    check("settlement(neg): a sub-threshold proof is NOT final",
+          not st.finality_ok(_sub, instr_evm["confirmationThreshold"], rail=instr_evm["rail"]))
+    check("settlement(neg): a self-set threshold below the rail floor cannot pass (anti-downgrade)",
+          not st.finality_ok(_sub, 1, rail=instr_evm["rail"]))
+    _smuggle = dict(proof_evm)
+    _smuggle["preimage"] = "00" * 32
+    check("settlement(neg): a preimage cannot smuggle a confirmation-rail proof past finality",
+          not st.finality_ok(_smuggle, instr_evm["confirmationThreshold"], rail=instr_evm["rail"]))
+    check("settlement(neg): a malformed did:pkh is rejected (SettlementError, not a crash)",
+          _rejects(lambda: st.did_pkh_account("did:pkh:eip155")))
+    check("settlement(neg): a malformed CAIP-10 account is rejected",
+          _rejects(lambda: st.parse_caip10("eip155: 0xspace")))
+    check("settlement(neg): a negative base-unit amount is rejected",
+          _rejects(lambda: st.to_base_units("-1.00", 6)))
+    check("settlement(neg): a non-positive USD/BTC rate is rejected",
+          _rejects(lambda: st.usd_to_msat("1.00", "0")))
 
     print("Attested (closed-processor) settlement rails -- card (Stripe) & bank/RTP:")
     binding_card = load(SETTLE, "57-processor-account-binding-card.json")

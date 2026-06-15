@@ -45,6 +45,11 @@ iop:SecuringDescriptorShape
     sh:maxCount 1 ;
   ] ;
   sh:property [
+    sh:path iop:importAdvisory ;
+    sh:nodeKind sh:Literal ;
+    sh:message "Each importAdvisory entry MUST be a string literal." ;
+  ] ;
+  sh:property [
     sh:path iop:profileVersion ;
     sh:nodeKind sh:Literal ;
     sh:minCount 1 ;
