@@ -145,6 +145,19 @@
      "scenario": "settle-evm-escrow-timeout", "decisive": "ok"},
     {"id": "WCP-CHN-008", "category": "On-chain settlement", "level": "MUST",
      "statement": "Execute an on-chain reversal (compensating transfer with payer/payee swapped).",
-     "scenario": "settle-reverse", "decisive": {"status": "completed", "settled": "1.00"}}
+     "scenario": "settle-reverse", "decisive": {"status": "completed", "settled": "1.00"}},
+
+    {"id": "WCP-PSP-001", "category": "Closed-processor settlement", "level": "MUST",
+     "statement": "Settle over a card rail through a processor (Stripe) using authorize-then-capture, accepting a payee-attested SettlementProof.",
+     "scenario": "settle-card-stripe", "decisive": {"status": "completed", "settled": "1.00"}},
+    {"id": "WCP-PSP-002", "category": "Closed-processor settlement", "level": "MUST",
+     "statement": "Settle over an instant bank credit-transfer rail (RTP/FedNow) with a payee-attested SettlementProof.",
+     "scenario": "settle-rtp-push", "decisive": {"status": "completed", "settled": "1.00"}},
+    {"id": "WCP-PSP-003", "category": "Closed-processor settlement", "level": "MUST",
+     "statement": "Refuse a closed-processor settlement whose processor account is not bound to the payee DID (anti-redirection).",
+     "scenario": "settle-card-redirection", "decisive": {"reject": "accountRedirection"}},
+    {"id": "WCP-PSP-004", "category": "Closed-processor settlement", "level": "MUST",
+     "statement": "Settle over the PayPal wallet rail (immediate capture) with a payee-attested SettlementProof (capture COMPLETED).",
+     "scenario": "settle-paypal", "decisive": {"status": "completed", "settled": "1.00"}}
   ]
 }

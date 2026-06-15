@@ -37,3 +37,8 @@ stl:rail-bank-rtp a skos:Concept ; skos:inScheme stl:RailScheme ;
   skos:prefLabel "Instant bank credit transfer (RTP)"@en ;
   skos:definition "Instant account-to-account credit transfer (FedNow / TCH RTP / SEPA Instant)."@en ;
   skos:note "Attested finality; push and irrevocable, so NO native escrow; a refund is a fresh credit transfer."@en .
+
+stl:rail-paypal a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "PayPal wallet"@en ;
+  skos:definition "Settlement through the PayPal wallet/processor (immediate capture)."@en ;
+  skos:note "Attested finality (payee- or processor-attested); processor did:web:paypal.com; capture status COMPLETED. The same pattern fits other closed processors (Adyen, Zum Rails) and push-to-card networks (Visa Direct, Mastercard Send) by minting a rail concept and naming the processor DID."@en .

@@ -897,6 +897,45 @@ def main() -> None:
     proof_rtp = ac.sign_ecdsa_jcs_2022(proof_rtp, payee, "2026-03-25T21:34:21Z")
     write(SETTLE, "62-settlement-proof-rtp.json", proof_rtp)
 
+    # 63: ProcessorAccountBinding -- payee proves it controls a PayPal account.
+    binding_paypal = {
+        "@context": SETTLE_CTX, "id": "urn:avp:proc-binding:paypal", "type": "ProcessorAccountBinding",
+        "subject": DID_PAYEE, "account": "paypal:payerid:ACMEPAYEE0001",
+        "processor": "did:web:paypal.com", "rail": "stl:rail-paypal",
+    }
+    binding_paypal = ac.sign_ecdsa_jcs_2022(binding_paypal, payee, "2026-03-25T21:30:00Z")
+    write(SETTLE, "63-processor-account-binding-paypal.json", binding_paypal)
+
+    # 64: PayPal AttestedSettlementInstruction (direct -- immediate wallet capture, no escrow).
+    instr_paypal = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:paypal", "type": "AttestedSettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": authz_digest,
+        "rail": "stl:rail-paypal", "payeeAccountBinding": binding_paypal["id"],
+        "payer": DID_AGENT, "payee": DID_PAYEE,
+        "amount": amount, "currency": currency,
+        "mode": "direct", "processorIntent": "paypal:order:5O190127TN364715T",
+        "nonce": "settle-paypal-1", "expires": "2026-03-25T22:00:00Z",
+    }
+    instr_paypal = ac.sign_ecdsa_jcs_2022(instr_paypal, wallet, "2026-03-25T21:30:40Z")
+    write(SETTLE, "64-settlement-instruction-paypal.json", instr_paypal)
+
+    # 65: PayPal AttestedSettlementProof (COMPLETED; payee-attested over the PayPal capture).
+    proof_paypal = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:paypal", "type": "AttestedSettlementProof",
+        "instruction": instr_paypal["id"], "instructionDigest": ac.jcs_digest(instr_paypal),
+        "execution": execution["id"], "rail": "stl:rail-paypal",
+        "settledAmount": amount, "currency": currency,
+        "attestation": {
+            "type": "ProcessorAttestation", "mode": "payee-attested",
+            "processor": "did:web:paypal.com", "reference": "paypal:capture:3C679366HH9089937",
+            "status": "completed", "evidence": "paypal-webhook:PAYMENT.CAPTURE.COMPLETED:WH-1",
+            "observedAt": "2026-03-25T21:34:40Z",
+        },
+        "finality": "final", "observedAt": "2026-03-25T21:34:41Z",
+    }
+    proof_paypal = ac.sign_ecdsa_jcs_2022(proof_paypal, payee, "2026-03-25T21:34:41Z")
+    write(SETTLE, "65-settlement-proof-paypal.json", proof_paypal)
+
     # ---- Transport & protocol binding bundle ----
     # Wraps the canonical payments objects. Reload them from disk so the digests
     # bound here match the exact bytes validate.py / verify.py will read.

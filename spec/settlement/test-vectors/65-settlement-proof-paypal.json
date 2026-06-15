@@ -1,0 +1,36 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:settle-proof:paypal",
+  "type": "AttestedSettlementProof",
+  "instruction": "urn:avp:settle-instr:paypal",
+  "instructionDigest": "sha-256:Q-ityzC0V96VQZvqflLABNysLe31Ke8e4mVtXReKS7c",
+  "execution": "urn:avp:exec:555",
+  "rail": "stl:rail-paypal",
+  "settledAmount": "0.001",
+  "currency": "USD",
+  "attestation": {
+    "type": "ProcessorAttestation",
+    "mode": "payee-attested",
+    "processor": "did:web:paypal.com",
+    "reference": "paypal:capture:3C679366HH9089937",
+    "status": "completed",
+    "evidence": "paypal-webhook:PAYMENT.CAPTURE.COMPLETED:WH-1",
+    "observedAt": "2026-03-25T21:34:40Z"
+  },
+  "finality": "final",
+  "observedAt": "2026-03-25T21:34:41Z",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:34:41Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z5bEBqAe9Xq3GZrwDXRYt6FJj573xA153E8yjnnsZwe146HnwYt2qJ9SrBFE7posbDBZv1WWAaKYRrs9aUqTmq5Ux"
+  }
+}

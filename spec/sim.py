@@ -731,8 +731,11 @@ def _do_escrow_refund(world: World, step: dict) -> dict:
 # AttestedSettlementProof embedding the processor's result (payee-attested). The
 # anti-redirection, amount, and parties checks mirror the on-chain rails.
 
-_ATTESTED_RAIL_ID = {"card-stripe": "stl:rail-card-stripe", "bank-rtp": "stl:rail-bank-rtp"}
-_ATTESTED_PROCESSOR = {"card-stripe": "did:web:stripe.com", "bank-rtp": "did:web:bank.example"}
+_ATTESTED_RAIL_ID = {"card-stripe": "stl:rail-card-stripe", "bank-rtp": "stl:rail-bank-rtp",
+                     "paypal": "stl:rail-paypal"}
+_ATTESTED_PROCESSOR = {"card-stripe": "did:web:stripe.com", "bank-rtp": "did:web:bank.example",
+                       "paypal": "did:web:paypal.com"}
+_ATTESTED_REF_PREFIX = {"card-stripe": "stripe:pi_", "bank-rtp": "rtp:e2e:", "paypal": "paypal:capture:"}
 
 
 def _do_processor_binding(world: World, step: dict) -> dict:
@@ -778,8 +781,9 @@ def _do_attested_instruct(world: World, step: dict) -> dict:
     if rail == "card-stripe":
         instr["captureMode"] = step.get("captureMode", "auth-capture")
         instr["processorIntent"] = "stripe:pi_" + step.get("nonce", "1")
-    else:
+    elif rail == "bank-rtp":
         instr["scheme"] = step.get("scheme", "fednow")
+    # paypal (and other wallet processors): direct immediate capture, no card/bank fields
     instr = world.actor("wallet").sign(instr, world.clock.now())
     wallet_verify(world, authz)                        # the authorization must still be valid + in policy
     if not stl.attested_binding_ok(instr, binding):    # settle only to the payee-bound account
@@ -796,8 +800,9 @@ def _do_attested_proof(world: World, step: dict) -> dict:
     instr = world.ctx["instruction"]
     rail = world.ctx.get("_settleRail", "card-stripe")
     payee = world.actor(_orig_payee_role(world))
-    status = step.get("status", "captured" if rail == "card-stripe" else "settled")
-    ref_prefix = "stripe:pi_" if rail == "card-stripe" else "rtp:e2e:"
+    _default_status = {"card-stripe": "captured", "bank-rtp": "settled", "paypal": "completed"}
+    status = step.get("status", _default_status.get(rail, "settled"))
+    ref_prefix = _ATTESTED_REF_PREFIX.get(rail, "ref:")
     proof = {
         "@context": SETTLE_CTX, "id": "urn:sim:settle-proof:" + step.get("nonce", "1"),
         "type": "AttestedSettlementProof",

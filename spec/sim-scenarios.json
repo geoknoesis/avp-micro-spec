@@ -713,5 +713,20 @@
       {"action": "attested_instruct", "rail": "card-stripe", "mode": "escrow", "redirect": true, "expect": {"reject": "accountRedirection"}}
     ],
     "finalBalances": {"agent": "100.00"}
+  },
+  {
+    "name": "settle-paypal",
+    "description": "closed-processor settlement over the PayPal wallet rail (immediate capture); the payee returns a payee-attested SettlementProof (capture COMPLETED) and the money moves",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "processor_binding", "rail": "paypal"},
+      {"action": "attested_instruct", "rail": "paypal", "mode": "direct"},
+      {"action": "attested_proof", "status": "completed", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
   }
 ]
