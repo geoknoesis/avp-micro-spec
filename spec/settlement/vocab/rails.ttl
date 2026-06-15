@@ -42,3 +42,8 @@ stl:rail-paypal a skos:Concept ; skos:inScheme stl:RailScheme ;
   skos:prefLabel "PayPal wallet"@en ;
   skos:definition "Settlement through the PayPal wallet/processor (immediate capture)."@en ;
   skos:note "Attested finality (payee- or processor-attested); processor did:web:paypal.com; capture status COMPLETED. The same pattern fits other closed processors (Adyen, Zum Rails) and push-to-card networks (Visa Direct, Mastercard Send) by minting a rail concept and naming the processor DID."@en .
+
+stl:rail-visa-direct a skos:Concept ; skos:inScheme stl:RailScheme ;
+  skos:prefLabel "Visa Direct (push-to-card)"@en ;
+  skos:definition "Push-to-card credit transfer via Visa Direct (Original Credit Transaction, OCT)."@en ;
+  skos:note "Attested finality; network/processor did:web:visa.com; OCT terminal status approved (action code 00). A credit push with NO authorize/capture and NO native escrow, settling to a tokenized PAN; the ProcessorAccountBinding binds the payee DID to the receiving card credential. Mastercard Send (stl:rail-mc-send) is the analogous network."@en .

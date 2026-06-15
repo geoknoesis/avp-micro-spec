@@ -121,6 +121,9 @@ SETTLEMENT_VECTORS = {
     "63-processor-account-binding-paypal.json": "ProcessorAccountBinding",
     "64-settlement-instruction-paypal.json": "AttestedSettlementInstruction",
     "65-settlement-proof-paypal.json": "AttestedSettlementProof",
+    "66-processor-account-binding-visa-direct.json": "ProcessorAccountBinding",
+    "67-settlement-instruction-visa-direct.json": "AttestedSettlementInstruction",
+    "68-settlement-proof-visa-direct.json": "AttestedSettlementProof",
 }
 # Signed transport objects: full expand + schema + SHACL coverage.
 TRANSPORT_VECTORS = {
@@ -498,6 +501,9 @@ def main():
         "63-processor-account-binding-paypal.json": [(SETTLE_NS + "processor", "stl:processor")],
         "64-settlement-instruction-paypal.json": [(SETTLE_NS + "rail", "stl:rail")],
         "65-settlement-proof-paypal.json": [(SETTLE_NS + "attestation", "stl:attestation")],
+        "66-processor-account-binding-visa-direct.json": [(SETTLE_NS + "processor", "stl:processor")],
+        "67-settlement-instruction-visa-direct.json": [(SETTLE_NS + "rail", "stl:rail")],
+        "68-settlement-proof-visa-direct.json": [(SETTLE_NS + "attestation", "stl:attestation")],
     })
     expand_check(TRANSPORT, TRANSPORT_VECTORS, {
         "00-service-description.json": [(TXP_NS + "acceptedSettlementRails", "txp:acceptedSettlementRails"),

@@ -744,6 +744,9 @@ def main() -> int:
     binding_paypal = load(SETTLE, "63-processor-account-binding-paypal.json")
     instr_paypal = load(SETTLE, "64-settlement-instruction-paypal.json")
     proof_paypal = load(SETTLE, "65-settlement-proof-paypal.json")
+    binding_visa = load(SETTLE, "66-processor-account-binding-visa-direct.json")
+    instr_visa = load(SETTLE, "67-settlement-instruction-visa-direct.json")
+    proof_visa = load(SETTLE, "68-settlement-proof-visa-direct.json")
 
     # signers: bindings + attested proofs are PAYEE-signed (payee-attested); the wallet
     # still signs the instructions. (Unlike on-chain proofs, which the wallet signs.)
@@ -751,14 +754,17 @@ def main() -> int:
                 ("59 proof(card)", proof_card, payee), ("60 binding(rtp)", binding_rtp, payee),
                 ("61 instr(rtp)", instr_rtp, wallet), ("62 proof(rtp)", proof_rtp, payee),
                 ("63 binding(paypal)", binding_paypal, payee), ("64 instr(paypal)", instr_paypal, wallet),
-                ("65 proof(paypal)", proof_paypal, payee)]
+                ("65 proof(paypal)", proof_paypal, payee),
+                ("66 binding(visa-direct)", binding_visa, payee), ("67 instr(visa-direct)", instr_visa, wallet),
+                ("68 proof(visa-direct)", proof_visa, payee)]
     for label, obj, signer in attested:
         check(f"{label} proof", ac.verify_ecdsa_jcs_2022(obj))
         check(f"{label} signed by expected key", controller(obj) == signer)
 
     for label, binding, instr, proof in [("card", binding_card, instr_card, proof_card),
                                          ("rtp", binding_rtp, instr_rtp, proof_rtp),
-                                         ("paypal", binding_paypal, instr_paypal, proof_paypal)]:
+                                         ("paypal", binding_paypal, instr_paypal, proof_paypal),
+                                         ("visa-direct", binding_visa, instr_visa, proof_visa)]:
         # binding: payee-signed, subject == the AUTHORIZED payee (anti-redirection root),
         # naming a did:web processor as the trust root, on the instruction's rail.
         check(f"{label} processor-account binding signed by its subject (payee==authz.payee)",

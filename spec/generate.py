@@ -936,6 +936,45 @@ def main() -> None:
     proof_paypal = ac.sign_ecdsa_jcs_2022(proof_paypal, payee, "2026-03-25T21:34:41Z")
     write(SETTLE, "65-settlement-proof-paypal.json", proof_paypal)
 
+    # 66: ProcessorAccountBinding -- payee proves it controls the receiving card credential.
+    binding_visa = {
+        "@context": SETTLE_CTX, "id": "urn:avp:proc-binding:visa-direct", "type": "ProcessorAccountBinding",
+        "subject": DID_PAYEE, "account": "card:token:visa:411111xxxxxx1111",
+        "processor": "did:web:visa.com", "rail": "stl:rail-visa-direct",
+    }
+    binding_visa = ac.sign_ecdsa_jcs_2022(binding_visa, payee, "2026-03-25T21:30:05Z")
+    write(SETTLE, "66-processor-account-binding-visa-direct.json", binding_visa)
+
+    # 67: Visa Direct AttestedSettlementInstruction (direct credit push, OCT; NO escrow).
+    instr_visa = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-instr:visa-direct", "type": "AttestedSettlementInstruction",
+        "authorization": authz["id"], "authorizationDigest": authz_digest,
+        "rail": "stl:rail-visa-direct", "payeeAccountBinding": binding_visa["id"],
+        "payer": DID_AGENT, "payee": DID_PAYEE,
+        "amount": amount, "currency": currency,
+        "mode": "direct", "processorIntent": "visa-direct:oct-request:OCT-20260325-0001",
+        "nonce": "settle-visa-1", "expires": "2026-03-25T22:00:00Z",
+    }
+    instr_visa = ac.sign_ecdsa_jcs_2022(instr_visa, wallet, "2026-03-25T21:30:45Z")
+    write(SETTLE, "67-settlement-instruction-visa-direct.json", instr_visa)
+
+    # 68: Visa Direct AttestedSettlementProof (OCT approved; payee-attested over the network result).
+    proof_visa = {
+        "@context": SETTLE_CTX, "id": "urn:avp:settle-proof:visa-direct", "type": "AttestedSettlementProof",
+        "instruction": instr_visa["id"], "instructionDigest": ac.jcs_digest(instr_visa),
+        "execution": execution["id"], "rail": "stl:rail-visa-direct",
+        "settledAmount": amount, "currency": currency,
+        "attestation": {
+            "type": "ProcessorAttestation", "mode": "payee-attested",
+            "processor": "did:web:visa.com", "reference": "visa-direct:oct:9876543210123456",
+            "status": "approved", "evidence": "visa-direct:response:actionCode=00",
+            "observedAt": "2026-03-25T21:34:45Z",
+        },
+        "finality": "final", "observedAt": "2026-03-25T21:34:46Z",
+    }
+    proof_visa = ac.sign_ecdsa_jcs_2022(proof_visa, payee, "2026-03-25T21:34:46Z")
+    write(SETTLE, "68-settlement-proof-visa-direct.json", proof_visa)
+
     # ---- Transport & protocol binding bundle ----
     # Wraps the canonical payments objects. Reload them from disk so the digests
     # bound here match the exact bytes validate.py / verify.py will read.

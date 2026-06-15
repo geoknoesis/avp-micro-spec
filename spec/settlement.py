@@ -146,10 +146,11 @@ def finality_ok(proof: dict, threshold: int, *, rail: str | None = None) -> bool
 # verifiable: the proof embeds a processor attestation and is signed by the payee
 # (payee-attested) or carries a processor signature (processor-attested).
 
-_ATTESTED_RAILS = {"stl:rail-card-stripe", "stl:rail-bank-rtp", "stl:rail-paypal"}
+_ATTESTED_RAILS = {"stl:rail-card-stripe", "stl:rail-bank-rtp", "stl:rail-paypal",
+                   "stl:rail-visa-direct"}
 # Statuses that count as final per rail family (card capture / bank settlement /
-# PayPal capture COMPLETED).
-_ATTESTED_FINAL_STATUS = {"succeeded", "captured", "settled", "completed"}
+# PayPal capture COMPLETED / Visa Direct OCT approved).
+_ATTESTED_FINAL_STATUS = {"succeeded", "captured", "settled", "completed", "approved"}
 _ATTESTED_MODES = {"payee-attested", "processor-attested"}
 
 

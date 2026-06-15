@@ -732,10 +732,11 @@ def _do_escrow_refund(world: World, step: dict) -> dict:
 # anti-redirection, amount, and parties checks mirror the on-chain rails.
 
 _ATTESTED_RAIL_ID = {"card-stripe": "stl:rail-card-stripe", "bank-rtp": "stl:rail-bank-rtp",
-                     "paypal": "stl:rail-paypal"}
+                     "paypal": "stl:rail-paypal", "visa-direct": "stl:rail-visa-direct"}
 _ATTESTED_PROCESSOR = {"card-stripe": "did:web:stripe.com", "bank-rtp": "did:web:bank.example",
-                       "paypal": "did:web:paypal.com"}
-_ATTESTED_REF_PREFIX = {"card-stripe": "stripe:pi_", "bank-rtp": "rtp:e2e:", "paypal": "paypal:capture:"}
+                       "paypal": "did:web:paypal.com", "visa-direct": "did:web:visa.com"}
+_ATTESTED_REF_PREFIX = {"card-stripe": "stripe:pi_", "bank-rtp": "rtp:e2e:", "paypal": "paypal:capture:",
+                        "visa-direct": "visa-direct:oct:"}
 
 
 def _do_processor_binding(world: World, step: dict) -> dict:
@@ -800,7 +801,8 @@ def _do_attested_proof(world: World, step: dict) -> dict:
     instr = world.ctx["instruction"]
     rail = world.ctx.get("_settleRail", "card-stripe")
     payee = world.actor(_orig_payee_role(world))
-    _default_status = {"card-stripe": "captured", "bank-rtp": "settled", "paypal": "completed"}
+    _default_status = {"card-stripe": "captured", "bank-rtp": "settled", "paypal": "completed",
+                       "visa-direct": "approved"}
     status = step.get("status", _default_status.get(rail, "settled"))
     ref_prefix = _ATTESTED_REF_PREFIX.get(rail, "ref:")
     proof = {

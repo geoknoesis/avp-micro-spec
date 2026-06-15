@@ -158,6 +158,9 @@
      "scenario": "settle-card-redirection", "decisive": {"reject": "accountRedirection"}},
     {"id": "WCP-PSP-004", "category": "Closed-processor settlement", "level": "MUST",
      "statement": "Settle over the PayPal wallet rail (immediate capture) with a payee-attested SettlementProof (capture COMPLETED).",
-     "scenario": "settle-paypal", "decisive": {"status": "completed", "settled": "1.00"}}
+     "scenario": "settle-paypal", "decisive": {"status": "completed", "settled": "1.00"}},
+    {"id": "WCP-PSP-005", "category": "Closed-processor settlement", "level": "MUST",
+     "statement": "Settle over Visa Direct push-to-card (OCT credit push, no auth/capture) with a payee-attested SettlementProof (OCT approved).",
+     "scenario": "settle-visa-direct", "decisive": {"status": "completed", "settled": "1.00"}}
   ]
 }

@@ -1,0 +1,23 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://w3id.org/security/data-integrity/v2",
+    "https://w3id.org/spending-authority/v1",
+    "https://w3id.org/avp-micro/v1",
+    "https://w3id.org/avp-micro/settlement/v1"
+  ],
+  "id": "urn:avp:proc-binding:visa-direct",
+  "type": "ProcessorAccountBinding",
+  "subject": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+  "account": "card:token:visa:411111xxxxxx1111",
+  "processor": "did:web:visa.com",
+  "rail": "stl:rail-visa-direct",
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "ecdsa-jcs-2022",
+    "created": "2026-03-25T21:30:05Z",
+    "verificationMethod": "did:key:zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN#zDnaenNXPt8JM5YYhrjp23T2ZsgGjyEhVVSC7dhFjbQwdrxEN",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z4oWqswJtP3E64pNPZZXmSNLWnw7PmJvomHdbakivSXTNZzVdsovovo6JjQZXJH4NehpfejdKcrsaFp7r5epLGA5Q"
+  }
+}

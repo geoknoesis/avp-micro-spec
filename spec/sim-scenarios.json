@@ -728,5 +728,20 @@
       {"action": "attested_proof", "status": "completed", "expect": {"status": "completed", "settled": "1.00"}}
     ],
     "finalBalances": {"agent": "99.00", "payee": "1.00"}
+  },
+  {
+    "name": "settle-visa-direct",
+    "description": "closed-processor settlement over Visa Direct push-to-card (Original Credit Transaction); a credit push with no authorize/capture, the payee returns a payee-attested SettlementProof (OCT approved) and the money moves",
+    "policy": {"currency": "USD", "maxPerTransaction": "5.00", "allowedPayees": ["payee"]},
+    "balances": {"agent": "100.00"},
+    "now": "2026-06-12T10:00:00Z",
+    "steps": [
+      {"action": "quote", "amount": "1.00"},
+      {"action": "authorize"},
+      {"action": "processor_binding", "rail": "visa-direct"},
+      {"action": "attested_instruct", "rail": "visa-direct", "mode": "direct"},
+      {"action": "attested_proof", "status": "approved", "expect": {"status": "completed", "settled": "1.00"}}
+    ],
+    "finalBalances": {"agent": "99.00", "payee": "1.00"}
   }
 ]
