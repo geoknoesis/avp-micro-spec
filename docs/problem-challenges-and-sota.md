@@ -1,14 +1,15 @@
 # Problem, Challenges, and State of the Art
 
-This document describes the problem **AVP-Micro** (Agent Verifiable Micropayments) is meant to address, the practical challenges that block today’s systems from solving it, and the current state of the art in standards and products. It complements the five normative specification bundles under [`spec/`](../spec/):
+This document describes the problem **AVP-Micro** (Agent Verifiable Micropayments) is meant to address, the practical challenges that block today’s systems from solving it, and the current state of the art in standards and products. It complements the six normative specification bundles under [`spec/`](../spec/):
 
 - **[Delegated Spending Authority (DSA)](../spec/authority/index.html)** — identity, the `SpendingAuthorizationCredential`, securing mechanisms, and the issuer trust framework.
 - **[AVP-Micro Payments](../spec/payments/index.html)** — signed quotes, authorizations, executions, receipts, and streaming/session metering, built on DSA.
 - **[AVP-Micro ⇄ SD-JWT-VC interop](../spec/interop-sd-jwt-vc/index.html)** — the bridge that carries spending authority across the SD-JWT-VC stack used by Mastercard/Google **Verifiable Intent** and Google **AP2**.
 - **[AVP-Micro Disputes](../spec/disputes/index.html)** — the reverse value-flow: refunds, reversals, chargebacks, and the dispute lifecycle, built on Payments + DSA.
-- **[AVP-Micro Settlement](../spec/settlement/index.html)** — binds a payment authorization to a concrete settlement rail (EVM stablecoin, x402, Lightning), including escrow (lock / release / refund) and on-chain settlement proofs.
+- **[AVP-Micro Settlement](../spec/settlement/index.html)** — binds a payment authorization to a concrete settlement rail (EVM stablecoin, x402, Lightning) and closed-processor rails (cards, bank/RTP, PayPal, Visa Direct / Mastercard Send), including escrow (lock / release / refund) and on-chain or payee-attested settlement proofs.
+- **[AVP-Micro Transport](../spec/transport/index.html)** — the normative HTTP/REST wire binding (service discovery + the HTTP 402 challenge) that carries the payment objects between agent and payee; OpenAPI 3.1 + signed objects.
 
-A shared conformance harness and signed test vectors exercise all five, and a protocol simulator enforces the runtime behaviour (single-use consumption, replay rejection, caps, budgets, request binding) that static vectors cannot.
+A shared conformance harness and signed test vectors exercise all six, and a protocol simulator enforces the runtime behaviour (single-use consumption, replay rejection, caps, budgets, request binding) that static vectors cannot.
 
 ---
 

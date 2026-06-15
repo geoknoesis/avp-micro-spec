@@ -3,7 +3,7 @@
 A normative, machine-readable catalog of the behaviours an **AVP-Micro wallet** MUST
 exhibit — and an executable runner that certifies an implementation against it.
 
-- **Catalog:** [`profile.json`](profile.json) — 45 requirements (`WCP-…`) in ten categories,
+- **Catalog:** [`profile.json`](profile.json) — 54 requirements (`WCP-…`) in ten categories,
   each mapping a behaviour to the scenario that exercises it and the decisive outcome.
 - **Runner:** [`../conformance.py`](../conformance.py).
 
@@ -13,7 +13,7 @@ exhibit — and an executable runner that certifies an implementation against it
 .venv\Scripts\python spec\conformance.py
 ```
 
-Prints a per-category `[PASS]/[FAIL]` report and a `N/45 requirements satisfied` summary;
+Prints a per-category `[PASS]/[FAIL]` report and a `N/54 requirements satisfied` summary;
 exits non-zero on any failure. With no adapter it certifies the bundled reference engine
 (`sim.py`), which is expected to satisfy 100%.
 
@@ -30,6 +30,7 @@ exits non-zero on any failure. With no adapter it certifies the bundled referenc
 | `WCP-AP2` | AP2 bridge |
 | `WCP-DIS` | Refunds, reversals & disputes |
 | `WCP-CHN` | On-chain settlement |
+| `WCP-PSP` | Closed-processor settlement |
 
 ## Certifying your own wallet
 

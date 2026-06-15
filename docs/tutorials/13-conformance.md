@@ -63,7 +63,7 @@ reference engine (`sim.py`) and is the suite's self-certification:
 === Spending limits ===
   [PASS] WCP-LIM-002 (MUST) Refuse an authorization whose amount exceeds maxPerTransaction.
   …
-53/53 requirements satisfied.
+54/54 requirements satisfied.
 PASS: wallet is conformant with the AVP-Micro Wallet Conformance Profile.
 ```
 

@@ -59,7 +59,7 @@ You can read any scenario as a template for your own:
 
 ## 4. The interactive demo
 
-The Streamlit demo ([`avp-micro-sim-demo`](https://github.com/geoknoesis/avp-micro-spec), or the
+The Streamlit demo ([`avp-micro-sim-demo`](https://github.com/geoknoesis/avp-micro-sim-demo), or the
 [hosted version](https://avp-micro-sim-demo-jhjzp6ra4fvqgxmpr7b3x8.streamlit.app/)) visualises
 all of the above. From the demo repo:
 
@@ -81,10 +81,10 @@ Its six views:
 ## 5. A real local server
 
 The demo also ships a tiny runnable payee+wallet HTTP server — the 402 binding (Tutorial 08)
-over real sockets:
+over real sockets. Run it from your `avp-micro-sim-demo` clone (it is not part of this spec repo):
 
 ```powershell
-python server.py     # http://localhost:8402
+python server.py     # http://localhost:8402, from the avp-micro-sim-demo repo
 curl -i "http://localhost:8402/.well-known/avp-micro"
 curl -i "http://localhost:8402/resource/premium?amount=1.00&cap=5.00&payee=allowed"                                 # 402 + challenge
 curl -i "http://localhost:8402/resource/premium?amount=1.00&cap=5.00&payee=allowed" -H "Authorization: AVP-Micro x" # 200

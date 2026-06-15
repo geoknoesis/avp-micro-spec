@@ -102,8 +102,8 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" integrity="sha384-/TQbtLCAerC3jgaim+N78RZSDYV7ryeoBCVqTuzRrFec2akfBkHS7ACQ3PQhvMVi" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js" integrity="sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I" crossorigin="anonymous"></script>
 <script src="../assets/avp.js?v=2" defer></script>
 <script>
 (function () {
@@ -131,7 +131,9 @@
   const toc = document.getElementById("tutToc");
   const content = document.getElementById("tutContent");
 
-  mermaid.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "loose" });
+  // "antiscript": diagram labels keep their HTML (<br/>, <i> used in the tutorials) but any
+  // injected <script>/event-handler is stripped -- closes the XSS vector that "loose" left open.
+  mermaid.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "antiscript" });
 
   function renderToc(activeId) {
     toc.innerHTML = "";
