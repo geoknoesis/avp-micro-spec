@@ -7,7 +7,7 @@
   <meta name="description" content="AVP-Micro is a vendor-neutral trust and authorization layer for AI-agent payments: six open specifications built on W3C Verifiable Credentials 2.0, DIDs, and Data Integrity proofs — delegated spending authority that any merchant can verify, above any settlement rail.">
   <link rel="canonical" href="https://geoknoesis.github.io/avp-micro-spec/">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="stylesheet" href="assets/avp.css?v=2">
+  <link rel="stylesheet" href="assets/avp.css?v=3">
 
   <!-- Open Graph / Twitter -->
   <meta property="og:type" content="website">
@@ -492,6 +492,27 @@
           <li>A normative bridge so one agent's authority verifies on <em>either</em> stack</li>
           <li>A cross-vendor, cryptographically-bound refund / reversal / chargeback flow</li>
         </ul>
+      </div>
+      <div class="gap-card gap-fill">
+        <h4>→ How AVP-Micro closes each — provably</h4>
+        <dl class="gap-map">
+          <div>
+            <dt>Policy that survives a rail change</dt>
+            <dd>The <a href="spec/authority/">Delegated Spending Authority</a> credential carries caps, allowlists and windows; <a href="spec/payments/">Payments</a> adds session budgets — all <em>above</em> the rail, so <a href="spec/settlement/">Settlement</a> can swap EVM ↔ Lightning ↔ card underneath. Normative: <a href="spec/authority/shapes/dsa-shapes.ttl">SHACL shape</a> · <a href="spec/authority/schemas/dsa.schema.json">JSON Schema</a>.</dd>
+          </div>
+          <div>
+            <dt>One auditable quote → session → accrual story</dt>
+            <dd>The <a href="spec/payments/">Payments</a> lifecycle chains quote → authorize → execute → receipt with <code>quoteDigest</code>/<code>requestHash</code> binding and signed streaming accruals — enforced at runtime by the <a href="spec/sim-scenarios.json">protocol simulator</a>, not just asserted. Normative: <a href="spec/payments/shapes/avp-shapes.ttl">SHACL shape</a>.</dd>
+          </div>
+          <div>
+            <dt>Authority that verifies on <em>either</em> stack</dt>
+            <dd>The <a href="spec/interop-sd-jwt-vc/">SD-JWT-VC interop bundle</a> bridges the same authority into the Verifiable Intent / AP2 ecosystems — proof-preserving, co-issued, or attested — without re-issuance.</dd>
+          </div>
+          <div>
+            <dt>Cryptographically-bound reverse value-flow</dt>
+            <dd>The <a href="spec/disputes/">Disputes</a> bundle converges refunds and the adversarial dispute lifecycle on one wallet-signed <code>Reversal</code> tied to the original authorization and receipt — see the signed <a href="spec/disputes/test-vectors">refund / reversal / dispute vectors</a>.</dd>
+          </div>
+        </dl>
       </div>
     </div>
   </div>

@@ -351,6 +351,14 @@ table.cmp td b { color: var(--ink); }
 .gap-card h4 { margin: 0 0 12px; font-size: .82rem; letter-spacing: .06em; text-transform: uppercase; }
 .gap-card ul { margin: 0; padding-left: 18px; }
 .gap-card li { font-size: .92rem; margin-bottom: 7px; color: var(--slate); }
+.gap-fill { grid-column: 1 / -1; background: #eff6ff; border-color: #bfdbfe; margin-top: -2px; }
+.gap-fill h4 { color: #1e40af; }
+.gap-map { margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 28px; }
+.gap-map dt { font-weight: 700; font-size: .92rem; color: var(--ink); margin-bottom: 3px; }
+.gap-map dd { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--slate); }
+.gap-map a { border-bottom: 1px solid #bfdbfe; }
+.gap-map a:hover { border-bottom-color: var(--blue); }
+.gap-map code { font-size: .85em; background: #dbeafe; color: #1e3a8a; padding: .08em .34em; border-radius: 5px; }
 
 /* ============================================================
    CONFORMANCE (dark)
@@ -404,7 +412,7 @@ table.cmp td b { color: var(--ink); }
   .nav-links.open { transform: translateY(0); visibility: visible; }
   .nav-links a { padding: 12px 12px; border-radius: 9px; }
   .nav-toggle { display: inline-flex; }
-  .grid-2, .grid-3, .spec-grid, .feat-grid, .chal, .conf-grid, .gap-grid, .arch-pillars { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .spec-grid, .feat-grid, .chal, .conf-grid, .gap-grid, .arch-pillars, .gap-map { grid-template-columns: 1fr; }
   .flow-arrow { transform: rotate(90deg); width: 100%; padding: 4px 0; }
   .flow-step { min-width: 0; }
   .hero-cta { flex-direction: column; align-items: stretch; }
